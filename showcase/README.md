@@ -78,5 +78,6 @@ The captain opens this on a phone. Every change is checked at **390px wide** bef
 
 - The `Shell` breakpoint is 768, so below it chat and canvas are thumb-sized tabs.
 - The page never scrolls sideways. Wide things — the screen nav, a `RecordList` table — scroll
-  inside their own strip, and below 768 `RecordList` draws cards instead of a table.
+  inside their own strip, and below 768 `RecordList` draws cards instead of a table and
+  `RecordForm` folds to one column with its submit bar stuck to the bottom.
 - Inputs use `text-base`, so iOS does not zoom on focus.

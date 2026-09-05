@@ -77,10 +77,7 @@ const primaryClass =
   'w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50'
 const quietClass = 'rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium'
 
-function Field({
-  label,
-  ...input
-}: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
+function Field({ label, ...input }: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-neutral-700">{label}</span>

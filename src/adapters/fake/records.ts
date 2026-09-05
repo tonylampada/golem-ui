@@ -1,14 +1,28 @@
-import type { FilterValue, RecordQuery, RecordsAdapter } from '../records'
+import {
+  RecordRefusedError,
+  type FilterValue,
+  type RecordQuery,
+  type RecordsAdapter,
+} from '../records'
 import { createEmitter } from './emitter'
 
 export type FakeRow = Record<string, unknown> & { id: string }
 
 /**
  * The fake's store, on top of the adapter interface. `insert` is not part of `RecordsAdapter`: it
- * is how a story, a test or a demo screen puts a row in, which in a real app is the server's job.
+ * is the synchronous way a story or a test puts a row in without going through `create`, so a
+ * seeded collection can grow while a refusal is switched on.
  */
 export interface FakeRecords extends RecordsAdapter {
   insert(collection: string, row: Record<string, unknown>): FakeRow
+}
+
+export interface FakeRecordsOptions {
+  /**
+   * Makes every `create` and `update` reject, naming this field. It is how a story shows what an
+   * adapter's refusal looks like landing under one control.
+   */
+  refuse?: { field: string; message: string }
 }
 
 function matches(value: unknown, wanted: FilterValue): boolean {
@@ -41,7 +55,10 @@ function hit(row: FakeRow, text: string, fields: string[]): boolean {
  * also its limit: a row inserted while the reader is on page three shifts the pages under them,
  * which is why a live update re-lists from the start rather than paging on.
  */
-export function fakeRecords(seed: Record<string, Record<string, unknown>[]> = {}): FakeRecords {
+export function fakeRecords(
+  seed: Record<string, Record<string, unknown>[]> = {},
+  options: FakeRecordsOptions = {},
+): FakeRecords {
   const store = new Map<string, FakeRow[]>(
     Object.entries(seed).map(([name, rows]) => [name, rows.map((row) => ({ ...row }) as FakeRow)]),
   )
@@ -55,6 +72,24 @@ export function fakeRecords(seed: Record<string, Record<string, unknown>[]> = {}
   const emitterFor = (collection: string) => {
     if (!emitters.has(collection)) emitters.set(collection, createEmitter<void>())
     return emitters.get(collection)!
+  }
+  const indexOf = (collection: string, id: string) =>
+    rows(collection).findIndex((row) => row.id === id)
+
+  const refuseIfAsked = () => {
+    const { refuse } = options
+    if (refuse) {
+      throw new RecordRefusedError(`The store refused this ${refuse.field}.`, [
+        { field: refuse.field, message: refuse.message },
+      ])
+    }
+  }
+
+  const insert = (collection: string, row: Record<string, unknown>) => {
+    const next = { id: `fake-${nextId++}`, ...row } as FakeRow
+    rows(collection).unshift(next)
+    emitterFor(collection).emit()
+    return next
   }
 
   return {
@@ -85,12 +120,34 @@ export function fakeRecords(seed: Record<string, Record<string, unknown>[]> = {}
       }
     },
 
-    insert(collection: string, row: Record<string, unknown>) {
-      const next = { id: `fake-${nextId++}`, ...row } as FakeRow
-      rows(collection).unshift(next)
-      emitterFor(collection).emit()
-      return next
+    async get<T>(collection: string, id: string) {
+      const found = rows(collection).find((row) => row.id === id)
+      return (found ? ({ ...found } as T) : null) as T | null
     },
+
+    async create<T>(collection: string, data: Record<string, unknown>) {
+      refuseIfAsked()
+      return { ...insert(collection, data) } as T
+    },
+
+    async update<T>(collection: string, id: string, patch: Record<string, unknown>) {
+      refuseIfAsked()
+      const at = indexOf(collection, id)
+      if (at === -1) throw new Error(`There is no ${collection} record with the id ${id}.`)
+      const next = { ...rows(collection)[at]!, ...patch, id }
+      rows(collection)[at] = next
+      emitterFor(collection).emit()
+      return { ...next } as T
+    },
+
+    async remove(collection: string, id: string) {
+      const at = indexOf(collection, id)
+      if (at === -1) throw new Error(`There is no ${collection} record with the id ${id}.`)
+      rows(collection).splice(at, 1)
+      emitterFor(collection).emit()
+    },
+
+    insert,
 
     subscribe(collection: string, listener: () => void) {
       return emitterFor(collection).subscribe(listener)

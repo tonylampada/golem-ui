@@ -1,4 +1,4 @@
-import type { RecordField } from './RecordList.config'
+import type { RenderedField } from '../abi/fields'
 
 const DATE_STYLES = ['short', 'medium', 'long', 'full'] as const
 type DateStyle = (typeof DATE_STYLES)[number]
@@ -35,7 +35,7 @@ export function initials(name: string): string {
  * put local time in the record. An unparseable date falls back to the raw string rather than to
  * `Invalid Date`: the reader should see what the record actually holds.
  */
-export function formatValue(value: unknown, field: RecordField): string {
+export function formatValue(value: unknown, field: RenderedField): string {
   if (value === null || value === undefined || value === '') return '—'
 
   switch (field.type) {

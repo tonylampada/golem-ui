@@ -1,6 +1,5 @@
 import type { GolemProps } from '../../abi'
 import { fakeRecords, type FakeRecords } from '../../adapters/fake'
-import type { RecordsAdapter } from '../../adapters'
 import type { RecordListAdapters, RecordListSlots } from './RecordList'
 import type { RecordListConfigInput } from './RecordList.config'
 
@@ -126,10 +125,7 @@ const emptyAdapters: RecordListAdapters = { records: fakeRecords({ tickets: [] }
 
 /** A list that never resolves, which is what the loading state actually looks like. */
 const pendingAdapters: RecordListAdapters = {
-  records: {
-    list: () => new Promise(() => {}),
-    subscribe: () => () => {},
-  } satisfies RecordsAdapter,
+  records: { ...fakeRecords(), list: () => new Promise(() => {}) },
 }
 
 /**

@@ -1,11 +1,16 @@
 import { Auth } from 'golem-ui'
-import type { ClockAdapter, FakeRecords, IdentityAdapter, NavigationAdapter, Route } from 'golem-ui'
+import type {
+  ClockAdapter,
+  IdentityAdapter,
+  NavigationAdapter,
+  RecordsAdapter,
+  Route,
+} from 'golem-ui'
 import { Dna } from './screens/Dna'
 import { Files } from './screens/Files'
-import { Job } from './screens/Job'
+import { JobForm } from './screens/JobForm'
 import { Jobs } from './screens/Jobs'
 import { Log } from './screens/Log'
-import { NewJob } from './screens/NewJob'
 import { Report } from './screens/Report'
 import { Today } from './screens/Today'
 import { authConfig, DNA_ROLE } from './auth-config'
@@ -21,9 +26,7 @@ export const screens = [
 ] as const
 
 export interface CanvasAdapters {
-  // The fake's own type, because the New-ticket placeholder writes a row: `RecordsAdapter` is
-  // read-only, and stays that way until the Record form component lands.
-  records: FakeRecords
+  records: RecordsAdapter
   clock: ClockAdapter
   identity: IdentityAdapter
   navigation: NavigationAdapter
@@ -36,7 +39,7 @@ function screenFor(path: string, a: CanvasAdapters) {
     case '/jobs':
       return <Jobs records={a.records} navigation={a.navigation} />
     case '/jobs/new':
-      return <NewJob records={a.records} navigation={a.navigation} />
+      return <JobForm records={a.records} identity={a.identity} navigation={a.navigation} />
     case '/report':
       return <Report clock={a.clock} />
     case '/log':
@@ -53,10 +56,15 @@ function screenFor(path: string, a: CanvasAdapters) {
     case '/team':
       return <Auth config={authConfig} adapters={auth} />
     default:
-      // One ticket, opened from a row of the job list.
+      // One ticket, opened from a row of the job list. The same form, in edit mode.
       if (path.startsWith('/jobs/')) {
         return (
-          <Job id={path.slice('/jobs/'.length)} records={a.records} navigation={a.navigation} />
+          <JobForm
+            id={path.slice('/jobs/'.length)}
+            records={a.records}
+            identity={a.identity}
+            navigation={a.navigation}
+          />
         )
       }
       return <Today records={a.records} clock={a.clock} navigation={a.navigation} />

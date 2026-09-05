@@ -20,9 +20,7 @@ export function Screen({
   children: ReactNode
 }) {
   return (
-    <div
-      className={`mx-auto w-full px-4 py-5 sm:px-6 sm:py-7 ${wide ? 'max-w-6xl' : 'max-w-3xl'}`}
-    >
+    <div className={`mx-auto w-full px-4 py-5 sm:px-6 sm:py-7 ${wide ? 'max-w-6xl' : 'max-w-3xl'}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>

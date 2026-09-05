@@ -1,54 +1,5 @@
 import { z } from 'zod'
-
-/**
- * The vocabulary an agent picks a field's `type` from. The type decides how a value is rendered and
- * what `format` means, and nothing else — the adapter still returns whatever the record holds.
- */
-export const FIELD_TYPES = [
-  'text',
-  'number',
-  'date',
-  'datetime',
-  'enum',
-  'boolean',
-  'money',
-  'user',
-] as const
-
-export type FieldType = (typeof FIELD_TYPES)[number]
-
-const fieldSchema = z
-  .object({
-    key: z
-      .string()
-      .min(1)
-      .describe('The property to read off each record. Must match what the adapter returns.'),
-    label: z
-      .string()
-      .min(1)
-      .describe('The column heading, and the label beside the value on a card.'),
-    type: z
-      .enum(FIELD_TYPES, {
-        error: (issue) =>
-          `Unknown field type ${JSON.stringify(issue.input)}. Pick one of: ${FIELD_TYPES.join(', ')}.`,
-      })
-      .describe(
-        'How the value is rendered. `text` verbatim; `number` grouped; `date` and `datetime` as UTC calendar dates; `enum` as a coloured chip; `boolean` as Yes/No; `money` as a currency amount; `user` as a name with initials.',
-      ),
-    format: z
-      .string()
-      .optional()
-      .describe(
-        'A hint read only by some types: an ISO currency code for `money` (default USD), an `Intl` dateStyle — short, medium, long, full — for `date` and `datetime`, and a digit count for `number`. Ignored by every other type.',
-      ),
-    primary: z
-      .boolean()
-      .default(false)
-      .describe(
-        'Marks the field that titles a row: the first column of the table and the heading of a card. At most one field may set it; with none, the first field is the title.',
-      ),
-  })
-  .strict()
+import { listFieldSchema } from '../../abi/fields'
 
 export const recordListConfigSchema = z
   .object({
@@ -57,7 +8,7 @@ export const recordListConfigSchema = z
       .min(1)
       .describe('The record type the adapter is asked for, passed to `list` and `subscribe`.'),
     fields: z
-      .array(fieldSchema)
+      .array(listFieldSchema)
       .min(1)
       .describe(
         'The columns, in the order they are shown. Each is `{ key, label, type, format?, primary? }`, where `type` is one of text, number, date, datetime, enum, boolean, money, user.',
@@ -154,4 +105,3 @@ export const recordListConfigSchema = z
 
 export type RecordListConfig = z.output<typeof recordListConfigSchema>
 export type RecordListConfigInput = z.input<typeof recordListConfigSchema>
-export type RecordField = z.output<typeof fieldSchema>

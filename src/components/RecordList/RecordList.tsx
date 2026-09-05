@@ -12,15 +12,11 @@ import {
 import { defineComponent, type GolemProps } from '../../abi'
 import type { FilterValue, RecordsAdapter } from '../../adapters'
 import { useContainerWidth } from '../../lib/use-container-width'
-import {
-  recordListConfigSchema,
-  type RecordField,
-  type RecordListConfig,
-} from './RecordList.config'
-import { chipTone, formatValue, initials, userName } from './format'
+import type { ListField, RecordRow } from '../../abi/fields'
+import { chipTone, formatValue, initials, userName } from '../../lib/format'
+import { recordListConfigSchema, type RecordListConfig } from './RecordList.config'
 
-/** Whatever the adapter hands back. `id` is the row key when there is one. */
-export type RecordRow = Record<string, unknown>
+export type { RecordRow }
 
 export interface RecordListAdapters {
   records: RecordsAdapter
@@ -196,7 +192,7 @@ function Chip({ value }: { value: string }) {
   )
 }
 
-function Cell({ row, field }: { row: RecordRow; field: RecordField }): ReactNode {
+function Cell({ row, field }: { row: RecordRow; field: ListField }): ReactNode {
   const value = row[field.key]
   if (value === null || value === undefined || value === '') {
     return <span className="text-neutral-400">—</span>

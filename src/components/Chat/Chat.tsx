@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { defineComponent, type GolemProps } from '../../abi'
 import type { ChatAdapter, ChatAttachment, ChatMessage } from '../../adapters'
 import { chatConfigSchema, type ChatConfig } from './Chat.config'
@@ -6,6 +6,15 @@ import { Markdown } from '../../lib/markdown'
 
 export interface ChatAdapters {
   chat: ChatAdapter
+}
+
+export interface ChatSlots {
+  /**
+   * Replaces the built-in attach button and the staged-chip row above the composer. It is handed
+   * `stage`, which is what the composer sends with the next message; `Upload.Picker` is what
+   * belongs here, so an attachment comes from a real upload rather than a name and a size.
+   */
+  attach?: (stage: (attachments: ChatAttachment[]) => void) => ReactNode
 }
 
 /** How close to the bottom still counts as "reading the newest message". */
@@ -146,10 +155,13 @@ function Thinking({ name }: { name: string }) {
   )
 }
 
-function ChatPanel({ config, adapters }: GolemProps<ChatConfig, ChatAdapters>) {
+function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdapters, ChatSlots>) {
   const messages = useConversation(adapters.chat)
   const [draft, setDraft] = useState('')
   const [staged, setStaged] = useState<ChatAttachment[]>([])
+  // Bumped on every send, so a hosted picker remounts with nothing on it: the files went with the
+  // message, and its chips would otherwise say they are still waiting to be sent.
+  const [sent, setSent] = useState(0)
   const composer = useRef<HTMLTextAreaElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -178,6 +190,7 @@ function ChatPanel({ config, adapters }: GolemProps<ChatConfig, ChatAdapters>) {
     if (!text && staged.length === 0) return
     setDraft('')
     setStaged([])
+    setSent((count) => count + 1)
     void adapters.chat.send(text, staged.length ? staged : undefined)
   }
 
@@ -204,13 +217,19 @@ function ChatPanel({ config, adapters }: GolemProps<ChatConfig, ChatAdapters>) {
         {thinking && <Thinking name={config.agentName} />}
       </div>
 
-      {staged.length > 0 && (
-        <div className="shrink-0 border-t border-neutral-200 bg-white px-3 pt-2">
-          <AttachmentChips
-            attachments={staged}
-            onRemove={(id) => setStaged((files) => files.filter((file) => file.id !== id))}
-          />
+      {attach ? (
+        <div key={sent} className="shrink-0 border-t border-neutral-200 bg-white px-3 pt-2">
+          {attach(setStaged)}
         </div>
+      ) : (
+        staged.length > 0 && (
+          <div className="shrink-0 border-t border-neutral-200 bg-white px-3 pt-2">
+            <AttachmentChips
+              attachments={staged}
+              onRemove={(id) => setStaged((files) => files.filter((file) => file.id !== id))}
+            />
+          </div>
+        )
       )}
 
       <form
@@ -220,31 +239,35 @@ function ChatPanel({ config, adapters }: GolemProps<ChatConfig, ChatAdapters>) {
           send()
         }}
       >
-        <input
-          ref={fileInput}
-          type="file"
-          multiple
-          className="hidden"
-          aria-label="Attach files"
-          onChange={(event) => {
-            const files = [...(event.target.files ?? [])].map((file, index) => ({
-              id: `att-${Date.now()}-${index}`,
-              name: file.name,
-              size: file.size,
-            }))
-            setStaged((current) => [...current, ...files])
-            event.target.value = ''
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          title="Attach a file"
-          aria-label="Attach a file"
-          className="shrink-0 rounded-full border border-neutral-300 px-3 py-2.5 text-sm"
-        >
-          📎
-        </button>
+        {!attach && (
+          <>
+            <input
+              ref={fileInput}
+              type="file"
+              multiple
+              className="hidden"
+              aria-label="Attach files"
+              onChange={(event) => {
+                const files = [...(event.target.files ?? [])].map((file, index) => ({
+                  id: `att-${Date.now()}-${index}`,
+                  name: file.name,
+                  size: file.size,
+                }))
+                setStaged((current) => [...current, ...files])
+                event.target.value = ''
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              title="Attach a file"
+              aria-label="Attach a file"
+              className="shrink-0 rounded-full border border-neutral-300 px-3 py-2.5 text-sm"
+            >
+              📎
+            </button>
+          </>
+        )}
         <textarea
           ref={composer}
           rows={1}
@@ -273,7 +296,7 @@ function ChatPanel({ config, adapters }: GolemProps<ChatConfig, ChatAdapters>) {
   )
 }
 
-export const Chat = defineComponent<typeof chatConfigSchema, ChatAdapters>({
+export const Chat = defineComponent<typeof chatConfigSchema, ChatAdapters, ChatSlots>({
   name: 'Chat',
   schema: chatConfigSchema,
   render: ChatPanel,

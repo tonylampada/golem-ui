@@ -1,4 +1,4 @@
-import type { ChatMessage, User } from 'golem-ui'
+import { placeholderImage, type ChatMessage, type FakeFileSeed, type User } from 'golem-ui'
 
 /**
  * Northgate Cycles, an invented neighbourhood bike repair shop: five people, a week of repair jobs,
@@ -388,47 +388,75 @@ service pricing goes up at the counter on Monday.`,
   },
 ]
 
-export interface Attachment {
-  id: string
-  name: string
-  kind: 'photo' | 'pdf' | 'audio'
-  size: string
-  addedBy: string
-  date: string
-}
-
-export const attachments: Attachment[] = [
+/**
+ * The shop's folder of files: photos from the bench and paperwork from the counter. Every picture
+ * is drawn by `placeholderImage` when the page loads — a few hundred bytes of SVG apiece — so the
+ * repository carries no photographs of anybody's bike and the gallery still has something in it.
+ * The ids are the ones the shop log and the seeded conversation attach, so a chip on a log entry
+ * opens the file that is actually in the store.
+ */
+export const shopFiles: FakeFileSeed[] = [
   {
     id: 'f-1',
+    folder: 'shop',
     name: 'rove-rear-wheel-before.jpg',
-    kind: 'photo',
-    size: '1.4 MB',
-    addedBy: 'Nadia Kessler',
-    date: '2026-09-10',
+    contentType: 'image/jpeg',
+    size: 1_468_006,
+    content: placeholderImage('Kona Rove · rear wheel', 205),
+    caption: 'Three broken spokes on the drive side, rim out by 4 mm.',
+    uploadedAt: '2026-09-10T11:40:00Z',
   },
   {
     id: 'f-2',
+    folder: 'shop',
     name: 'supplier-invoice-2211.pdf',
-    kind: 'pdf',
-    size: '320 KB',
-    addedBy: 'Theo Lang',
-    date: '2026-09-09',
+    contentType: 'application/pdf',
+    size: 327_680,
+    uploadedAt: '2026-09-09T16:20:00Z',
   },
   {
     id: 'f-3',
+    folder: 'shop',
     name: 'rockhopper-fork-seals.jpg',
-    kind: 'photo',
-    size: '2.1 MB',
-    addedBy: 'Priya Sandoval',
-    date: '2026-09-09',
+    contentType: 'image/jpeg',
+    size: 2_202_009,
+    content: placeholderImage('Rockhopper · fork lowers', 30),
+    caption: 'Both legs weeping, photographed before stripping.',
+    uploadedAt: '2026-09-09T09:40:00Z',
   },
   {
     id: 'f-4',
+    folder: 'shop',
     name: 'gazelle-cutout-noise.m4a',
-    kind: 'audio',
-    size: '180 KB',
-    addedBy: 'Nadia Kessler',
-    date: '2026-09-07',
+    contentType: 'audio/mp4',
+    size: 184_320,
+    uploadedAt: '2026-09-07T09:05:00Z',
+  },
+  {
+    id: 'f-5',
+    folder: 'shop',
+    name: 'trek-fx3-collection-rack.jpg',
+    contentType: 'image/jpeg',
+    size: 986_112,
+    content: placeholderImage('Trek FX 3 · on the rack', 150),
+    uploadedAt: '2026-09-10T08:20:00Z',
+  },
+  {
+    id: 'f-6',
+    folder: 'shop',
+    name: 'brompton-hinge-plate.jpg',
+    contentType: 'image/jpeg',
+    size: 1_120_460,
+    content: placeholderImage('Brompton · hinge plate', 275),
+    uploadedAt: '2026-09-08T15:45:00Z',
+  },
+  {
+    id: 'f-7',
+    folder: 'shop',
+    name: 'winter-service-prices.pdf',
+    contentType: 'application/pdf',
+    size: 98_304,
+    uploadedAt: '2026-09-01T09:30:00Z',
   },
 ]
 

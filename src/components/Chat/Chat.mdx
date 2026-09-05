@@ -1,6 +1,6 @@
 import { Meta, Canvas } from '@storybook/addon-docs/blocks'
 import { ConfigTable } from '../../../docs/ConfigTable'
-import { AdapterTable, CodeBlock, Prose } from '../../../docs/Prose'
+import { AdapterTable, CodeBlock, Prose, SlotTable } from '../../../docs/Prose'
 import { chatConfigSchema } from './Chat.config'
 import { chatDocs } from './Chat.docs'
 import * as ChatStories from './Chat.stories'
@@ -26,6 +26,8 @@ import * as ChatStories from './Chat.stories'
 <AdapterTable rows={chatDocs.adapters} />
 
 <Prose text={chatDocs.adapterNotes} />
+
+<SlotTable rows={chatDocs.slots} />
 
 ## One complete example
 

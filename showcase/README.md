@@ -24,9 +24,9 @@ under `/app/`.
 
 ## Where each component lands
 
-`Shell`, `Chat`, `Auth`, `RecordList`, `RecordForm`, `Report` and `Timeline` exist today. Every other
-screen is plain markup standing in one component's place, so adding that component is a swap of
-markup for JSX inside one file, and nothing else moves.
+`Shell`, `Chat`, `Auth`, `RecordList`, `RecordForm`, `Report`, `Timeline` and `Upload` exist today.
+Every other screen is plain markup standing in one component's place, so adding that component is a
+swap of markup for JSX inside one file, and nothing else moves.
 
 | File                      | Route        | Component that replaces it    | What it stands in for                          |
 | ------------------------- | ------------ | ----------------------------- | ---------------------------------------------- |
@@ -37,7 +37,7 @@ markup for JSX inside one file, and nothing else moves.
 | `src/screens/JobForm.tsx` | `/jobs/<id>` | **RecordForm** (already used) | The same form in edit mode, on one ticket      |
 | `src/screens/Report.tsx`  | `/report`    | **Report** (already used)     | The daily document, dated and printable        |
 | `src/screens/Log.tsx`     | `/log`       | **Timeline** (already used)   | Dated shop entries, filterable                 |
-| `src/screens/Files.tsx`   | `/files`     | **Upload**                    | Photos and invoices, with a gallery            |
+| `src/screens/Files.tsx`   | `/files`     | **Upload** (already used)     | Photos and invoices, with a gallery            |
 | `src/screens/Dna.tsx`     | `/dna`       | **Editor**                    | The workspace DNA, live-updated by the agent   |
 | —                         | `/team`      | **Auth** (already used)       | Members, roles, invite by link                 |
 | `src/screens/Today.tsx`   | `/today`     | _a composition_               | Report + RecordList + Timeline on one screen   |
@@ -58,6 +58,13 @@ filter chips, the search box and the composer and cuts `pageSize` to 3, because 
 glance at the log rather than the log. The composer on `/log` writes through `Records.create` and
 signs the entry with whoever is signed in, so a line added there is on Today the moment you go back.
 
+`/files` is `Upload` on the `shop` folder, and the picker in the chat composer is the same component
+on the same folder: `showcase/src/ChatColumn.tsx` hosts `Upload.Picker` in `Chat`'s `attach` slot, so
+a chip on a chat message is a file that really went into the shop's folder and is on `/files` the
+moment you go there. The seeded files are the ones the shop log already attaches — the same ids —
+and every picture in them is drawn by `placeholderImage` when the page loads, a few hundred bytes of
+SVG apiece. There are no photographs in this repository.
+
 `/jobs/new` and `/jobs/<id>` are the same `RecordForm` in the same way: one field list in
 `src/screens/JobForm.tsx`, `mode: 'create'` on one route and `mode: 'edit'` on the other. The ticket
 number is required on create and `readOnly` on edit, because the shop writes it once when the bike
@@ -71,7 +78,8 @@ Saving returns to `/jobs`, where the list shows the change through `subscribe` w
 
 `Identity`, `Records`, `Files`, `Clock` and `Chat` are the kit's fakes, seeded from `src/seed.ts` —
 `fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word, and
-`fakeRecords` gets the shop's tickets, reports, log and files. Writing goes through the `Records` adapter's
+`fakeRecords` gets the shop's tickets, reports and log, and `fakeFiles` gets the shop's folder of
+photos and paperwork. Writing goes through the `Records` adapter's
 own `create`, `update` and `remove`, so the ticket form talks to the same interface a server would
 sit behind. One adapter is the app's own, with its reason written above it in that file:
 `hashNavigation`, so a screen has a linkable URL that survives a reload under the Pages subpath. It
@@ -96,6 +104,9 @@ a reload puts the demo back at the sign-in screen.
 The captain opens this on a phone. Every change is checked at **390px wide** before it lands:
 
 - The `Shell` breakpoint is 768, so below it chat and canvas are thumb-sized tabs.
+- `Upload`'s gallery is two columns on a phone and four on a desktop, and its drop zone carries a
+  camera button below 768 because `capture: 'environment'` opens the rear camera on a phone and is
+  ignored on a laptop.
 - `Timeline` scrolls inside its own box, so its day headers stick and the log never pushes the
   screen out sideways; the composer's row folds nothing, so it stays one line on a phone.
 - The page never scrolls sideways. Wide things — the screen nav, a `RecordList` table — scroll

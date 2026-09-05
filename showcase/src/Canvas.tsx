@@ -47,7 +47,7 @@ function screenFor(path: string, a: CanvasAdapters) {
     case '/log':
       return <Log records={a.records} clock={a.clock} identity={a.identity} files={a.files} />
     case '/files':
-      return <Files records={a.records} />
+      return <Files files={a.files} />
     case '/dna':
       // The one screen a mechanic cannot open, so the guard is visible in the demo.
       return (

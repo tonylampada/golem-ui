@@ -10,11 +10,11 @@ import {
   type Unsubscribe,
 } from 'golem-ui'
 import {
-  attachments,
   cannedReplies,
   conversation,
   jobs,
   reports,
+  shopFiles,
   shopLog,
   members,
   SHOP_PASSWORD,
@@ -83,13 +83,16 @@ export const identity: IdentityAdapter = {
   },
 }
 export const clock = fakeClock(TODAY, TIME_ZONE)
-export const files = fakeFiles()
+/**
+ * The shop's files, seeded with what the log and the seeded conversation already attach. Uploads
+ * land here too, so a photo taken on the Files screen is a photo the picker in the chat can attach.
+ */
+export const files = fakeFiles({ seed: shopFiles })
 
 export const records = fakeRecords({
   jobs: jobs.map((job) => ({ ...job })),
   log: shopLog.map((entry) => ({ ...entry })),
   reports: reports.map((report) => ({ ...report })),
-  attachments: attachments.map((file) => ({ ...file })),
 })
 
 const DEFAULT_PATH = '/today'

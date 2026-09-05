@@ -147,6 +147,35 @@ describe('Chat', () => {
     })
   })
 
+  it('sends what a hosted attach slot staged, and takes the paperclip away', async () => {
+    const { adapter, sent } = scriptedChat()
+    render(
+      <Chat
+        config={{ placeholder: 'Ask Golem…' }}
+        adapters={{ chat: adapter }}
+        attach={(stage) => (
+          <button
+            type="button"
+            onClick={() => stage([{ id: 'f-3', name: 'fork-seals.jpg', size: 2048 }])}
+          >
+            Pick a file
+          </button>
+        )}
+      />,
+    )
+    await act(async () => {})
+
+    // The slot replaces the built-in paperclip rather than sitting beside it.
+    expect(screen.queryByRole('button', { name: 'Attach a file' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Pick a file' }))
+    await userEvent.type(screen.getByLabelText('Ask Golem…'), 'here are the fork photos')
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+
+    expect(sent).toHaveLength(1)
+    expect(sent[0]!.attachments).toEqual([{ id: 'f-3', name: 'fork-seals.jpg', size: 2048 }])
+  })
+
   it('renders an error card naming every invalid field instead of the conversation', () => {
     render(<Chat {...examples.invalidConfig.props} />)
 

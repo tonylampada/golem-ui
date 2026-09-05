@@ -29,7 +29,7 @@ route. For a list of past conversations to pick from, that is a different compon
     {
       adapter: 'Chat',
       calls: '`send(text, attachments?)`',
-      why: 'What the reader typed, with whatever they staged on the paperclip.',
+      why: 'What the reader typed, with whatever the composer has staged.',
     },
   ],
 
@@ -40,6 +40,13 @@ time comes from the message's own \`at\`.
 \`id\` and a longer \`text\`, \`streaming: true\` throughout; the emission that drops the flag is \`done\`.
 Chat renders that as one bubble that grows with a caret on the end. A \`streaming\` message with no
 text yet is the agent thinking, and renders as the thinking row rather than an empty bubble.`,
+
+  slots: [
+    {
+      slot: 'attach',
+      what: 'Replaces the paperclip and the row of staged chips above the composer. It is called with `stage`, which is what the next message is sent with; `Upload.Picker` is what belongs here, so an attachment is a file that really went somewhere. Empty falls back to the built-in paperclip, which stages a name and a size and uploads nothing.',
+    },
+  ],
 
   example: `import { Chat, fakeChat } from 'golem-ui'
 import 'golem-ui/styles.css'
@@ -71,6 +78,9 @@ import 'golem-ui/styles.css'
 - **Markdown is a subset.** Fenced code, bullet and numbered lists, bold, italic, inline code, and
   \`http(s)\` links. Anything else — tables, images, raw HTML — renders as the characters it is, which
   is also what a half-written token mid-stream does.
+- **The built-in paperclip uploads nothing.** It stages a name and a size, which is enough to show
+  the chip and enough for an adapter that only wants the metadata. For an attachment that is a real
+  file in a real folder, host \`Upload.Picker\` in the \`attach\` slot.
 - **Timestamps are UTC**, read straight off the ISO string, so a bubble reads the same everywhere.
   For local time, put local time in \`at\`.`,
 }

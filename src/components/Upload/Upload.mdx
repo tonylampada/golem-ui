@@ -1,0 +1,60 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks'
+import { ConfigTable } from '../../../docs/ConfigTable'
+import { AdapterTable, CodeBlock, DocBlocks, Prose, SlotTable } from '../../../docs/Prose'
+import { uploadConfigSchema } from './Upload.config'
+import { uploadDocs } from './Upload.docs'
+import * as UploadStories from './Upload.stories'
+
+<Meta of={UploadStories} name="Docs" />
+
+# Upload
+
+<a href="https://tonylampada.github.io/golem-ui/app/#/api/upload" target="_top">
+  The same page on a phone →
+</a>
+
+## What it is for
+
+<Prose text={uploadDocs.purpose} />
+
+## The configuration object
+
+<ConfigTable schema={uploadConfigSchema} />
+
+<DocBlocks blocks={uploadDocs.configNotes} />
+
+## The adapters it needs
+
+<AdapterTable rows={uploadDocs.adapters} />
+
+<Prose text={uploadDocs.adapterNotes} />
+
+<SlotTable rows={uploadDocs.slots} />
+
+## One complete example
+
+<CodeBlock code={uploadDocs.example} />
+
+<Canvas of={UploadStories.GalleryOfPhotos} />
+
+An empty folder: the drop zone, the limits written under it, and the `emptyState` line where the
+gallery will be. Drop a file on it and it goes up:
+
+<Canvas of={UploadStories.EmptyDropZone} />
+
+The same folder with invoices and a voice memo in it, read as a list, and the same photos with a
+caption under each:
+
+<Canvas of={UploadStories.MixedFilesAsList} />
+<Canvas of={UploadStories.Captions} />
+
+A store that refuses one name, and the compact surface inside a stand-in composer:
+
+<Canvas of={UploadStories.UploadFails} />
+<Canvas of={UploadStories.PickerInComposer} />
+
+## Failure modes
+
+<Prose text={uploadDocs.failureModes} />
+
+<Canvas of={UploadStories.InvalidConfig} />

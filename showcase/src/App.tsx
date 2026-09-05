@@ -59,7 +59,7 @@ function screenFor(route: Route) {
         <Shell
           config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768 }}
           adapters={{ identity, navigation }}
-          chat={<ChatColumn adapter={chat} />}
+          chat={<ChatColumn adapter={chat} files={files} />}
           canvas={<Canvas route={route} adapters={canvasAdapters} />}
           account={<Auth.AccountMenu config={authConfig} adapters={authAdapters} />}
         />

@@ -1,5 +1,5 @@
 export { Chat } from './Chat'
-export type { ChatAdapters } from './Chat'
+export type { ChatAdapters, ChatSlots } from './Chat'
 export { chatConfigSchema } from './Chat.config'
 export type { ChatConfig, ChatConfigInput } from './Chat.config'
 export { chatDocs } from './Chat.docs'

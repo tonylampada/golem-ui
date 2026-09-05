@@ -14,6 +14,11 @@ export interface ShellSlots {
   chat?: ReactNode
   /** The screen the agent built. */
   canvas?: ReactNode
+  /**
+   * The right-hand end of the top bar — `Auth.AccountMenu` is what usually goes here. Left empty
+   * the bar shows the signed-in name as plain text.
+   */
+  account?: ReactNode
 }
 
 function Placeholder({ label }: { label: string }) {
@@ -47,6 +52,7 @@ function ShellFrame({
   adapters,
   chat,
   canvas,
+  account,
 }: GolemProps<ShellConfig, ShellAdapters, ShellSlots>) {
   const [tab, setTab] = useState<'chat' | 'canvas'>('chat')
   const root = useRef<HTMLDivElement>(null)
@@ -79,7 +85,8 @@ function ShellFrame({
           >
             {config.title}
           </button>
-          {user && <span className="shrink-0 text-sm text-neutral-500">{user.name}</span>}
+          {account ??
+            (user && <span className="shrink-0 text-sm text-neutral-500">{user.name}</span>)}
         </header>
       )}
 

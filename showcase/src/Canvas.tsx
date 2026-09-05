@@ -1,3 +1,4 @@
+import { Auth } from 'golem-ui'
 import type {
   ClockAdapter,
   IdentityAdapter,
@@ -11,8 +12,8 @@ import { Jobs } from './screens/Jobs'
 import { Log } from './screens/Log'
 import { NewJob } from './screens/NewJob'
 import { Report } from './screens/Report'
-import { Team } from './screens/Team'
 import { Today } from './screens/Today'
+import { authConfig, DNA_ROLE } from './auth-config'
 
 export const screens = [
   { path: '/today', label: 'Today' },
@@ -32,6 +33,8 @@ export interface CanvasAdapters {
 }
 
 function screenFor(path: string, a: CanvasAdapters) {
+  const auth = { identity: a.identity, navigation: a.navigation }
+
   switch (path) {
     case '/jobs':
       return <Jobs records={a.records} navigation={a.navigation} />
@@ -44,9 +47,14 @@ function screenFor(path: string, a: CanvasAdapters) {
     case '/files':
       return <Files records={a.records} />
     case '/dna':
-      return <Dna />
+      // The one screen a mechanic cannot open, so the guard is visible in the demo.
+      return (
+        <Auth.Guard config={authConfig} adapters={auth} roles={[DNA_ROLE]}>
+          <Dna />
+        </Auth.Guard>
+      )
     case '/team':
-      return <Team records={a.records} identity={a.identity} />
+      return <Auth config={authConfig} adapters={auth} />
     default:
       return <Today records={a.records} clock={a.clock} navigation={a.navigation} />
   }

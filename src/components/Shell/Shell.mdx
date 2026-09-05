@@ -30,6 +30,14 @@ the `canvas` slot). If you want a two-pane layout _inside_ the canvas, that is n
 
 Shell takes no other adapter. It never fetches, never stores, never reads a router.
 
+## The slots it exposes
+
+| Slot      | What goes in it                                                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `chat`    | The conversation. `Chat` is what belongs here; empty renders a labelled placeholder.                                              |
+| `canvas`  | The screen the agent built. Empty renders a labelled placeholder.                                                                 |
+| `account` | The right-hand end of the top bar. `Auth.AccountMenu` is what belongs here; empty falls back to the signed-in name as plain text. |
+
 ## One complete example
 
 ```tsx
@@ -41,6 +49,7 @@ import 'golem-ui/styles.css'
   adapters={{ identity: fakeIdentity(), navigation: fakeNavigation() }}
   chat={<AgentChat />}
   canvas={<TodayScreen />}
+  account={<Auth.AccountMenu config={authConfig} adapters={{ identity, navigation }} />}
 />
 ```
 

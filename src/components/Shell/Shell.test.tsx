@@ -32,6 +32,14 @@ describe('Shell', () => {
     await waitFor(() => expect(screen.getByText('Robin Vale')).toBeInTheDocument())
   })
 
+  it('hands the top bar’s right-hand end to the account slot when it is given one', async () => {
+    setViewportWidth(examples.desktop.viewportWidth)
+    render(<Shell {...examples.desktop.props} account={<button type="button">Robin V.</button>} />)
+
+    expect(screen.getByRole('button', { name: 'Robin V.' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Robin Vale')).not.toBeInTheDocument())
+  })
+
   it('lays the panes side by side above the breakpoint and as tabs below it', async () => {
     setViewportWidth(1200)
     const { rerender } = render(<Shell {...examples.mobile.props} />)

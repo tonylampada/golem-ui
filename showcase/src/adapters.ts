@@ -14,8 +14,8 @@ import {
   conversation,
   jobs,
   shopLog,
-  signedIn,
-  team,
+  members,
+  SHOP_PASSWORD,
   TIME_ZONE,
   TODAY,
 } from './seed'
@@ -25,7 +25,17 @@ import {
  * the chat; `hashNavigation` below is the app's own, because a demo needs a real URL.
  */
 
-export const identity = fakeIdentity(signedIn)
+/**
+ * Signed out on purpose: the showcase opens on the sign-in screen, and the invite links it mints
+ * point back at this same page under whatever path Pages is serving it from.
+ */
+export const identity = fakeIdentity({
+  user: null,
+  members,
+  password: SHOP_PASSWORD,
+  defaultRole: 'mechanic',
+  inviteBase: `${window.location.origin}${window.location.pathname}#/join?invite=`,
+})
 export const clock = fakeClock(TODAY, TIME_ZONE)
 export const files = fakeFiles()
 
@@ -33,14 +43,17 @@ export const records = fakeRecords({
   jobs: jobs.map((job) => ({ ...job })),
   log: shopLog.map((entry) => ({ ...entry })),
   attachments: attachments.map((file) => ({ ...file })),
-  team: team.map((member) => ({ ...member })),
 })
 
 const DEFAULT_PATH = '/today'
 
 function routeFromHash(): Route {
-  const path = window.location.hash.replace(/^#/, '')
-  return { path: path.startsWith('/') ? path : DEFAULT_PATH, params: {} }
+  const [path = '', query = ''] = window.location.hash.replace(/^#/, '').split('?')
+  return {
+    path: path.startsWith('/') ? path : DEFAULT_PATH,
+    // Auth reads its invite token out of here, so the query has to survive the hash.
+    params: Object.fromEntries(new URLSearchParams(query)),
+  }
 }
 
 /**

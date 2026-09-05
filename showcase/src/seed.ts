@@ -9,64 +9,42 @@ import type { ChatMessage, User } from 'golem-ui'
 export const TODAY = new Date('2026-09-10T13:20:00Z')
 export const TIME_ZONE = 'UTC'
 
-export const signedIn: User = {
-  id: 'u-nadia',
-  name: 'Nadia Kessler',
-  email: 'nadia@northgatecycles.example',
-  roles: ['mechanic', 'owner'],
-}
-
-export interface TeamMember {
-  id: string
-  name: string
-  role: string
-  station: string
-  initials: string
-  lastSeen: string
-}
-
-export const team: TeamMember[] = [
+/** The shop's five accounts. The Auth adapter is seeded from these, and one of them signs in. */
+export const members: User[] = [
   {
     id: 'u-nadia',
     name: 'Nadia Kessler',
-    role: 'owner',
-    station: 'Wheel bench',
-    initials: 'NK',
-    lastSeen: 'now',
+    email: 'nadia@northgatecycles.example',
+    roles: ['owner'],
   },
   {
     id: 'u-omar',
     name: 'Omar Bright',
-    role: 'mechanic',
-    station: 'Drivetrain bench',
-    initials: 'OB',
-    lastSeen: '2 h ago',
+    email: 'omar@northgatecycles.example',
+    roles: ['mechanic'],
   },
   {
     id: 'u-priya',
     name: 'Priya Sandoval',
-    role: 'mechanic',
-    station: 'Suspension bench',
-    initials: 'PS',
-    lastSeen: 'yesterday',
+    email: 'priya@northgatecycles.example',
+    roles: ['mechanic'],
   },
   {
     id: 'u-theo',
     name: 'Theo Lang',
-    role: 'front desk',
-    station: 'Counter',
-    initials: 'TL',
-    lastSeen: '20 min ago',
+    email: 'theo@northgatecycles.example',
+    roles: ['front desk'],
   },
   {
     id: 'u-hana',
     name: 'Hana Vogt',
-    role: 'apprentice',
-    station: 'Build stand',
-    initials: 'HV',
-    lastSeen: '3 days ago',
+    email: 'hana@northgatecycles.example',
+    roles: ['apprentice'],
   },
 ]
+
+/** The one password every account takes in the demo. The sign-in screen says so out loud. */
+export const SHOP_PASSWORD = 'northgate'
 
 export interface RepairJob {
   id: string

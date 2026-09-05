@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Shell } from 'golem-ui'
+import { Auth, Shell } from 'golem-ui'
 import { Canvas } from './Canvas'
 import { ChatColumn } from './ChatColumn'
+import { authConfig } from './auth-config'
 import { chat, clock, identity, navigation, records } from './adapters'
 
 const DOCS_URL = 'https://tonylampada.github.io/golem-ui/'
 
 const canvasAdapters = { records, clock, identity, navigation }
+const authAdapters = { identity, navigation }
 
 export function App() {
   const [route, setRoute] = useState(navigation.current())
@@ -26,13 +28,17 @@ export function App() {
         </a>
       </div>
 
+      {/* The front door: no roles, so any signed-in member gets in and everyone else gets sign-in. */}
       <div className="min-h-0 flex-1">
-        <Shell
-          config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768 }}
-          adapters={{ identity, navigation }}
-          chat={<ChatColumn adapter={chat} />}
-          canvas={<Canvas route={route} adapters={canvasAdapters} />}
-        />
+        <Auth.Guard config={authConfig} adapters={authAdapters}>
+          <Shell
+            config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768 }}
+            adapters={{ identity, navigation }}
+            chat={<ChatColumn adapter={chat} />}
+            canvas={<Canvas route={route} adapters={canvasAdapters} />}
+            account={<Auth.AccountMenu config={authConfig} adapters={authAdapters} />}
+          />
+        </Auth.Guard>
       </div>
     </div>
   )

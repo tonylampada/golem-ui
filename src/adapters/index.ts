@@ -1,7 +1,7 @@
 export type { Unsubscribe } from './common'
 export type { RecordsAdapter, RecordQuery } from './records'
 export type { FilesAdapter, StoredFile } from './files'
-export type { IdentityAdapter, User } from './identity'
+export type { IdentityAdapter, SignUpInput, User } from './identity'
 export type { ChatAdapter, ChatAttachment, ChatMessage } from './chat'
 export type { ClockAdapter } from './clock'
 export type { NavigationAdapter, Route } from './navigation'

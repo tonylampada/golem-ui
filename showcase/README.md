@@ -17,8 +17,9 @@ under `/app/`.
 
 ## Where each component lands
 
-`Shell` and `Chat` exist today. Every other screen is plain markup standing in one component's
-place, so adding that component is a swap of markup for JSX inside one file, and nothing else moves.
+`Shell`, `Chat` and `Auth` exist today. Every other screen is plain markup standing in one
+component's place, so adding that component is a swap of markup for JSX inside one file, and nothing
+else moves.
 
 | File                     | Route       | Component that replaces it | What it stands in for                         |
 | ------------------------ | ----------- | -------------------------- | --------------------------------------------- |
@@ -30,7 +31,7 @@ place, so adding that component is a swap of markup for JSX inside one file, and
 | `src/screens/Log.tsx`    | `/log`      | **Timeline**               | Dated shop entries, filterable                |
 | `src/screens/Files.tsx`  | `/files`    | **Upload**                 | Photos and invoices, with a gallery           |
 | `src/screens/Dna.tsx`    | `/dna`      | **Editor**                 | The workspace DNA, live-updated by the agent  |
-| `src/screens/Team.tsx`   | `/team`     | **Auth**                   | Members, invite by link, sign out             |
+| —                        | `/team`     | **Auth** (already used)    | Members, roles, invite by link                |
 | `src/screens/Today.tsx`  | `/today`    | _a composition_            | Report + Record list + Timeline on one screen |
 
 ## Adapters
@@ -40,7 +41,16 @@ place, so adding that component is a swap of markup for JSX inside one file, and
 `Identity`, `Records`, `Files`, `Clock` and `Chat` are the kit's fakes, seeded from `src/seed.ts` —
 `fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word. One
 adapter is the app's own, with its reason written above it in that file: `hashNavigation`, so a
-screen has a linkable URL that survives a reload under the Pages subpath.
+screen has a linkable URL that survives a reload under the Pages subpath. It parses the hash's query
+string into `Route.params`, which is where `Auth` reads an invite token from.
+
+## Signing in
+
+The app opens signed out. `fakeIdentity` is seeded with the shop's five accounts and one password
+for all of them, and the sign-in screen says which — a demo nobody can get into is a broken demo.
+`showcase/src/auth-config.ts` holds the one `Auth` config the front door, the Team screen, the
+account menu and the DNA guard all share. Sign in as anyone but Nadia and `/dna` shows the guard
+turning you away; sign in as Nadia and it opens.
 
 ## Phone first
 

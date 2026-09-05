@@ -5,8 +5,10 @@ import { ConfigErrorCard, issuesFromZodError } from './error-card'
 /**
  * The outer shape of every golem-ui component, no exceptions.
  *
- * `Slots` carries the ReactNode holes a component exposes; it is never used for data or behaviour,
- * which belong to `config` and `adapters` respectively.
+ * `Slots` carries the ReactNode holes a component exposes, plus the per-use props that belong to
+ * the call site rather than to the config — `Auth.Guard`'s `roles` is one. Anything the agent would
+ * write once for the whole app belongs in `config`, and anything that reaches the world in
+ * `adapters`.
  */
 export type GolemProps<ConfigInput, Adapters, Slots = object> = {
   config: ConfigInput

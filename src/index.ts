@@ -1,5 +1,3 @@
-import './styles.css'
-
 export * from './abi'
 export * from './adapters'
 export * from './adapters/fake'

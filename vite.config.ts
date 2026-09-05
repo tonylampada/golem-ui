@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
     lib: {
-      entry: resolve(import.meta.dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/bundle.ts'),
       formats: ['es'],
       fileName: () => 'index.js',
       cssFileName: 'golem-ui',

@@ -83,11 +83,16 @@ export const identity: IdentityAdapter = {
   },
 }
 export const clock = fakeClock(TODAY, TIME_ZONE)
+
 /**
  * The shop's files, seeded with what the log and the seeded conversation already attach. Uploads
  * land here too, so a photo taken on the Files screen is a photo the picker in the chat can attach.
+ *
+ * Stamped from the shop's own frozen clock rather than the machine's: everything else in the demo
+ * is dated inside the fiction, and a file stamped with the real date would sort under files the
+ * shop took days ago.
  */
-export const files = fakeFiles({ seed: shopFiles })
+export const files = fakeFiles({ seed: shopFiles, now: () => clock.now() })
 
 export const records = fakeRecords({
   jobs: jobs.map((job) => ({ ...job })),

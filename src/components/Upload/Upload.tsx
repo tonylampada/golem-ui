@@ -467,8 +467,10 @@ function Gallery({
   const [open, setOpen] = useState<string | null>(null)
   const openFile = refs.find((ref) => ref.id === open)
 
-  const asPicture = (file: FileRef) =>
-    config.layout === 'grid' && isImage(file) && urls[file.id] !== null
+  const grid = config.layout === 'grid'
+  // A picture the store gave us no URL for is drawn as its icon: an empty frame would say the
+  // file is blank rather than that the thumbnail did not arrive.
+  const asPicture = (file: FileRef) => isImage(file) && urls[file.id] !== null
 
   const tile = (file: FileRef) => (
     <div className="min-w-0 flex-1">
@@ -478,14 +480,24 @@ function Gallery({
         aria-label={`Open ${file.name}`}
         className="block w-full text-left"
       >
-        {asPicture(file) ? (
+        {grid ? (
+          // Every tile is the same square, picture or not, so a row of the grid is one line high.
           <span className="block aspect-square overflow-hidden rounded-lg bg-neutral-100">
-            {urls[file.id] && (
-              <img
-                src={urls[file.id]!.thumbnail}
-                alt={file.caption ?? file.name}
-                className="size-full object-cover"
-              />
+            {asPicture(file) ? (
+              urls[file.id] && (
+                <img
+                  src={urls[file.id]!.thumbnail}
+                  alt={file.caption ?? file.name}
+                  className="size-full object-cover"
+                />
+              )
+            ) : (
+              <span className="flex size-full flex-col items-center justify-center gap-1">
+                <span className="text-3xl leading-none">
+                  {iconFor(file.contentType, file.name)}
+                </span>
+                <span className="text-xs text-neutral-500">{megabytes(file.size)}</span>
+              </span>
             )}
           </span>
         ) : (
@@ -499,7 +511,7 @@ function Gallery({
         )}
       </button>
 
-      {asPicture(file) && <p className="mt-1 truncate text-xs text-neutral-600">{file.name}</p>}
+      {grid && <p className="mt-1 truncate text-xs text-neutral-600">{file.name}</p>}
       {config.captions && <Caption file={file} files={files} />}
     </div>
   )

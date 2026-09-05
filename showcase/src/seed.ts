@@ -153,47 +153,119 @@ export const jobs: RepairJob[] = [
 
 export interface LogEntry {
   id: string
-  date: string
-  label: string
-  detail: string
-  kind: 'win' | 'note' | 'goal'
+  /** A full ISO instant: the shop log is read in minutes during the day, not in calendar days. */
+  at: string
+  body: string
+  kind: 'note' | 'done' | 'problem' | 'parts'
+  actor: string
+  files?: { id: string; name: string }[]
 }
 
+/**
+ * The shop log, running back to August. `TODAY` is 13:20, so the newest entries read as minutes
+ * ago and everything older carries its clock time.
+ */
 export const shopLog: LogEntry[] = [
   {
-    id: 'l-8',
-    date: '2026-09-10',
-    label: 'Nine tickets closed this week',
-    detail: 'Best week since the spring service rush.',
-    kind: 'win',
+    id: 'l-31',
+    at: '2026-09-10T13:06:00Z',
+    kind: 'done',
+    actor: 'Omar Bright',
+    body: '**#4186 Trek FX 3** back together — chain, cassette and both brakes bled. On the collection rack.',
   },
   {
-    id: 'l-7',
-    date: '2026-09-08',
-    label: 'Suspension bench booked out to the 22nd',
-    detail: 'Priya is the only one certified on it. Worth a second pair of hands.',
+    id: 'l-30',
+    at: '2026-09-10T12:15:00Z',
     kind: 'note',
+    actor: 'Theo Lang',
+    body: 'Owen called about #4186. Collecting after five, paying at the counter.',
   },
   {
-    id: 'l-6',
-    date: '2026-09-04',
-    label: 'Turnaround target set to three days',
-    detail: 'Agreed at the Friday stand-up, tracked on this page.',
-    kind: 'goal',
+    id: 'l-29',
+    at: '2026-09-10T09:40:00Z',
+    kind: 'problem',
+    actor: 'Priya Sandoval',
+    body: '#4185 fork lowers are weeping worse than Monday. Photographed both legs before I stripped them.',
+    files: [{ id: 'f-3', name: 'rockhopper-fork-seals.jpg' }],
   },
   {
-    id: 'l-5',
-    date: '2026-09-01',
-    label: 'Winter service pricing published',
-    detail: 'New sheet at the counter and on the shop page.',
+    id: 'l-28',
+    at: '2026-09-10T08:05:00Z',
+    kind: 'parts',
+    actor: 'Nadia Kessler',
+    body: 'Spoke order landed. Enough drive-side 292mm for the Kona rebuild and two spares.',
+  },
+  {
+    id: 'l-27',
+    at: '2026-09-09T16:20:00Z',
+    kind: 'parts',
+    actor: 'Priya Sandoval',
+    body: 'SKF seal kit for #4185 quoted Thursday by the supplier. Told the customer by text.',
+    files: [{ id: 'f-2', name: 'supplier-invoice-2211.pdf' }],
+  },
+  {
+    id: 'l-26',
+    at: '2026-09-09T11:30:00Z',
+    kind: 'done',
+    actor: 'Hana Vogt',
+    body: 'First wheel built unsupervised. It is true and it holds.',
+  },
+  {
+    id: 'l-25',
+    at: '2026-09-09T09:10:00Z',
     kind: 'note',
+    actor: 'Nadia Kessler',
+    body: 'Counter clear for the first time since Monday.',
   },
   {
-    id: 'l-4',
-    date: '2026-08-19',
-    label: 'Second wheel-building stand arrived',
-    detail: 'Hana trained on it the same afternoon.',
-    kind: 'win',
+    id: 'l-24',
+    at: '2026-09-08T15:45:00Z',
+    kind: 'done',
+    actor: 'Omar Bright',
+    body: '**#4184 Brompton M6L** collected at four. Hinge clamp plate and all four cables.',
+  },
+  {
+    id: 'l-23',
+    at: '2026-09-08T10:00:00Z',
+    kind: 'problem',
+    actor: 'Nadia Kessler',
+    body: 'Suspension bench booked out to the 22nd, and Priya is the only one certified on it. Either a second pair of hands, or a longer lead time quoted at the counter.',
+  },
+  {
+    id: 'l-22',
+    at: '2026-09-07T14:20:00Z',
+    kind: 'note',
+    actor: 'Theo Lang',
+    body: 'Six bikes in over the weekend. That is the whole of Monday accounted for.',
+  },
+  {
+    id: 'l-21',
+    at: '2026-09-07T09:05:00Z',
+    kind: 'done',
+    actor: 'Nadia Kessler',
+    body: '#4183 cut-out traced to a chafed speed-sensor lead, not the battery. Re-routed and taped.',
+    files: [{ id: 'f-4', name: 'gazelle-cutout-noise.m4a' }],
+  },
+  {
+    id: 'l-20',
+    at: '2026-09-04T16:00:00Z',
+    kind: 'note',
+    actor: 'Nadia Kessler',
+    body: 'Turnaround target set to **three days** at the Friday stand-up. Tracked on this log.',
+  },
+  {
+    id: 'l-19',
+    at: '2026-09-01T09:30:00Z',
+    kind: 'note',
+    actor: 'Theo Lang',
+    body: 'Winter service pricing published. New sheet at the counter and on the shop page.',
+  },
+  {
+    id: 'l-18',
+    at: '2026-08-19T15:10:00Z',
+    kind: 'done',
+    actor: 'Nadia Kessler',
+    body: 'Second wheel-building stand arrived. Hana trained on it the same afternoon.',
   },
 ]
 

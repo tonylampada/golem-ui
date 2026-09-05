@@ -1,35 +1,65 @@
-import type { RecordsAdapter } from 'golem-ui'
-import { useRows } from '../lib/use-rows'
-import type { LogEntry } from '../seed'
-import { day, Panel, Screen, Tag } from '../ui'
+import { Timeline } from 'golem-ui'
+import type {
+  ClockAdapter,
+  FilesAdapter,
+  IdentityAdapter,
+  RecordsAdapter,
+  TimelineConfigInput,
+} from 'golem-ui'
+import { Screen } from '../ui'
 
-const kindLabel: Record<LogEntry['kind'], string> = {
-  win: 'win',
-  note: 'note',
-  goal: 'goal',
+/** The four things that happen in a bike shop, one per tone. */
+const kinds: TimelineConfigInput['kinds'] = [
+  { id: 'note', label: 'Note', tone: 'neutral' },
+  { id: 'done', label: 'Done', tone: 'good' },
+  { id: 'parts', label: 'Parts', tone: 'warn' },
+  { id: 'problem', label: 'Problem', tone: 'bad' },
+]
+
+const shared = {
+  collection: 'log',
+  dateField: 'at',
+  bodyField: 'body',
+  kindField: 'kind',
+  kinds,
+  actorField: 'actor',
+  attachmentsField: 'files',
+} satisfies Partial<TimelineConfigInput>
+
+/** The whole log: chips, a search box, and the box the shop writes its next line in. */
+export const logConfig: TimelineConfigInput = {
+  ...shared,
+  filters: ['kind', 'actor'],
+  search: ['body'],
+  pageSize: 8,
+  composer: true,
+  emptyState: 'Nothing on the log yet. The agent writes a line when a ticket moves.',
 }
 
-/** Placeholder for the Timeline component: dated entries, filterable. */
-export function Log({ records }: { records: RecordsAdapter }) {
-  const entries = useRows<LogEntry>(records, 'log')
+/**
+ * The same component on Today, one config away: three entries, no chips and no composer, because
+ * the block is a glance at the log rather than the log.
+ */
+export const latestConfig: TimelineConfigInput = {
+  ...shared,
+  pageSize: 3,
+  emptyState: 'Nothing on the log yet.',
+}
 
+export function Log({
+  records,
+  clock,
+  identity,
+  files,
+}: {
+  records: RecordsAdapter
+  clock: ClockAdapter
+  identity: IdentityAdapter
+  files: FilesAdapter
+}) {
   return (
-    <Screen title="Shop log" lead="What changed, in order, since the spring.">
-      <Panel>
-        <ol className="space-y-5">
-          {entries.map((entry) => (
-            <li key={entry.id} className="relative pl-6">
-              <span className="absolute top-1.5 left-0 size-2.5 rounded-full bg-neutral-900" />
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-neutral-500">{day(entry.date)}</span>
-                <Tag>{kindLabel[entry.kind]}</Tag>
-              </div>
-              <p className="mt-1 text-sm font-medium">{entry.label}</p>
-              <p className="mt-0.5 text-sm text-neutral-600">{entry.detail}</p>
-            </li>
-          ))}
-        </ol>
-      </Panel>
+    <Screen title="Shop log" lead="What changed, in order, since the summer.">
+      <Timeline config={logConfig} adapters={{ records, clock, identity, files }} />
     </Screen>
   )
 }

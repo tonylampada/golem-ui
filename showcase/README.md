@@ -24,9 +24,9 @@ under `/app/`.
 
 ## Where each component lands
 
-`Shell`, `Chat`, `Auth`, `RecordList`, `RecordForm` and `Report` exist today. Every other screen is plain
-markup standing in one component's place, so adding that component is a swap of markup for JSX
-inside one file, and nothing else moves.
+`Shell`, `Chat`, `Auth`, `RecordList`, `RecordForm`, `Report` and `Timeline` exist today. Every other
+screen is plain markup standing in one component's place, so adding that component is a swap of
+markup for JSX inside one file, and nothing else moves.
 
 | File                      | Route        | Component that replaces it    | What it stands in for                          |
 | ------------------------- | ------------ | ----------------------------- | ---------------------------------------------- |
@@ -36,7 +36,7 @@ inside one file, and nothing else moves.
 | `src/screens/JobForm.tsx` | `/jobs/new`  | **RecordForm** (already used) | A blank ticket, written into the collection    |
 | `src/screens/JobForm.tsx` | `/jobs/<id>` | **RecordForm** (already used) | The same form in edit mode, on one ticket      |
 | `src/screens/Report.tsx`  | `/report`    | **Report** (already used)     | The daily document, dated and printable        |
-| `src/screens/Log.tsx`     | `/log`       | **Timeline**                  | Dated shop entries, filterable                 |
+| `src/screens/Log.tsx`     | `/log`       | **Timeline** (already used)   | Dated shop entries, filterable                 |
 | `src/screens/Files.tsx`   | `/files`     | **Upload**                    | Photos and invoices, with a gallery            |
 | `src/screens/Dna.tsx`     | `/dna`       | **Editor**                    | The workspace DNA, live-updated by the agent   |
 | —                         | `/team`      | **Auth** (already used)       | Members, roles, invite by link                 |
@@ -51,6 +51,12 @@ told apart by config alone: Today adds `scope: { status: ['waiting', 'in progres
 apart by config alone: `showcase/src/screens/Report.tsx` holds both configs, and the card turns off
 `showIndex`, `showNavigation` and `print` because the screen around it already carries all three.
 Today's report is seeded as a draft, so it wears the badge until the agent marks it final.
+
+`/log` and Today's "latest on the log" are the same `Timeline` on the same `log` collection, told
+apart by config alone: `showcase/src/screens/Log.tsx` holds both configs, and Today's drops the
+filter chips, the search box and the composer and cuts `pageSize` to 3, because the block is a
+glance at the log rather than the log. The composer on `/log` writes through `Records.create` and
+signs the entry with whoever is signed in, so a line added there is on Today the moment you go back.
 
 `/jobs/new` and `/jobs/<id>` are the same `RecordForm` in the same way: one field list in
 `src/screens/JobForm.tsx`, `mode: 'create'` on one route and `mode: 'edit'` on the other. The ticket
@@ -90,6 +96,8 @@ a reload puts the demo back at the sign-in screen.
 The captain opens this on a phone. Every change is checked at **390px wide** before it lands:
 
 - The `Shell` breakpoint is 768, so below it chat and canvas are thumb-sized tabs.
+- `Timeline` scrolls inside its own box, so its day headers stick and the log never pushes the
+  screen out sideways; the composer's row folds nothing, so it stays one line on a phone.
 - The page never scrolls sideways. Wide things — the screen nav, a `RecordList` table — scroll
   inside their own strip, and below 768 `RecordList` draws cards instead of a table and
   `RecordForm` folds to one column with its submit bar stuck to the bottom.

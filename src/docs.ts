@@ -5,6 +5,7 @@ import { recordFormDocs } from './components/RecordForm/RecordForm.docs'
 import { recordListDocs } from './components/RecordList/RecordList.docs'
 import { reportDocs } from './components/Report/Report.docs'
 import { shellDocs } from './components/Shell/Shell.docs'
+import { timelineDocs } from './components/Timeline/Timeline.docs'
 
 /**
  * Every exported component's page prose, in the order a reader meets them: the frame first, then
@@ -18,4 +19,5 @@ export const componentDocs: ComponentDocs[] = [
   recordListDocs,
   recordFormDocs,
   reportDocs,
+  timelineDocs,
 ]

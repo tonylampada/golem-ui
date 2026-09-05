@@ -1,6 +1,7 @@
 import { Auth } from 'golem-ui'
 import type {
   ClockAdapter,
+  FilesAdapter,
   IdentityAdapter,
   NavigationAdapter,
   RecordsAdapter,
@@ -28,6 +29,7 @@ export const screens = [
 export interface CanvasAdapters {
   records: RecordsAdapter
   clock: ClockAdapter
+  files: FilesAdapter
   identity: IdentityAdapter
   navigation: NavigationAdapter
 }
@@ -43,7 +45,7 @@ function screenFor(path: string, a: CanvasAdapters) {
     case '/report':
       return <Report records={a.records} clock={a.clock} />
     case '/log':
-      return <Log records={a.records} />
+      return <Log records={a.records} clock={a.clock} identity={a.identity} files={a.files} />
     case '/files':
       return <Files records={a.records} />
     case '/dna':
@@ -67,7 +69,7 @@ function screenFor(path: string, a: CanvasAdapters) {
           />
         )
       }
-      return <Today records={a.records} clock={a.clock} navigation={a.navigation} />
+      return <Today records={a.records} clock={a.clock} files={a.files} navigation={a.navigation} />
   }
 }
 

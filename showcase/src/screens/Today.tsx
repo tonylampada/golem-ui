@@ -1,14 +1,16 @@
-import { RecordList, Report } from 'golem-ui'
+import { RecordList, Report, Timeline } from 'golem-ui'
 import type {
   ClockAdapter,
+  FilesAdapter,
   NavigationAdapter,
   RecordListConfigInput,
   RecordsAdapter,
 } from 'golem-ui'
 import { useRows } from '../lib/use-rows'
-import type { LogEntry, RepairJob } from '../seed'
+import type { RepairJob } from '../seed'
 import { cardConfig } from './Report'
-import { day, Panel, PanelTitle, Screen } from '../ui'
+import { latestConfig } from './Log'
+import { Panel, PanelTitle, Screen } from '../ui'
 
 /**
  * The same component the Jobs screen uses, scoped to what is still open and cut to three rows —
@@ -39,14 +41,15 @@ const benchConfig: RecordListConfigInput = {
 export function Today({
   records,
   clock,
+  files,
   navigation,
 }: {
   records: RecordsAdapter
   clock: ClockAdapter
+  files: FilesAdapter
   navigation: NavigationAdapter
 }) {
   const jobs = useRows<RepairJob>(records, 'jobs')
-  const log = useRows<LogEntry>(records, 'log')
   const onTheBench = jobs.filter((job) => job.status !== 'ready')
   const ready = jobs.filter((job) => job.status === 'ready')
 
@@ -127,16 +130,9 @@ export function Today({
         >
           Latest on the log
         </PanelTitle>
-        <ul className="space-y-3">
-          {log.slice(0, 3).map((entry) => (
-            <li key={entry.id}>
-              <p className="text-sm font-medium">{entry.label}</p>
-              <p className="text-xs text-neutral-500">
-                {day(entry.date)} · {entry.detail}
-              </p>
-            </li>
-          ))}
-        </ul>
+        {/* The same Timeline that fills `/log`, cut to three entries with no chips and no
+            composer — the block is a glance at the log rather than the log. */}
+        <Timeline config={latestConfig} adapters={{ records, clock, files }} />
       </Panel>
     </Screen>
   )

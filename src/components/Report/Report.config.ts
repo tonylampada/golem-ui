@@ -1,18 +1,5 @@
 import { z } from 'zod'
-
-/**
- * A locale the platform can actually format with. `en_GB` and `english` are the two an agent
- * writes by mistake, and both would otherwise throw inside `Intl` at render time rather than land
- * on the error card.
- */
-function isFormattableLocale(locale: string): boolean {
-  try {
-    new Intl.DateTimeFormat(locale)
-    return true
-  } catch {
-    return false
-  }
-}
+import { isFormattableLocale } from '../../lib/locale'
 
 export const reportConfigSchema = z
   .object({

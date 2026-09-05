@@ -1,0 +1,60 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks'
+import { ConfigTable } from '../../../docs/ConfigTable'
+import { AdapterTable, CodeBlock, DocBlocks, Prose } from '../../../docs/Prose'
+import { timelineConfigSchema } from './Timeline.config'
+import { timelineDocs } from './Timeline.docs'
+import * as TimelineStories from './Timeline.stories'
+
+<Meta of={TimelineStories} name="Docs" />
+
+# Timeline
+
+<a href="https://tonylampada.github.io/golem-ui/app/#/api/timeline" target="_top">
+  The same page on a phone →
+</a>
+
+## What it is for
+
+<Prose text={timelineDocs.purpose} />
+
+## The configuration object
+
+<ConfigTable schema={timelineConfigSchema} />
+
+<DocBlocks blocks={timelineDocs.configNotes} />
+
+## The adapters it needs
+
+<AdapterTable rows={timelineDocs.adapters} />
+
+<Prose text={timelineDocs.adapterNotes} />
+
+## One complete example
+
+<CodeBlock code={timelineDocs.example} />
+
+<Canvas of={TimelineStories.GroupedDays} />
+
+One day of it, against the same frozen clock. Every entry says how long ago it was, and the day
+heads itself as Today:
+
+<Canvas of={TimelineStories.ADay} />
+
+Chips for the kind and for who wrote the entry, a search box over the body, and a page of five.
+Choose `Problem` and two entries are left; `Load 5 older` fetches the next page and appends it
+underneath:
+
+<Canvas of={TimelineStories.FiltersAndSearch} />
+
+The composer, an entry arriving from somewhere else 2.5 seconds after mount, and a log with nothing
+on it yet:
+
+<Canvas of={TimelineStories.Composer} />
+<Canvas of={TimelineStories.EntryArriving} />
+<Canvas of={TimelineStories.Empty} />
+
+## Failure modes
+
+<Prose text={timelineDocs.failureModes} />
+
+<Canvas of={TimelineStories.InvalidConfig} />

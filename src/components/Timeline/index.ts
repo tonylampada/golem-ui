@@ -1,0 +1,5 @@
+export { Timeline } from './Timeline'
+export type { TimelineAdapters, TimelineEntry } from './Timeline'
+export { timelineConfigSchema, timelineKindSchema, TONES } from './Timeline.config'
+export type { TimelineConfig, TimelineConfigInput, Tone } from './Timeline.config'
+export { timelineDocs } from './Timeline.docs'

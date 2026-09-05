@@ -77,3 +77,16 @@
     break-inside: avoid;
   }
 }
+
+/* Timeline's arrival: a new entry drops in from above rather than appearing mid-list, so a reader
+   watching the log sees where it came from. Only entries mounted after the first page carry it. */
+@keyframes golem-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

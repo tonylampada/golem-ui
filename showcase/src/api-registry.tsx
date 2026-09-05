@@ -6,6 +6,7 @@ import {
   RecordList,
   Report,
   Shell,
+  Timeline,
   componentDocs,
   type ComponentDocs,
 } from 'golem-ui'
@@ -15,12 +16,14 @@ import { recordFormConfigSchema } from '../../src/components/RecordForm/RecordFo
 import { recordListConfigSchema } from '../../src/components/RecordList/RecordList.config'
 import { reportConfigSchema } from '../../src/components/Report/Report.config'
 import { shellConfigSchema } from '../../src/components/Shell/Shell.config'
+import { timelineConfigSchema } from '../../src/components/Timeline/Timeline.config'
 import * as authExamples from '../../src/components/Auth/Auth.examples'
 import * as chatExamples from '../../src/components/Chat/Chat.examples'
 import * as recordFormExamples from '../../src/components/RecordForm/RecordForm.examples'
 import * as recordListExamples from '../../src/components/RecordList/RecordList.examples'
 import * as reportExamples from '../../src/components/Report/Report.examples'
 import * as shellExamples from '../../src/components/Shell/Shell.examples'
+import * as timelineExamples from '../../src/components/Timeline/Timeline.examples'
 
 /**
  * What an API page is made of, and the only place the three sources are named together: the prose
@@ -76,6 +79,12 @@ const byName: Record<string, Omit<ApiComponent, 'docs'>> = {
     schema: reportConfigSchema,
     example: <Report {...reportExamples.today.props} />,
     invalid: <Report {...reportExamples.invalidConfig.props} />,
+    exampleHeight: 620,
+  },
+  Timeline: {
+    schema: timelineConfigSchema,
+    example: <Timeline {...timelineExamples.groupedDays.props} />,
+    invalid: <Timeline {...timelineExamples.invalidConfig.props} />,
     exampleHeight: 620,
   },
 }

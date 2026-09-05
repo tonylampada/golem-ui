@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type FormEvent,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react'
 import { defineComponent, type GolemProps } from '../../abi'
 import type { IdentityAdapter, NavigationAdapter, User } from '../../adapters'
 import { authConfigSchema, type AuthConfig, type AuthRole } from './Auth.config'
@@ -73,7 +80,7 @@ const quietClass = 'rounded-lg border border-neutral-300 px-3 py-2 text-sm font-
 function Field({
   label,
   ...input
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-neutral-700">{label}</span>

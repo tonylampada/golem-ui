@@ -165,7 +165,10 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
           ? `You have been invited to ${config.workspaceName}.`
           : config.workspaceName}
       </p>
-      {config.copy.hint && <p className="mt-3 text-xs text-neutral-500">{config.copy.hint}</p>}
+      {/* The hint is about getting back in, so it stays off the sign-up form. */}
+      {config.copy.hint && !creatingNow && (
+        <p className="mt-3 text-xs text-neutral-500">{config.copy.hint}</p>
+      )}
 
       <form className="mt-4 space-y-3" onSubmit={submit}>
         {creatingNow && (

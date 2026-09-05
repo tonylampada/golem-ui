@@ -52,6 +52,11 @@ for all of them, and the sign-in screen says which — a demo nobody can get int
 account menu and the DNA guard all share. Sign in as anyone but Nadia and `/dna` shows the guard
 turning you away; sign in as Nadia and it opens.
 
+Invites are the one piece of state that outlives a page load. An invite link is meant to be opened
+in another tab, which is a cold start, so `src/adapters.ts` keeps the open tokens in `localStorage`
+and spends them on sign-up. Everything else — who is signed in, who has been added — is memory, and
+a reload puts the demo back at the sign-in screen.
+
 ## Phone first
 
 The captain opens this on a phone. Every change is checked at **390px wide** before it lands:

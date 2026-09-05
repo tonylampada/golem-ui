@@ -4,6 +4,7 @@ import {
   fakeFiles,
   fakeIdentity,
   fakeRecords,
+  type IdentityAdapter,
   type NavigationAdapter,
   type Route,
   type Unsubscribe,
@@ -25,17 +26,61 @@ import {
  * the chat; `hashNavigation` below is the app's own, because a demo needs a real URL.
  */
 
+const INVITES_KEY = 'northgate-invites'
+
+function readInvites(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(INVITES_KEY) ?? '{}') as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
+const openInvites = readInvites()
+
+function rememberInvites() {
+  try {
+    localStorage.setItem(INVITES_KEY, JSON.stringify(openInvites))
+  } catch {
+    // A browser with storage switched off still gets a working demo inside one page load.
+  }
+}
+
 /**
  * Signed out on purpose: the showcase opens on the sign-in screen, and the invite links it mints
  * point back at this same page under whatever path Pages is serving it from.
  */
-export const identity = fakeIdentity({
+const shopIdentity = fakeIdentity({
   user: null,
   members,
   password: SHOP_PASSWORD,
   defaultRole: 'mechanic',
+  invites: openInvites,
   inviteBase: `${window.location.origin}${window.location.pathname}#/join?invite=`,
 })
+
+/**
+ * The fake holds its invites in memory, which a demo cannot: an invite link is meant to be opened
+ * in another tab, and that is a cold page load. So the tokens are kept in `localStorage` — minted
+ * on `invite`, spent on `signUp`, exactly once either way.
+ */
+export const identity: IdentityAdapter = {
+  ...shopIdentity,
+  async invite(role) {
+    const url = await shopIdentity.invite(role)
+    openInvites[url.slice(url.lastIndexOf('=') + 1)] = role
+    rememberInvites()
+    return url
+  },
+  async signUp(input) {
+    const user = await shopIdentity.signUp(input)
+    if (input.invite) {
+      delete openInvites[input.invite]
+      rememberInvites()
+    }
+    return user
+  },
+}
 export const clock = fakeClock(TODAY, TIME_ZONE)
 export const files = fakeFiles()
 

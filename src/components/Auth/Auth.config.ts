@@ -58,7 +58,7 @@ export const authConfigSchema = z
     copy: copySchema
       .prefault({})
       .describe(
-        'Overrides for the labels the screens are built from: `signInTitle`, `signUpTitle`, `hint` (a line under the title, where a demo says which accounts work), `submit`, `membersTitle`, `denied`.',
+        'Overrides for the labels the screens are built from: `signInTitle`, `signUpTitle`, `hint` (a line under the sign-in title, where a demo says which accounts work), `submit`, `membersTitle`, `denied`.',
       ),
   })
   .strict()

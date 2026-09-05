@@ -267,14 +267,30 @@ export const conversation: ChatMessage[] = [
   {
     id: 'm-4',
     role: 'agent',
-    text: 'Changed it to "nine tickets closed, average turnaround 2.6 days". I also put the turnaround target on the shop log.',
+    text: 'Changed it to **nine tickets closed, average turnaround 2.6 days**. I also put the turnaround target on the shop log.',
     at: '2026-09-10T09:33:00Z',
+  },
+  {
+    id: 'm-5',
+    role: 'user',
+    text: 'here are the fork photos for #4185 while you are in there',
+    at: '2026-09-10T09:41:00Z',
+    attachments: [
+      { id: 'f-3', name: 'rockhopper-fork-seals.jpg', size: 2_202_009 },
+      { id: 'f-2', name: 'supplier-invoice-2211.pdf', size: 327_680 },
+    ],
+  },
+  {
+    id: 'm-6',
+    role: 'agent',
+    text: 'Both are on ticket #4185 now.',
+    at: '2026-09-10T09:41:00Z',
   },
 ]
 
 /** What the agent answers in the showcase, in order, so the composer is never a dead end. */
 export const cannedReplies: string[] = [
   'Noted. I will fold that into today’s report and put a line on the shop log.',
-  'Right. Does that change the turnaround target? If it does, I will update the workspace DNA too.',
+  'Right — that touches three things:\n\n- the **turnaround target** on the shop log\n- the wording in today’s report\n- the workspace DNA, if you want it to stick\n\nSay the word and I will do all three.',
   'Done. The ticket is saved and already showing in the job list.',
 ]

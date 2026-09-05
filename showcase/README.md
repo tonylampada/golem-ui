@@ -17,13 +17,13 @@ under `/app/`.
 
 ## Where each component lands
 
-Only `Shell` exists today. Every other screen is plain markup standing in one component's place, so
-adding that component is a swap of markup for JSX inside one file, and nothing else moves.
+`Shell` and `Chat` exist today. Every other screen is plain markup standing in one component's
+place, so adding that component is a swap of markup for JSX inside one file, and nothing else moves.
 
 | File                     | Route       | Component that replaces it | What it stands in for                         |
 | ------------------------ | ----------- | -------------------------- | --------------------------------------------- |
 | `src/App.tsx`            | —           | **Shell** (already used)   | The frame: chat column, canvas, top bar, tabs |
-| `src/ChatColumn.tsx`     | —           | **Chat**                   | The conversation with the agent               |
+| `src/ChatColumn.tsx`     | —           | **Chat** (already used)    | The conversation with the agent               |
 | `src/screens/Jobs.tsx`   | `/jobs`     | **Record list**            | Repair tickets, newest first                  |
 | `src/screens/NewJob.tsx` | `/jobs/new` | **Record form**            | One ticket, config-driven from a field list   |
 | `src/screens/Report.tsx` | `/report`   | **Report**                 | The daily document, dated and printable       |
@@ -37,10 +37,10 @@ adding that component is a swap of markup for JSX inside one file, and nothing e
 
 `src/adapters.ts` wires every one of them, and it is the only file that knows an adapter exists.
 
-`Identity`, `Records`, `Files` and `Clock` are the kit's fakes, seeded from `src/seed.ts`. Two are
-the app's own, and both have a reason written above them in that file: `hashNavigation` so a screen
-has a linkable URL that survives a reload under the Pages subpath, and `demoChat` so the composer
-answers instead of swallowing what you type.
+`Identity`, `Records`, `Files`, `Clock` and `Chat` are the kit's fakes, seeded from `src/seed.ts` —
+`fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word. One
+adapter is the app's own, with its reason written above it in that file: `hashNavigation`, so a
+screen has a linkable URL that survives a reload under the Pages subpath.
 
 ## Phone first
 

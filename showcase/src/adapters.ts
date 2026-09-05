@@ -1,10 +1,9 @@
 import {
+  fakeChat,
   fakeClock,
   fakeFiles,
   fakeIdentity,
   fakeRecords,
-  type ChatAdapter,
-  type ChatMessage,
   type NavigationAdapter,
   type Route,
   type Unsubscribe,
@@ -22,8 +21,8 @@ import {
 } from './seed'
 
 /**
- * Every adapter the showcase wires. The kit's fakes cover identity, records, files and the clock;
- * the two below are the app's own, because a demo needs a real URL and an agent that answers.
+ * Every adapter the showcase wires. The kit's fakes cover identity, records, files, the clock and
+ * the chat; `hashNavigation` below is the app's own, because a demo needs a real URL.
  */
 
 export const identity = fakeIdentity(signedIn)
@@ -72,45 +71,7 @@ export function hashNavigation(): NavigationAdapter {
 export const navigation = hashNavigation()
 
 /**
- * `fakeChat` records what you send but never answers, which reads as a broken app rather than a
- * demo. This one replies from a canned list, so the composer on a phone does something.
+ * The kit's own fake, which streams its reply word by word — so the composer on a phone answers
+ * instead of swallowing what you type, and the showcase shows the streaming path working.
  */
-export function demoChat(seed: ChatMessage[]): ChatAdapter {
-  const messages = [...seed]
-  const listeners = new Set<(messages: ChatMessage[]) => void>()
-  let sent = 0
-
-  const emit = () => {
-    for (const listener of listeners) listener([...messages])
-  }
-
-  return {
-    async history() {
-      return [...messages]
-    },
-    async send(text: string) {
-      const at = new Date().toISOString()
-      messages.push({ id: `msg-${messages.length + 1}`, role: 'user', text, at })
-      emit()
-      const reply = cannedReplies[sent % cannedReplies.length]!
-      sent += 1
-      setTimeout(() => {
-        messages.push({
-          id: `msg-${messages.length + 1}`,
-          role: 'agent',
-          text: reply,
-          at: new Date().toISOString(),
-        })
-        emit()
-      }, 700)
-    },
-    subscribe(listener): Unsubscribe {
-      listeners.add(listener)
-      return () => {
-        listeners.delete(listener)
-      }
-    },
-  }
-}
-
-export const chat = demoChat(conversation)
+export const chat = fakeChat(conversation, { replies: cannedReplies, tokenDelayMs: 45 })

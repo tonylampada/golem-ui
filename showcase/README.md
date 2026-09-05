@@ -24,7 +24,7 @@ under `/app/`.
 
 ## Where each component lands
 
-`Shell`, `Chat`, `Auth`, `RecordList` and `RecordForm` exist today. Every other screen is plain
+`Shell`, `Chat`, `Auth`, `RecordList`, `RecordForm` and `Report` exist today. Every other screen is plain
 markup standing in one component's place, so adding that component is a swap of markup for JSX
 inside one file, and nothing else moves.
 
@@ -35,7 +35,7 @@ inside one file, and nothing else moves.
 | `src/screens/Jobs.tsx`    | `/jobs`      | **RecordList** (already used) | Repair tickets, newest first                   |
 | `src/screens/JobForm.tsx` | `/jobs/new`  | **RecordForm** (already used) | A blank ticket, written into the collection    |
 | `src/screens/JobForm.tsx` | `/jobs/<id>` | **RecordForm** (already used) | The same form in edit mode, on one ticket      |
-| `src/screens/Report.tsx`  | `/report`    | **Report**                    | The daily document, dated and printable        |
+| `src/screens/Report.tsx`  | `/report`    | **Report** (already used)     | The daily document, dated and printable        |
 | `src/screens/Log.tsx`     | `/log`       | **Timeline**                  | Dated shop entries, filterable                 |
 | `src/screens/Files.tsx`   | `/files`     | **Upload**                    | Photos and invoices, with a gallery            |
 | `src/screens/Dna.tsx`     | `/dna`       | **Editor**                    | The workspace DNA, live-updated by the agent   |
@@ -46,6 +46,11 @@ inside one file, and nothing else moves.
 `/jobs` and Today's "on the bench" block are the same `RecordList` on the same `jobs` collection,
 told apart by config alone: Today adds `scope: { status: ['waiting', 'in progress'] }` and
 `pageSize: 3`, `/jobs` adds the filter chips and the search box. A row opens `/jobs/<id>`.
+
+`/report` and Today's daily-report card are the same `Report` on the same `reports` collection, told
+apart by config alone: `showcase/src/screens/Report.tsx` holds both configs, and the card turns off
+`showIndex`, `showNavigation` and `print` because the screen around it already carries all three.
+Today's report is seeded as a draft, so it wears the badge until the agent marks it final.
 
 `/jobs/new` and `/jobs/<id>` are the same `RecordForm` in the same way: one field list in
 `src/screens/JobForm.tsx`, `mode: 'create'` on one route and `mode: 'edit'` on the other. The ticket
@@ -60,7 +65,7 @@ Saving returns to `/jobs`, where the list shows the change through `subscribe` w
 
 `Identity`, `Records`, `Files`, `Clock` and `Chat` are the kit's fakes, seeded from `src/seed.ts` —
 `fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word, and
-`fakeRecords` gets the shop's tickets, log and files. Writing goes through the `Records` adapter's
+`fakeRecords` gets the shop's tickets, reports, log and files. Writing goes through the `Records` adapter's
 own `create`, `update` and `remove`, so the ticket form talks to the same interface a server would
 sit behind. One adapter is the app's own, with its reason written above it in that file:
 `hashNavigation`, so a screen has a linkable URL that survives a reload under the Pages subpath. It

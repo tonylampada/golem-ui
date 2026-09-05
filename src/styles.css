@@ -1,1 +1,79 @@
 @import 'tailwindcss';
+
+/* Report's print sheet, switched on by its `print` config. A printed report is the document and
+   nothing else: the period arrows, the print button and the index are chrome, and paper is not a
+   screen — no card border, no grey ground, and no heading stranded at the foot of a page.
+
+   The rules are written twice because CSS cannot alias a media query into a class selector. The
+   first block is what a real print gives; the second forces the same on screen, so the print-preview
+   story shows the printed page without opening a dialog. Change one and change the other. */
+
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  [data-golem-component='Report'][data-print='on'] {
+    [data-golem-chrome] {
+      display: none;
+    }
+
+    [data-golem-paper] {
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    [data-golem-contents] {
+      background: transparent;
+      padding-inline: 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      break-after: avoid;
+    }
+
+    li,
+    pre,
+    table {
+      break-inside: avoid;
+    }
+  }
+}
+
+.golem-print-preview [data-golem-component='Report'] {
+  [data-golem-chrome] {
+    display: none;
+  }
+
+  [data-golem-paper] {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  [data-golem-contents] {
+    background: transparent;
+    padding-inline: 0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  li,
+  pre,
+  table {
+    break-inside: avoid;
+  }
+}

@@ -3,6 +3,7 @@ import { authDocs } from './components/Auth/Auth.docs'
 import { chatDocs } from './components/Chat/Chat.docs'
 import { recordFormDocs } from './components/RecordForm/RecordForm.docs'
 import { recordListDocs } from './components/RecordList/RecordList.docs'
+import { reportDocs } from './components/Report/Report.docs'
 import { shellDocs } from './components/Shell/Shell.docs'
 
 /**
@@ -16,4 +17,5 @@ export const componentDocs: ComponentDocs[] = [
   authDocs,
   recordListDocs,
   recordFormDocs,
+  reportDocs,
 ]

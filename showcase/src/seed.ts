@@ -197,6 +197,125 @@ export const shopLog: LogEntry[] = [
   },
 ]
 
+/**
+ * The daily write-up the agent posts each morning, built from the week's tickets and the shop log.
+ * Today's is still a draft: the agent wrote it at 09:12 and Nadia is still editing it in the chat.
+ */
+export type ShopReport = {
+  id: string
+  date: string
+  title: string
+  status: 'draft' | 'final'
+  author: string
+  sections: string[]
+  body: string
+}
+
+export const reports: ShopReport[] = [
+  {
+    id: 'r-0910',
+    date: '2026-09-10',
+    title: 'Daily report — Thursday',
+    status: 'draft',
+    author: 'Northgate agent',
+    sections: ['Where the week stands', 'Closed today', 'Still open', 'Worth a decision'],
+    body: `Nine tickets closed this week and the average turnaround is 2.6 days, against the
+three-day target set at the Friday stand-up. Two bikes are waiting for collection at the counter
+and one is held for parts.
+
+## Where the week stands
+
+| Measure | This week | Target |
+| --- | --- | --- |
+| Tickets closed | 9 | 7 |
+| Average turnaround | 2.6 days | 3 days |
+| Waiting on parts | 1 | — |
+
+## Closed today
+
+- **#4186 Trek FX 3** — full tune-up, chain and cassette replaced, both brakes bled. Owen called at
+  11:40 and collects after five.
+- **#4184 Brompton M6L** — hinge clamp plate and all four cables. The fold is tight again.
+- **#4183 Gazelle Ultimate C380** — the cut-out was a chafed speed-sensor lead, not the battery.
+  Re-routed and taped, and the customer is watching it for a fortnight.
+
+## Still open
+
+- **#4187 Kona Rove** — rear wheel rebuild on the bench, three broken spokes on the drive side and
+  the rim out by 4 mm. Spokes in stock.
+- **#4185 Specialized Rockhopper** — fork lowers weeping. The SKF kit is quoted for Thursday.
+
+## Worth a decision
+
+The suspension bench is booked out to the 22nd and Priya is the only one certified on it. Either a
+second pair of hands, or a longer lead time quoted at the counter.`,
+  },
+  {
+    id: 'r-0909',
+    date: '2026-09-09',
+    title: 'Daily report — Wednesday',
+    status: 'final',
+    author: 'Northgate agent',
+    sections: ['Closed today', 'Still open'],
+    body: `Three tickets in, two out. The counter is clear for the first time since Monday.
+
+## Closed today
+
+- **#4182 Surly Long Haul Trucker** — bottom bracket swapped, half an hour on the bench.
+- **#4181 Ribble Endurance SL** — full bleed on both brakes.
+
+## Still open
+
+- **#4185 Specialized Rockhopper** — booked in this morning, fork seals weeping. Quoted at $210 and
+  approved by text.`,
+  },
+  {
+    id: 'r-0908',
+    date: '2026-09-08',
+    title: 'Daily report — Tuesday',
+    status: 'final',
+    author: 'Northgate agent',
+    sections: ['Closed today', 'Worth a decision'],
+    body: `A quiet Tuesday. One collection, one booking, and the second wheel-building stand is
+earning its shelf.
+
+## Closed today
+
+- **#4184 Brompton M6L** — collected at four.
+
+## Worth a decision
+
+The suspension bench is booked to the 22nd. Raised at the stand-up; no answer yet.`,
+  },
+  {
+    id: 'r-0907',
+    date: '2026-09-07',
+    title: 'Daily report — Monday',
+    status: 'final',
+    author: 'Northgate agent',
+    sections: ['Closed today'],
+    body: `Six bikes in over the weekend, which is the whole of Monday accounted for.
+
+## Closed today
+
+- **#4183 Gazelle Ultimate C380** — booked in, diagnostic started.
+
+Hana finished her first wheel unsupervised. It is true and it holds.`,
+  },
+  {
+    id: 'r-0904',
+    date: '2026-09-04',
+    title: 'Weekly summary — first week of September',
+    status: 'final',
+    author: 'Northgate agent',
+    sections: ['The week'],
+    body: `## The week
+
+Seven tickets closed, turnaround target agreed at three days and written onto the shop log. Winter
+service pricing goes up at the counter on Monday.`,
+  },
+]
+
 export interface Attachment {
   id: string
   name: string

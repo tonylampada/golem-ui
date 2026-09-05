@@ -1,15 +1,25 @@
 import type { ReactNode } from 'react'
 import type { ZodType } from 'zod'
-import { Chat, RecordForm, RecordList, Shell, componentDocs, type ComponentDocs } from 'golem-ui'
+import {
+  Chat,
+  RecordForm,
+  RecordList,
+  Report,
+  Shell,
+  componentDocs,
+  type ComponentDocs,
+} from 'golem-ui'
 import { authConfigSchema } from '../../src/components/Auth/Auth.config'
 import { chatConfigSchema } from '../../src/components/Chat/Chat.config'
 import { recordFormConfigSchema } from '../../src/components/RecordForm/RecordForm.config'
 import { recordListConfigSchema } from '../../src/components/RecordList/RecordList.config'
+import { reportConfigSchema } from '../../src/components/Report/Report.config'
 import { shellConfigSchema } from '../../src/components/Shell/Shell.config'
 import * as authExamples from '../../src/components/Auth/Auth.examples'
 import * as chatExamples from '../../src/components/Chat/Chat.examples'
 import * as recordFormExamples from '../../src/components/RecordForm/RecordForm.examples'
 import * as recordListExamples from '../../src/components/RecordList/RecordList.examples'
+import * as reportExamples from '../../src/components/Report/Report.examples'
 import * as shellExamples from '../../src/components/Shell/Shell.examples'
 
 /**
@@ -60,6 +70,12 @@ const byName: Record<string, Omit<ApiComponent, 'docs'>> = {
     schema: recordFormConfigSchema,
     example: <RecordForm {...recordFormExamples.createPhone.props} />,
     invalid: <RecordForm {...recordFormExamples.invalidConfig.props} />,
+    exampleHeight: 620,
+  },
+  Report: {
+    schema: reportConfigSchema,
+    example: <Report {...reportExamples.today.props} />,
+    invalid: <Report {...reportExamples.invalidConfig.props} />,
     exampleHeight: 620,
   },
 }

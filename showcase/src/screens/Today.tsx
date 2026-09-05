@@ -1,4 +1,4 @@
-import { RecordList } from 'golem-ui'
+import { RecordList, Report } from 'golem-ui'
 import type {
   ClockAdapter,
   NavigationAdapter,
@@ -7,6 +7,7 @@ import type {
 } from 'golem-ui'
 import { useRows } from '../lib/use-rows'
 import type { LogEntry, RepairJob } from '../seed'
+import { cardConfig } from './Report'
 import { day, Panel, PanelTitle, Screen } from '../ui'
 
 /**
@@ -72,7 +73,9 @@ export function Today({
         ))}
       </div>
 
-      <Panel>
+      {/* The same Report that fills `/report`, with the arrows, the index and the print action
+          off — the screen around it already carries all three. */}
+      <section>
         <PanelTitle
           aside={
             <button
@@ -86,11 +89,8 @@ export function Today({
         >
           Daily report
         </PanelTitle>
-        <p className="text-sm leading-relaxed text-neutral-700">
-          Nine tickets closed, average turnaround 2.6 days. Two bikes waiting for collection, one
-          held for parts. The suspension bench is booked out to the 22nd.
-        </p>
-      </Panel>
+        <Report config={cardConfig} adapters={{ records, clock }} />
+      </section>
 
       <Panel>
         <PanelTitle

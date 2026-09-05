@@ -1,0 +1,62 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks'
+import { ConfigTable } from '../../../docs/ConfigTable'
+import { AdapterTable, CodeBlock, DocBlocks, Prose, SlotTable } from '../../../docs/Prose'
+import { reportConfigSchema } from './Report.config'
+import { reportDocs } from './Report.docs'
+import * as ReportStories from './Report.stories'
+
+<Meta of={ReportStories} name="Docs" />
+
+# Report
+
+<a href="https://tonylampada.github.io/golem-ui/app/#/api/report" target="_top">
+  The same page on a phone →
+</a>
+
+## What it is for
+
+<Prose text={reportDocs.purpose} />
+
+## The configuration object
+
+<ConfigTable schema={reportConfigSchema} />
+
+<DocBlocks blocks={reportDocs.configNotes} />
+
+## The adapters it needs
+
+<AdapterTable rows={reportDocs.adapters} />
+
+<Prose text={reportDocs.adapterNotes} />
+
+## The slots it exposes
+
+<SlotTable rows={reportDocs.slots} />
+
+## One complete example
+
+<CodeBlock code={reportDocs.example} />
+
+<Canvas of={ReportStories.Draft} />
+
+The same report at 390px, with the index off — the shape the daily card on a dashboard takes:
+
+<Canvas of={ReportStories.Today} />
+
+One period a month, with every past report listed under the document, and a period with nothing in
+it:
+
+<Canvas of={ReportStories.Month} />
+<Canvas of={ReportStories.EmptyPeriod} />
+
+The agent rewriting the open report two seconds after mount, and the sheet that comes out of
+Print / Save as PDF:
+
+<Canvas of={ReportStories.LiveUpdate} />
+<Canvas of={ReportStories.PrintPreview} />
+
+## Failure modes
+
+<Prose text={reportDocs.failureModes} />
+
+<Canvas of={ReportStories.InvalidConfig} />

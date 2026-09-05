@@ -41,7 +41,7 @@ function screenFor(path: string, a: CanvasAdapters) {
     case '/jobs/new':
       return <JobForm records={a.records} identity={a.identity} navigation={a.navigation} />
     case '/report':
-      return <Report clock={a.clock} />
+      return <Report records={a.records} clock={a.clock} />
     case '/log':
       return <Log records={a.records} />
     case '/files':

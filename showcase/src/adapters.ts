@@ -14,6 +14,7 @@ import {
   cannedReplies,
   conversation,
   jobs,
+  reports,
   shopLog,
   members,
   SHOP_PASSWORD,
@@ -87,6 +88,7 @@ export const files = fakeFiles()
 export const records = fakeRecords({
   jobs: jobs.map((job) => ({ ...job })),
   log: shopLog.map((entry) => ({ ...entry })),
+  reports: reports.map((report) => ({ ...report })),
   attachments: attachments.map((file) => ({ ...file })),
 })
 

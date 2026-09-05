@@ -1,0 +1,6 @@
+export { fakeRecords } from './records'
+export { fakeFiles } from './files'
+export { fakeIdentity, fakeUser } from './identity'
+export { fakeChat } from './chat'
+export { fakeClock } from './clock'
+export { fakeNavigation } from './navigation'

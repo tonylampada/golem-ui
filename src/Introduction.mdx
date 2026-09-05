@@ -1,0 +1,23 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+
+<Meta title="Introduction" />
+
+# golem-ui
+
+UI components with **one ABI**, built so an agent assembling a screen unattended gets it right the
+first time.
+
+```tsx
+<Component config={/* plain data, validated */} adapters={/* how it talks to the world */} />
+```
+
+- **config** is JSON-serializable data, validated by a Zod schema on mount. Wrong config renders a
+  loud error card naming the field and the rule — in dev and in prod.
+- **adapters** are TypeScript interfaces (`Records`, `Files`, `Identity`, `Chat`, `Clock`,
+  `Navigation`). A component never imports a data layer, a router or a fetch; it calls only what it
+  was handed. `golem-ui` ships an in-memory fake of each, which is what every story on this site
+  runs on.
+
+Every component page has the same five sections in the same order: what it is for, the configuration
+object, the adapters it needs, one complete example, failure modes. Every example on a page is also a
+test fixture, so a broken example is a broken build.

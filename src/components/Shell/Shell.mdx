@@ -1,4 +1,4 @@
-import { Meta, Canvas, Story } from '@storybook/addon-docs/blocks'
+import { Meta, Canvas } from '@storybook/addon-docs/blocks'
 import { ConfigTable } from '../../../docs/ConfigTable'
 import { shellConfigSchema } from './Shell.config'
 import * as ShellStories from './Shell.stories'
@@ -26,7 +26,7 @@ the `canvas` slot). If you want a two-pane layout _inside_ the canvas, that is n
 | Adapter      | What Shell calls               | Why                                                                                      |
 | ------------ | ------------------------------ | ---------------------------------------------------------------------------------------- |
 | `Identity`   | `currentUser()`, `subscribe()` | Shows the signed-in user's name in the top bar, and keeps it current when they sign out. |
-| `Navigation` | `go()`                         | The title in the top bar is the way home.                                                |
+| `Navigation` | `go('/')`                      | The title in the top bar is the way home.                                                |
 
 Shell takes no other adapter. It never fetches, never stores, never reads a router.
 

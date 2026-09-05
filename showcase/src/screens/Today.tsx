@@ -1,7 +1,35 @@
-import type { ClockAdapter, NavigationAdapter, RecordsAdapter } from 'golem-ui'
+import { RecordList } from 'golem-ui'
+import type {
+  ClockAdapter,
+  NavigationAdapter,
+  RecordListConfigInput,
+  RecordsAdapter,
+} from 'golem-ui'
 import { useRows } from '../lib/use-rows'
 import type { LogEntry, RepairJob } from '../seed'
-import { day, Panel, PanelTitle, Screen, Tag } from '../ui'
+import { day, Panel, PanelTitle, Screen } from '../ui'
+
+/**
+ * The same component the Jobs screen uses, scoped to what is still open and cut to three rows —
+ * one config away from the full board.
+ */
+const benchConfig: RecordListConfigInput = {
+  collection: 'jobs',
+  fields: [
+    { key: 'ticket', label: 'Ticket', type: 'text', primary: true },
+    { key: 'service', label: 'Service', type: 'text' },
+    { key: 'customer', label: 'Customer', type: 'text' },
+    { key: 'status', label: 'Status', type: 'enum' },
+    { key: 'assignee', label: 'Mechanic', type: 'user' },
+    { key: 'date', label: 'Booked in', type: 'date', format: 'short' },
+  ],
+  scope: { status: ['waiting', 'in progress'] },
+  sort: { field: 'date', direction: 'desc' },
+  pageSize: 3,
+  emptyState: 'Nothing on the bench. Every ticket is ready to collect.',
+  rowAction: 'open',
+  density: 'compact',
+}
 
 /**
  * The screen the shop opens on. It is a composition, not a component: the report block becomes
@@ -78,21 +106,11 @@ export function Today({
         >
           On the bench
         </PanelTitle>
-        <ul className="divide-y divide-neutral-100">
-          {onTheBench.map((job) => (
-            <li key={job.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {job.ticket} · {job.service}
-                </p>
-                <p className="truncate text-xs text-neutral-500">
-                  {job.customer} — {job.assignee}
-                </p>
-              </div>
-              <Tag tone={job.status}>{job.status}</Tag>
-            </li>
-          ))}
-        </ul>
+        <RecordList
+          config={benchConfig}
+          adapters={{ records }}
+          onOpen={(row) => navigation.go(`/jobs/${String(row.id)}`)}
+        />
       </Panel>
 
       <Panel>

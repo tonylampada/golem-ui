@@ -7,7 +7,7 @@ A neighbourhood bike repair shop. Five people, one bench diary, one counter.
 
 ## Records
 
-- **job** — ticket, customer, bike, service, assignee, status, quote, notes
+- **job** — ticket, customer, bike, service, assignee, status, quote, hours, approved, notes
 - **log entry** — date, label, detail, kind (win | note | goal)
 - **attachment** — a photo or an invoice, attached to a job
 

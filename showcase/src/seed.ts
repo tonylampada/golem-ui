@@ -55,7 +55,10 @@ export interface RepairJob {
   service: string
   assignee: string
   status: 'waiting' | 'in progress' | 'ready'
-  quote: string
+  quote: number
+  hours: number
+  approved: boolean
+  updatedAt: string
   notes: string
   tags: string[]
 }
@@ -70,7 +73,10 @@ export const jobs: RepairJob[] = [
     service: 'Rear wheel rebuild',
     assignee: 'Nadia Kessler',
     status: 'in progress',
-    quote: '$140',
+    quote: 140,
+    hours: 3.5,
+    approved: true,
+    updatedAt: '2026-09-10T11:40:00Z',
     notes:
       'Three broken spokes on the drive side and the rim is out by 4 mm. Rebuilding on the original hub; new spokes are in stock.',
     tags: ['wheels', 'parts in stock'],
@@ -84,7 +90,10 @@ export const jobs: RepairJob[] = [
     service: 'Full tune-up',
     assignee: 'Omar Bright',
     status: 'ready',
-    quote: '$85',
+    quote: 85,
+    hours: 1.75,
+    approved: true,
+    updatedAt: '2026-09-10T11:05:00Z',
     notes:
       'Chain and cassette replaced, both brakes bled. Customer called at 11:40 and will collect after five.',
     tags: ['tune-up'],
@@ -98,7 +107,10 @@ export const jobs: RepairJob[] = [
     service: 'Fork service',
     assignee: 'Priya Sandoval',
     status: 'waiting',
-    quote: '$210',
+    quote: 210,
+    hours: 2,
+    approved: true,
+    updatedAt: '2026-09-09T16:20:00Z',
     notes:
       'Lower seals are weeping. Waiting on the SKF kit, quoted Thursday by the supplier. Customer approved the price by text.',
     tags: ['suspension', 'waiting on parts'],
@@ -112,7 +124,10 @@ export const jobs: RepairJob[] = [
     service: 'Hinge and cable replacement',
     assignee: 'Omar Bright',
     status: 'ready',
-    quote: '$120',
+    quote: 120,
+    hours: 1.25,
+    approved: true,
+    updatedAt: '2026-09-08T15:10:00Z',
     notes:
       'Hinge clamp plate swapped and all four cables replaced. Fold is tight again. Collected Tuesday.',
     tags: ['folding'],
@@ -126,7 +141,10 @@ export const jobs: RepairJob[] = [
     service: 'E-bike diagnostic',
     assignee: 'Nadia Kessler',
     status: 'ready',
-    quote: '$60',
+    quote: 60,
+    hours: 0.75,
+    approved: false,
+    updatedAt: '2026-09-07T10:30:00Z',
     notes:
       'Intermittent cut-out traced to a chafed speed-sensor lead, not the battery. Re-routed and taped. Told the customer to watch it for a fortnight.',
     tags: ['e-bike', 'diagnostic'],

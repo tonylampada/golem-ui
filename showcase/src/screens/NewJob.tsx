@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import type { NavigationAdapter, RecordsAdapter } from 'golem-ui'
+import type { FakeRecords, NavigationAdapter } from 'golem-ui'
 import { Panel, Screen } from '../ui'
 
 const fields = [
   { name: 'customer', label: 'Customer', placeholder: 'Delia Marchetti' },
   { name: 'bike', label: 'Bike', placeholder: 'Kona Rove, 2019' },
   { name: 'service', label: 'Service', placeholder: 'Rear wheel rebuild' },
-  { name: 'quote', label: 'Quote', placeholder: '$140' },
+  { name: 'quote', label: 'Quote (USD)', placeholder: '140' },
 ] as const
 
 /** Placeholder for the Record form component. */
@@ -14,24 +14,29 @@ export function NewJob({
   records,
   navigation,
 }: {
-  records: RecordsAdapter
+  records: FakeRecords
   navigation: NavigationAdapter
 }) {
   const [values, setValues] = useState<Record<string, string>>({})
   const [notes, setNotes] = useState('')
 
   const submit = () => {
-    void records
-      .create('jobs', {
-        ticket: `#${4188 + Math.floor(Math.random() * 12)}`,
-        date: new Date().toISOString().slice(0, 10),
-        assignee: 'Nadia Kessler',
-        status: 'waiting',
-        notes,
-        tags: ['new'],
-        ...values,
-      })
-      .then(() => navigation.go('/jobs'))
+    // `insert` is the fake's own, not part of the read-only Records adapter; the Record form
+    // component is what will own writing a record properly.
+    records.insert('jobs', {
+      ticket: `#${4188 + Math.floor(Math.random() * 12)}`,
+      date: new Date().toISOString().slice(0, 10),
+      assignee: 'Nadia Kessler',
+      status: 'waiting',
+      hours: 0,
+      approved: false,
+      updatedAt: new Date().toISOString(),
+      notes,
+      tags: ['new'],
+      ...values,
+      quote: Number(values.quote ?? 0) || 0,
+    })
+    navigation.go('/jobs')
   }
 
   return (

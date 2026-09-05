@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { defineComponent, type GolemProps } from '../../abi'
 import type { IdentityAdapter, NavigationAdapter, User } from '../../adapters'
 import { shellConfigSchema, type ShellConfig } from './Shell.config'
-import { useContainerWidth } from './use-container-width'
+import { useContainerWidth } from '../../lib/use-container-width'
 
 export interface ShellAdapters {
   identity: IdentityAdapter

@@ -1,5 +1,5 @@
 export type { Unsubscribe } from './common'
-export type { RecordsAdapter, RecordQuery } from './records'
+export type { RecordsAdapter, RecordQuery, RecordPage, FilterValue } from './records'
 export type { FilesAdapter, StoredFile } from './files'
 export type { IdentityAdapter, SignUpInput, User } from './identity'
 export type { ChatAdapter, ChatAttachment, ChatMessage } from './chat'

@@ -17,29 +17,37 @@ under `/app/`.
 
 ## Where each component lands
 
-`Shell`, `Chat` and `Auth` exist today. Every other screen is plain markup standing in one
-component's place, so adding that component is a swap of markup for JSX inside one file, and nothing
-else moves.
+`Shell`, `Chat`, `Auth` and `RecordList` exist today. Every other screen is plain markup standing in
+one component's place, so adding that component is a swap of markup for JSX inside one file, and
+nothing else moves.
 
-| File                     | Route       | Component that replaces it | What it stands in for                         |
-| ------------------------ | ----------- | -------------------------- | --------------------------------------------- |
-| `src/App.tsx`            | —           | **Shell** (already used)   | The frame: chat column, canvas, top bar, tabs |
-| `src/ChatColumn.tsx`     | —           | **Chat** (already used)    | The conversation with the agent               |
-| `src/screens/Jobs.tsx`   | `/jobs`     | **Record list**            | Repair tickets, newest first                  |
-| `src/screens/NewJob.tsx` | `/jobs/new` | **Record form**            | One ticket, config-driven from a field list   |
-| `src/screens/Report.tsx` | `/report`   | **Report**                 | The daily document, dated and printable       |
-| `src/screens/Log.tsx`    | `/log`      | **Timeline**               | Dated shop entries, filterable                |
-| `src/screens/Files.tsx`  | `/files`    | **Upload**                 | Photos and invoices, with a gallery           |
-| `src/screens/Dna.tsx`    | `/dna`      | **Editor**                 | The workspace DNA, live-updated by the agent  |
-| —                        | `/team`     | **Auth** (already used)    | Members, roles, invite by link                |
-| `src/screens/Today.tsx`  | `/today`    | _a composition_            | Report + Record list + Timeline on one screen |
+| File                     | Route        | Component that replaces it    | What it stands in for                         |
+| ------------------------ | ------------ | ----------------------------- | --------------------------------------------- |
+| `src/App.tsx`            | —            | **Shell** (already used)      | The frame: chat column, canvas, top bar, tabs |
+| `src/ChatColumn.tsx`     | —            | **Chat** (already used)       | The conversation with the agent               |
+| `src/screens/Jobs.tsx`   | `/jobs`      | **RecordList** (already used) | Repair tickets, newest first                  |
+| `src/screens/Job.tsx`    | `/jobs/<id>` | **Record form**               | One ticket, read-only until the form lands    |
+| `src/screens/NewJob.tsx` | `/jobs/new`  | **Record form**               | One ticket, config-driven from a field list   |
+| `src/screens/Report.tsx` | `/report`    | **Report**                    | The daily document, dated and printable       |
+| `src/screens/Log.tsx`    | `/log`       | **Timeline**                  | Dated shop entries, filterable                |
+| `src/screens/Files.tsx`  | `/files`     | **Upload**                    | Photos and invoices, with a gallery           |
+| `src/screens/Dna.tsx`    | `/dna`       | **Editor**                    | The workspace DNA, live-updated by the agent  |
+| —                        | `/team`      | **Auth** (already used)       | Members, roles, invite by link                |
+| `src/screens/Today.tsx`  | `/today`     | _a composition_               | Report + RecordList + Timeline on one screen  |
+
+`/jobs` and Today's "on the bench" block are the same `RecordList` on the same `jobs` collection,
+told apart by config alone: Today adds `scope: { status: ['waiting', 'in progress'] }` and
+`pageSize: 3`, `/jobs` adds the filter chips and the search box. A row opens `/jobs/<id>`.
 
 ## Adapters
 
 `src/adapters.ts` wires every one of them, and it is the only file that knows an adapter exists.
 
 `Identity`, `Records`, `Files`, `Clock` and `Chat` are the kit's fakes, seeded from `src/seed.ts` —
-`fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word. One
+`fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word, and
+`fakeRecords` gets the shop's tickets, log and files. The `Records` adapter is read-only —
+`list` and `subscribe` — so the New-ticket screen writes through `fakeRecords`' own `insert` until
+the Record form component lands and gives writing a home. One
 adapter is the app's own, with its reason written above it in that file: `hashNavigation`, so a
 screen has a linkable URL that survives a reload under the Pages subpath. It parses the hash's query
 string into `Route.params`, which is where `Auth` reads an invite token from.
@@ -62,6 +70,6 @@ a reload puts the demo back at the sign-in screen.
 The captain opens this on a phone. Every change is checked at **390px wide** before it lands:
 
 - The `Shell` breakpoint is 768, so below it chat and canvas are thumb-sized tabs.
-- The page never scrolls sideways. Wide things — the screen nav — scroll inside their own
-  `overflow-x-auto` strip.
+- The page never scrolls sideways. Wide things — the screen nav, a `RecordList` table — scroll
+  inside their own strip, and below 768 `RecordList` draws cards instead of a table.
 - Inputs use `text-base`, so iOS does not zoom on focus.

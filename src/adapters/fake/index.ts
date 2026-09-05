@@ -1,4 +1,5 @@
 export { fakeRecords } from './records'
+export type { FakeRecords, FakeRow } from './records'
 export { fakeFiles } from './files'
 export { fakeIdentity, fakeUser } from './identity'
 export type { FakeIdentityOptions } from './identity'

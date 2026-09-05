@@ -1,13 +1,8 @@
 import { Auth } from 'golem-ui'
-import type {
-  ClockAdapter,
-  IdentityAdapter,
-  NavigationAdapter,
-  RecordsAdapter,
-  Route,
-} from 'golem-ui'
+import type { ClockAdapter, FakeRecords, IdentityAdapter, NavigationAdapter, Route } from 'golem-ui'
 import { Dna } from './screens/Dna'
 import { Files } from './screens/Files'
+import { Job } from './screens/Job'
 import { Jobs } from './screens/Jobs'
 import { Log } from './screens/Log'
 import { NewJob } from './screens/NewJob'
@@ -26,7 +21,9 @@ export const screens = [
 ] as const
 
 export interface CanvasAdapters {
-  records: RecordsAdapter
+  // The fake's own type, because the New-ticket placeholder writes a row: `RecordsAdapter` is
+  // read-only, and stays that way until the Record form component lands.
+  records: FakeRecords
   clock: ClockAdapter
   identity: IdentityAdapter
   navigation: NavigationAdapter
@@ -56,6 +53,12 @@ function screenFor(path: string, a: CanvasAdapters) {
     case '/team':
       return <Auth config={authConfig} adapters={auth} />
     default:
+      // One ticket, opened from a row of the job list.
+      if (path.startsWith('/jobs/')) {
+        return (
+          <Job id={path.slice('/jobs/'.length)} records={a.records} navigation={a.navigation} />
+        )
+      }
       return <Today records={a.records} clock={a.clock} navigation={a.navigation} />
   }
 }

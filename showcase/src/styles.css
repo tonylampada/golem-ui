@@ -1,0 +1,5 @@
+@import '../../src/styles.css';
+
+/* Tailwind scans from this file's project root, which stops at showcase/. The kit's own class
+   names live outside it, so they have to be pointed at explicitly. */
+@source '../../src';

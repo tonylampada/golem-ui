@@ -25,18 +25,16 @@ const adapters: ShellAdapters = {
 const chat = (
   <div className="space-y-3 p-4 text-sm">
     <p className="rounded-lg bg-neutral-100 p-3">What do you want to build?</p>
-    <p className="rounded-lg bg-blue-50 p-3">
-      A daily report the therapists can read on their phones.
-    </p>
+    <p className="rounded-lg bg-blue-50 p-3">A daily report I can read on my phone.</p>
     <p className="rounded-lg bg-neutral-100 p-3">Writing that into the DNA now.</p>
   </div>
 )
 
 const canvas = (
   <div className="p-6">
-    <h2 className="text-lg font-semibold">Daily report — 1 January</h2>
+    <h2 className="text-lg font-semibold">Daily report — 10 September</h2>
     <p className="mt-2 max-w-prose text-sm text-neutral-600">
-      Isaac drank 400ml before noon and asked for the bathroom twice without prompting.
+      Nine tickets closed, average turnaround 2.6 days. Two bikes are waiting for collection.
     </p>
   </div>
 )
@@ -47,7 +45,7 @@ export const desktop: ShellExample = {
   summary: 'Chat on the left, canvas on the right, top bar showing the signed-in user.',
   viewportWidth: 1200,
   props: {
-    config: { title: "Isaac's workspace" },
+    config: { title: 'Northgate Cycles' },
     adapters,
     chat,
     canvas,
@@ -59,7 +57,7 @@ export const chatOnRight: ShellExample = {
   summary: 'The same frame mirrored, for people who read the canvas first.',
   viewportWidth: 1200,
   props: {
-    config: { title: "Isaac's workspace", chatSide: 'right' },
+    config: { title: 'Northgate Cycles', chatSide: 'right' },
     adapters,
     chat,
     canvas,
@@ -71,7 +69,7 @@ export const mobile: ShellExample = {
   summary: 'Below the breakpoint the two panes become tabs.',
   viewportWidth: 420,
   props: {
-    config: { title: "Isaac's workspace", breakpoint: 768 },
+    config: { title: 'Northgate Cycles', breakpoint: 768 },
     adapters,
     chat,
     canvas,
@@ -83,7 +81,7 @@ export const withoutTopBar: ShellExample = {
   summary: 'For hosts that already draw their own header.',
   viewportWidth: 1200,
   props: {
-    config: { title: "Isaac's workspace", showTopBar: false },
+    config: { title: 'Northgate Cycles', showTopBar: false },
     adapters,
     chat,
     canvas,

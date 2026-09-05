@@ -16,14 +16,15 @@ needs prose, put the prose in `.describe()` on the schema so the table carries i
 
 ## The adapters it needs
 
-One row per adapter interface the component takes, saying what it calls and why. Interfaces the
-component does not take do not appear.
+One row per adapter interface the component takes, saying which methods it calls and why. The table
+is the whole list: an interface absent from it is one the component never touches.
 
 ## One complete example
 
-A `<Canvas of={...} />` of a story from `<ComponentName>.examples.tsx`, plus the config object as
-copy-pasteable code. The example file is the single source: it feeds the story and the test, so an
-example that stops working fails the build.
+The config object as copy-pasteable code, then a `<Canvas of={...} />` of the matching story from
+`<ComponentName>.stories.tsx` — `of` takes a story, not the example behind it.
+`<ComponentName>.examples.tsx` is the single source under both: it feeds the story and the test, so
+an example that stops working fails the build.
 
 ## Failure modes
 

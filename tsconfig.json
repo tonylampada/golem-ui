@@ -15,9 +15,10 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
+    "paths": { "golem-ui": ["./src/index.ts"] },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "docs", ".storybook", "*.config.ts", "eslint.config.js"]
+  "include": ["src", "docs", ".storybook", "showcase", "*.config.ts", "eslint.config.js"]
 }

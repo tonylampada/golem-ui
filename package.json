@@ -28,12 +28,14 @@
   "homepage": "https://tonylampada.github.io/golem-ui/",
   "scripts": {
     "dev": "storybook dev -p 6006",
+    "dev-showcase": "vite --config showcase/vite.config.ts",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "vite build && tsc -p tsconfig.build.json",
     "build-storybook": "storybook build",
+    "build-showcase": "vite build --config showcase/vite.config.ts",
     "format": "prettier --write ."
   },
   "peerDependencies": {

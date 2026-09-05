@@ -28,8 +28,8 @@ describe('Shell', () => {
     setViewportWidth(examples.desktop.viewportWidth)
     render(<Shell {...examples.desktop.props} />)
 
-    expect(screen.getByText("Isaac's workspace")).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByText('Ana Ribeiro')).toBeInTheDocument())
+    expect(screen.getByText('Northgate Cycles')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Robin Vale')).toBeInTheDocument())
   })
 
   it('lays the panes side by side above the breakpoint and as tabs below it', async () => {

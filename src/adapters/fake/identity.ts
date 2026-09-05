@@ -3,9 +3,9 @@ import { createEmitter } from './emitter'
 
 export const fakeUser: User = {
   id: 'u-1',
-  name: 'Ana Ribeiro',
-  email: 'ana@example.com',
-  roles: ['therapist'],
+  name: 'Robin Vale',
+  email: 'robin@example.com',
+  roles: ['member'],
 }
 
 export function fakeIdentity(initial: User | null = fakeUser): IdentityAdapter {

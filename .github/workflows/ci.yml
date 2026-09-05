@@ -31,6 +31,8 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm build-storybook
+      # Writes into storybook-static/app, so the two sites upload as one artifact.
+      - run: pnpm build-showcase
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:

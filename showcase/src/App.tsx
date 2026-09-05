@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Auth, Shell } from 'golem-ui'
+import { Auth, Shell, type Route } from 'golem-ui'
 import { Canvas } from './Canvas'
 import { ChatColumn } from './ChatColumn'
+import { ApiIndex, ApiPage } from './screens/Api'
 import { authConfig } from './auth-config'
 import { chat, clock, identity, navigation, records } from './adapters'
 
@@ -23,23 +24,46 @@ export function App() {
           <strong className="font-semibold text-white">golem-ui</strong> showcase — a demo app, no
           backend
         </span>
-        <a href={DOCS_URL} className="shrink-0 font-medium text-white underline">
-          Docs
-        </a>
+        <span className="flex shrink-0 gap-3">
+          <a href="#/api" className="font-medium text-white underline">
+            API
+          </a>
+          <a href={DOCS_URL} className="font-medium text-white underline">
+            Docs
+          </a>
+        </span>
       </div>
 
-      {/* The front door: no roles, so any signed-in member gets in and everyone else gets sign-in. */}
-      <div className="min-h-0 flex-1">
-        <Auth.Guard config={authConfig} adapters={authAdapters}>
-          <Shell
-            config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768 }}
-            adapters={{ identity, navigation }}
-            chat={<ChatColumn adapter={chat} />}
-            canvas={<Canvas route={route} adapters={canvasAdapters} />}
-            account={<Auth.AccountMenu config={authConfig} adapters={authAdapters} />}
-          />
-        </Auth.Guard>
-      </div>
+      <div className="min-h-0 flex-1">{screenFor(route)}</div>
+    </div>
+  )
+}
+
+function screenFor(route: Route) {
+  const path = route.path
+
+  // The API pages are the kit's spec, so they sit outside the guard: signed out is how most
+  // readers arrive, and an agent reading them has no account at all.
+  if (path === '/api') return <ApiIndex navigation={navigation} />
+  if (path.startsWith('/api/')) {
+    const slug = path.slice('/api/'.length)
+    // Keyed by slug so moving between component pages remounts and starts at the top, rather
+    // than dropping the reader halfway down the next page.
+    return <ApiPage key={slug} slug={slug} navigation={navigation} />
+  }
+
+  return (
+    // The front door: no roles, so any signed-in member gets in and everyone else gets sign-in.
+    <div className="h-full">
+      <Auth.Guard config={authConfig} adapters={authAdapters}>
+        <Shell
+          config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768 }}
+          adapters={{ identity, navigation }}
+          chat={<ChatColumn adapter={chat} />}
+          canvas={<Canvas route={route} adapters={canvasAdapters} />}
+          account={<Auth.AccountMenu config={authConfig} adapters={authAdapters} />}
+        />
+      </Auth.Guard>
     </div>
   )
 }

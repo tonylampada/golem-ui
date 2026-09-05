@@ -1,3 +1,4 @@
+export type { AdapterRow, ComponentDocs, DocBlock, DocTable, SlotRow } from './docs'
 export { defineComponent } from './define-component'
 export type { ComponentSpec, GolemProps } from './define-component'
 export { ConfigErrorCard, issuesFromZodError } from './error-card'

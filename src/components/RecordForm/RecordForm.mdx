@@ -1,108 +1,37 @@
 import { Meta, Canvas } from '@storybook/addon-docs/blocks'
 import { ConfigTable } from '../../../docs/ConfigTable'
+import { AdapterTable, CodeBlock, DocBlocks, Prose } from '../../../docs/Prose'
 import { recordFormConfigSchema } from './RecordForm.config'
+import { recordFormDocs } from './RecordForm.docs'
 import * as RecordFormStories from './RecordForm.stories'
 
 <Meta of={RecordFormStories} name="Docs" />
 
 # RecordForm
 
+<a href="https://tonylampada.github.io/golem-ui/app/#/api/record-form" target="_top">
+  The same page on a phone →
+</a>
+
 ## What it is for
 
-`RecordForm` is one record being written: a create form or an edit form of the same collection
-`RecordList` shows, out of the same field vocabulary. It owns validation, the dirty-state guard, the
-confirm before a delete, and where an adapter's refusal lands; the fields and the layout are the
-agent's.
-
-Reach for something else when the screen is many records rather than one (`RecordList`), when the
-reader signs in or is invited (`Auth`), or when nothing is written and the record is only being read
-— a page of `readOnly` fields is a form with the controls taken out, and a document is usually the
-better shape for that.
+<Prose text={recordFormDocs.purpose} />
 
 ## The configuration object
 
 <ConfigTable schema={recordFormConfigSchema} />
 
-`fields` is the whole form, in the order it is drawn. Each entry starts as the field `RecordList`
-knows — `{ key, label, type, format? }` — and adds what makes a control out of it:
-
-| Key           | On which types                     | What it does                                                              |
-| ------------- | ---------------------------------- | ------------------------------------------------------------------------- |
-| `required`    | all                                | Blocks submit while empty, and marks the label                            |
-| `readOnly`    | all                                | Shows the value formatted, with no control and no place in a patch        |
-| `help`        | all                                | One always-visible line under the control                                 |
-| `placeholder` | all but `boolean`                  | Ghost text in an empty control                                            |
-| `options`     | `enum` (required)                  | `[{ id, label }]` — the reader picks the label, the record gets the id    |
-| `min` / `max` | `number` `money` `date` `datetime` | The accepted range: a number, or an ISO string for a date                 |
-| `multiline`   | `text`                             | A textarea, spanning both columns of `two-column`                         |
-| `users`       | `user`                             | `members` is a select over `Identity.listMembers()`; `free` is a text box |
-
-The eight types are the same eight `RecordList` renders, from one schema in `src/abi/fields.ts`, so
-a field list can be written once and read by both.
+<DocBlocks blocks={recordFormDocs.configNotes} />
 
 ## The adapters it needs
 
-| Adapter    | What RecordForm calls           | Why                                                      |
-| ---------- | ------------------------------- | -------------------------------------------------------- |
-| `Records`  | `get(collection, id)`           | Edit mode only, to fill the controls from the record     |
-| `Records`  | `create(collection, data)`      | Create mode's submit. Every editable field goes in       |
-| `Records`  | `update(collection, id, patch)` | Edit mode's submit. Only what the reader changed goes in |
-| `Records`  | `remove(collection, id)`        | The Delete button, after the confirm                     |
-| `Identity` | `listMembers()`                 | Only for a `user` field with `users: 'members'`          |
+<AdapterTable rows={recordFormDocs.adapters} />
 
-RecordForm takes no other adapter. It never fetches, never routes and never reads a clock — a date
-is whatever the reader put in the control, kept as an ISO string.
-
-**Which record is a prop, not config.** `mode: 'edit'` loads the id in the `recordId` prop, because
-the route knows it and the config does not: one config serves every ticket on the board. `onDone` is
-called with the stored row after a save and with `null` after a delete, and `onCancel` after the
-reader has confirmed discarding anything unsaved — where those go next is the app's to decide.
-
-**Refusals name fields.** A rejection carrying `fields: [{ field, message }]` — a
-`RecordRefusedError`, or anything shaped like one — puts each sentence under its own control and
-focuses the first. A rejection without them shows its `message` as one line above the buttons.
+<Prose text={recordFormDocs.adapterNotes} />
 
 ## One complete example
 
-```tsx
-import { RecordForm, fakeIdentity, fakeRecords } from 'golem-ui'
-import 'golem-ui/styles.css'
-
-;<RecordForm
-  config={{
-    collection: 'jobs',
-    fields: [
-      { key: 'customer', label: 'Customer', type: 'text', required: true },
-      { key: 'bike', label: 'Bike', type: 'text', required: true },
-      { key: 'service', label: 'Service', type: 'text', required: true },
-      {
-        key: 'status',
-        label: 'Status',
-        type: 'enum',
-        required: true,
-        options: [
-          { id: 'waiting', label: 'Waiting for parts' },
-          { id: 'in progress', label: 'On the bench' },
-          { id: 'ready', label: 'Ready for pickup' },
-        ],
-      },
-      { key: 'assignee', label: 'Mechanic', type: 'user', users: 'members' },
-      { key: 'date', label: 'Booked in', type: 'date', required: true },
-      { key: 'quote', label: 'Quote', type: 'money', format: 'USD', min: 0, max: 5000 },
-      { key: 'approved', label: 'Price approved', type: 'boolean' },
-      { key: 'notes', label: 'Notes', type: 'text', multiline: true },
-    ],
-    mode: 'create',
-    layout: 'single',
-    submitLabel: 'Book the bike in',
-    cancel: 'back',
-    successMessage: 'Ticket written to the board.',
-  }}
-  adapters={{ records: fakeRecords(), identity: fakeIdentity() }}
-  onDone={(row) => navigation.go(`/jobs/${String(row.id)}`)}
-  onCancel={() => navigation.go('/jobs')}
-/>
-```
+<CodeBlock code={recordFormDocs.example} />
 
 <Canvas of={RecordFormStories.CreateOnAPhone} />
 
@@ -127,30 +56,6 @@ Fields the store owns, shown formatted with no control, and a delete that asks o
 
 ## Failure modes
 
-- **Invalid config.** RecordForm renders an error card instead of the form, in dev and in prod,
-  naming every field that failed by its position — `fields.1.options` for an `enum` with nothing to
-  pick. `options` on a non-enum, a field both `required` and `readOnly`, a `min` above its `max`,
-  and `deleteAllowed` in create mode all fail the same way, before a control is drawn.
-- **Edit mode with no `recordId`** says so in place of the form. So does an id the adapter has no
-  record for: the form will not open blank and quietly create a second record.
-- **The adapter refuses.** A rejection naming fields lands under them and focuses the first; one
-  that names none is a single line above the buttons. Both take back the optimistic success line.
-- **The save is optimistic.** The success line appears before the adapter has answered, so a slow
-  store still feels immediate. A refusal takes it back — nothing is lost, but a reader who looks
-  away at the wrong moment can see the line and then the error.
-- **`readOnly` fields never reach the store.** They are not in the create data and not in the update
-  patch, so a value the server owns cannot be sent back to it stale.
-- **A `user` field with `users: 'members'` and no `Identity` adapter** draws an empty select saying
-  there are no members to pick from. The select writes the member's **name**, which is what the
-  kit's `user` type renders; store an id instead by making it an `enum` with your own options.
-- **Dates are ISO strings**, and `datetime` is a UTC instant reshaped for `datetime-local`. What the
-  reader types in the control is what the record gets, with no timezone applied on the way.
-- **Below 768px the form is one column**, whatever `layout` says, and the submit bar sticks to the
-  bottom. The breakpoint is measured on the form's own container, so a form in a narrow panel is one
-  column on a wide screen.
-- **Cancel with unsaved changes asks first.** With `cancel: 'none'` there is no cancel button and no
-  guard: a form with no way out cannot lose anything by accident.
-- **A new adapter object on every render** makes RecordForm re-load its record on every render.
-  Build adapters once, outside render.
+<Prose text={recordFormDocs.failureModes} />
 
 <Canvas of={RecordFormStories.InvalidConfig} />

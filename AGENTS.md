@@ -24,6 +24,10 @@ that an agent assembling a screen from these components, unattended, gets it rig
 - **Examples are the single source.** `<X>.examples.tsx` feeds both the stories and the tests. Adapters
   in that file are built once at module scope, so props identity is stable across renders.
 - **Every doc page ends with the invalid-config story**, so the reader sees the error card.
+- **The page's prose is data, in `<X>.docs.ts`.** Two surfaces render it — the Storybook `.mdx` and
+  the showcase's `#/api/<x>` page — so a sentence written twice would be a sentence that drifts.
+  The generated parts stay generated: the config table from the Zod schema, the worked example from
+  `<X>.examples.tsx`. Markdown carries no tables, so a table inside `configNotes` is a `DocBlock`.
 - **The showcase is fiction.** Its domain is Northgate Cycles, an invented bike shop, and every name,
   ticket and date in `showcase/src/seed.ts` is invented. New seed data stays inside that fiction.
 - **Docs are written with the `writing-for-agents` skill loaded**: README lines, component pages, the
@@ -32,8 +36,9 @@ that an agent assembling a screen from these components, unattended, gets it rig
 ## Verification bar
 
 `pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm build-storybook && pnpm build-showcase`
-green locally, then green in CI, then the component **opened on the live docs site** and on the live
-showcase, at a phone width and a desktop width. A done report names the URL you opened and what you saw.
+green locally, then green in CI, then the component **opened on the live docs site**, on its
+`#/api/<x>` page, and on the live showcase, at a phone width and a desktop width. A done report
+names the URL you opened and what you saw.
 
 ## Delivery
 

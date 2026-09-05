@@ -3,6 +3,13 @@
 A demo app built only from `golem-ui` components on the kit's fake adapters. No backend, no
 network. Published beside the docs at **https://tonylampada.github.io/golem-ui/app/**, phone first.
 
+It also carries the kit's **API pages** at `#/api` and `#/api/<component>` — Storybook's docs are a
+desktop site, these are the same five sections on a phone. They sit outside `Auth.Guard`, so a
+reader with no account still gets the spec. `src/screens/Api.tsx` draws them and
+`src/api-registry.tsx` is the only place the three sources are named together: `<X>.docs.ts` for the
+prose, the Zod schema for the configuration table, `<X>.examples.tsx` for what runs live. Add a
+component to that registry and its page exists.
+
 The domain is **Northgate Cycles**, an invented neighbourhood bike repair shop. It is fiction on
 purpose: nothing in this repository refers to a real person, customer or use case.
 
@@ -21,19 +28,20 @@ under `/app/`.
 markup standing in one component's place, so adding that component is a swap of markup for JSX
 inside one file, and nothing else moves.
 
-| File                      | Route        | Component that replaces it    | What it stands in for                         |
-| ------------------------- | ------------ | ----------------------------- | --------------------------------------------- |
-| `src/App.tsx`             | —            | **Shell** (already used)      | The frame: chat column, canvas, top bar, tabs |
-| `src/ChatColumn.tsx`      | —            | **Chat** (already used)       | The conversation with the agent               |
-| `src/screens/Jobs.tsx`    | `/jobs`      | **RecordList** (already used) | Repair tickets, newest first                  |
-| `src/screens/JobForm.tsx` | `/jobs/new`  | **RecordForm** (already used) | A blank ticket, written into the collection   |
-| `src/screens/JobForm.tsx` | `/jobs/<id>` | **RecordForm** (already used) | The same form in edit mode, on one ticket     |
-| `src/screens/Report.tsx`  | `/report`    | **Report**                    | The daily document, dated and printable       |
-| `src/screens/Log.tsx`     | `/log`       | **Timeline**                  | Dated shop entries, filterable                |
-| `src/screens/Files.tsx`   | `/files`     | **Upload**                    | Photos and invoices, with a gallery           |
-| `src/screens/Dna.tsx`     | `/dna`       | **Editor**                    | The workspace DNA, live-updated by the agent  |
-| —                         | `/team`      | **Auth** (already used)       | Members, roles, invite by link                |
-| `src/screens/Today.tsx`   | `/today`     | _a composition_               | Report + RecordList + Timeline on one screen  |
+| File                      | Route        | Component that replaces it    | What it stands in for                          |
+| ------------------------- | ------------ | ----------------------------- | ---------------------------------------------- |
+| `src/App.tsx`             | —            | **Shell** (already used)      | The frame: chat column, canvas, top bar, tabs  |
+| `src/ChatColumn.tsx`      | —            | **Chat** (already used)       | The conversation with the agent                |
+| `src/screens/Jobs.tsx`    | `/jobs`      | **RecordList** (already used) | Repair tickets, newest first                   |
+| `src/screens/JobForm.tsx` | `/jobs/new`  | **RecordForm** (already used) | A blank ticket, written into the collection    |
+| `src/screens/JobForm.tsx` | `/jobs/<id>` | **RecordForm** (already used) | The same form in edit mode, on one ticket      |
+| `src/screens/Report.tsx`  | `/report`    | **Report**                    | The daily document, dated and printable        |
+| `src/screens/Log.tsx`     | `/log`       | **Timeline**                  | Dated shop entries, filterable                 |
+| `src/screens/Files.tsx`   | `/files`     | **Upload**                    | Photos and invoices, with a gallery            |
+| `src/screens/Dna.tsx`     | `/dna`       | **Editor**                    | The workspace DNA, live-updated by the agent   |
+| —                         | `/team`      | **Auth** (already used)       | Members, roles, invite by link                 |
+| `src/screens/Today.tsx`   | `/today`     | _a composition_               | Report + RecordList + Timeline on one screen   |
+| `src/screens/Api.tsx`     | `/api`       | _the kit's own spec_          | Every component's page, signed out, on a phone |
 
 `/jobs` and Today's "on the bench" block are the same `RecordList` on the same `jobs` collection,
 told apart by config alone: Today adds `scope: { status: ['waiting', 'in progress'] }` and

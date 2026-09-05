@@ -7,6 +7,9 @@ first time. Part of [Golem](https://github.com/tonylampada/golem-ui). MIT.
 
 **Showcase (a demo app, for people, phone first): https://tonylampada.github.io/golem-ui/app/**
 
+**API pages (the same spec, phone first, readable signed out):
+https://tonylampada.github.io/golem-ui/app/#/api**
+
 ## The ABI
 
 ```tsx
@@ -39,8 +42,11 @@ first time. Part of [Golem](https://github.com/tonylampada/golem-ui). MIT.
    scope. This file is the single source: stories and tests both import it.
 4. `src/components/<X>/<X>.stories.tsx` — one story per example, including an invalid-config one.
 5. `src/components/<X>/<X>.test.tsx` — renders every example, plus the seams worth holding.
-6. `src/components/<X>/<X>.mdx` — copy `docs/TEMPLATE.md` and fill every section it names. The
-   order is fixed and no section is optional; the template says why.
+6. `src/components/<X>/<X>.docs.ts` — the page's prose as data (`tagline`, `purpose`, `adapters`,
+   `failureModes`, the example), and `<X>.mdx` reading it. Both the Storybook page and the API page
+   at `#/api/<x>` render that one object, so a sentence lives in one place. Copy `docs/TEMPLATE.md`
+   for the section order: it is fixed and no section is optional. Add the docs object to
+   `src/docs.ts`, and the component to `showcase/src/api-registry.tsx`.
 7. Export it from `src/index.ts`.
 8. Give it a place in the showcase: `showcase/README.md` names the screen it replaces, and that
    screen is plain markup waiting for it. A component nobody can see working is not finished.

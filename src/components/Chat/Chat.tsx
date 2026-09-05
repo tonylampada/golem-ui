@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { defineComponent, type GolemProps } from '../../abi'
 import type { ChatAdapter, ChatAttachment, ChatMessage } from '../../adapters'
 import { chatConfigSchema, type ChatConfig } from './Chat.config'
-import { Markdown } from './markdown'
+import { Markdown } from '../../lib/markdown'
 
 export interface ChatAdapters {
   chat: ChatAdapter

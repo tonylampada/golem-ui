@@ -1,21 +1,21 @@
 import { Meta, Canvas } from '@storybook/addon-docs/blocks'
 import { ConfigTable } from '../../../docs/ConfigTable'
+import { AdapterTable, CodeBlock, Prose, SlotTable } from '../../../docs/Prose'
 import { shellConfigSchema } from './Shell.config'
+import { shellDocs } from './Shell.docs'
 import * as ShellStories from './Shell.stories'
 
 <Meta of={ShellStories} name="Docs" />
 
 # Shell
 
+<a href="https://tonylampada.github.io/golem-ui/app/#/api/shell" target="_top">
+  The same page on a phone →
+</a>
+
 ## What it is for
 
-`Shell` is the app frame: an agent chat column on one side, the canvas the agent builds into on the
-other, and a top bar carrying the app title and who is signed in. Below a configured width the two
-columns stop sitting side by side and become tabs, so the same screen works on a phone.
-
-Use it once, at the root of an app. It is a frame and nothing else: it does not render the
-conversation (hand that in as the `chat` slot), and it does not route (hand the current screen in as
-the `canvas` slot). If you want a two-pane layout _inside_ the canvas, that is not this component.
+<Prose text={shellDocs.purpose} />
 
 ## The configuration object
 
@@ -23,35 +23,17 @@ the `canvas` slot). If you want a two-pane layout _inside_ the canvas, that is n
 
 ## The adapters it needs
 
-| Adapter      | What Shell calls               | Why                                                                                      |
-| ------------ | ------------------------------ | ---------------------------------------------------------------------------------------- |
-| `Identity`   | `currentUser()`, `subscribe()` | Shows the signed-in user's name in the top bar, and keeps it current when they sign out. |
-| `Navigation` | `go('/')`                      | The title in the top bar is the way home.                                                |
+<AdapterTable rows={shellDocs.adapters} />
 
-Shell takes no other adapter. It never fetches, never stores, never reads a router.
+<Prose text={shellDocs.adapterNotes} />
 
 ## The slots it exposes
 
-| Slot      | What goes in it                                                                                                                   |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `chat`    | The conversation. `Chat` is what belongs here; empty renders a labelled placeholder.                                              |
-| `canvas`  | The screen the agent built. Empty renders a labelled placeholder.                                                                 |
-| `account` | The right-hand end of the top bar. `Auth.AccountMenu` is what belongs here; empty falls back to the signed-in name as plain text. |
+<SlotTable rows={shellDocs.slots} />
 
 ## One complete example
 
-```tsx
-import { Shell, fakeIdentity, fakeNavigation } from 'golem-ui'
-import 'golem-ui/styles.css'
-
-;<Shell
-  config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768, showTopBar: true }}
-  adapters={{ identity: fakeIdentity(), navigation: fakeNavigation() }}
-  chat={<AgentChat />}
-  canvas={<TodayScreen />}
-  account={<Auth.AccountMenu config={authConfig} adapters={{ identity, navigation }} />}
-/>
-```
+<CodeBlock code={shellDocs.example} />
 
 <Canvas of={ShellStories.Desktop} />
 
@@ -63,13 +45,6 @@ The same frame, mirrored, without the top bar, and below its breakpoint:
 
 ## Failure modes
 
-- **Invalid config.** Shell renders an error card instead of the frame, in dev and in prod, naming
-  every field that failed and the rule it broke. An unknown field is a failure too — `chatside` does
-  not quietly become `chatSide`.
-- **No slot.** A missing `chat` or `canvas` renders a labelled placeholder, so a half-wired app looks
-  half-wired rather than broken.
-- **Identity resolves to `null`.** The top bar renders without a name. Signing out is not an error.
-- **The breakpoint is measured on the frame, not the window.** A Shell inside a narrow column gets
-  the mobile layout, which is usually what you want and is occasionally a surprise.
+<Prose text={shellDocs.failureModes} />
 
 <Canvas of={ShellStories.InvalidConfig} />

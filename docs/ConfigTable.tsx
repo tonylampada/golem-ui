@@ -1,36 +1,12 @@
-import { z, type ZodType } from 'zod'
-
-type JsonSchema = {
-  properties?: Record<string, Record<string, unknown>>
-  required?: string[]
-  additionalProperties?: boolean
-}
-
-function describeType(field: Record<string, unknown>): string {
-  if (Array.isArray(field.enum)) return field.enum.map((v) => JSON.stringify(v)).join(' | ')
-  if (field.type === 'integer') return 'integer'
-  return String(field.type ?? 'unknown')
-}
-
-function describeRules(field: Record<string, unknown>): string {
-  const rules: string[] = []
-  if (typeof field.minLength === 'number') rules.push(`min length ${field.minLength}`)
-  if (typeof field.maxLength === 'number') rules.push(`max length ${field.maxLength}`)
-  if (typeof field.minimum === 'number') rules.push(`>= ${field.minimum}`)
-  if (typeof field.maximum === 'number') rules.push(`<= ${field.maximum}`)
-  if (typeof field.pattern === 'string') rules.push(`matches ${field.pattern}`)
-  return rules.join(', ') || '—'
-}
+import type { ZodType } from 'zod'
+import { Markdown } from '../src/lib/markdown'
+import { configFields, rejectsUnknownFields, STRICT_NOTE } from './config-fields'
 
 /**
- * The configuration table on every docs page, read straight off the Zod schema so it cannot drift
- * from the validator that rejects the agent's config at runtime.
+ * The configuration table on every Storybook docs page. The showcase's `#/api` page draws the same
+ * `configFields()` rows as cards, because a six-column table is not a phone.
  */
 export function ConfigTable({ schema }: { schema: ZodType }) {
-  const json = z.toJSONSchema(schema, { io: 'input' }) as JsonSchema
-  const properties = json.properties ?? {}
-  const required = new Set(json.required ?? [])
-
   return (
     <>
       <table>
@@ -45,28 +21,27 @@ export function ConfigTable({ schema }: { schema: ZodType }) {
           </tr>
         </thead>
         <tbody>
-          {Object.entries(properties).map(([name, field]) => (
-            <tr key={name}>
+          {configFields(schema).map((field) => (
+            <tr key={field.name}>
               <td>
-                <code>{name}</code>
+                <code>{field.name}</code>
               </td>
               <td>
-                <code>{describeType(field)}</code>
+                <code>{field.type}</code>
               </td>
-              <td>{required.has(name) ? 'yes' : 'no'}</td>
-              <td>{'default' in field ? <code>{JSON.stringify(field.default)}</code> : '—'}</td>
-              <td>{describeRules(field)}</td>
-              <td>{String(field.description ?? '')}</td>
+              <td>{field.required ? 'yes' : 'no'}</td>
+              <td>{field.default === null ? '—' : <code>{field.default}</code>}</td>
+              <td>{field.rules}</td>
+              <td>
+                <Markdown text={field.description} hardWraps={false} />
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {json.additionalProperties === false && (
+      {rejectsUnknownFields(schema) && (
         <p>
-          <em>
-            Unknown fields are rejected. A misspelt option produces the error card, never a silent
-            default.
-          </em>
+          <em>{STRICT_NOTE}</em>
         </p>
       )}
     </>

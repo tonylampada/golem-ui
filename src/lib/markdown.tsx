@@ -1,8 +1,9 @@
 import { Fragment, type ReactNode } from 'react'
 
 /**
- * The subset of markdown an agent actually writes into a chat bubble: fenced code, bullet and
- * numbered lists, and inline code / bold / italic / links. Everything else falls through as text.
+ * The subset of markdown this kit writes: fenced code, bullet and numbered lists, and inline code /
+ * bold / italic / links. Everything else falls through as text. Two readers share it — a chat
+ * bubble an agent is streaming into, and the prose of a component's docs page.
  *
  * It builds React nodes rather than an HTML string, so a message that arrives mid-stream with a
  * half-written `**` or an unclosed fence renders as the plain characters it currently is, and no
@@ -21,11 +22,13 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
         </code>
       )
     }
+    // Bold and italic recurse, so `**a `b`**` is bold text with code inside rather than backticks
+    // on the screen. The inner text can hold no further `*`, so the recursion is one level deep.
     if (piece.startsWith('**') && piece.endsWith('**') && piece.length > 3) {
-      return <strong key={key}>{piece.slice(2, -2)}</strong>
+      return <strong key={key}>{inline(piece.slice(2, -2), key)}</strong>
     }
     if (piece.startsWith('*') && piece.endsWith('*') && piece.length > 2) {
-      return <em key={key}>{piece.slice(1, -1)}</em>
+      return <em key={key}>{inline(piece.slice(1, -1), key)}</em>
     }
     const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(piece)
     if (link) {
@@ -50,6 +53,9 @@ type Block =
 function blocksOf(text: string): Block[] {
   const blocks: Block[] = []
   let fence: Block | null = null
+  // A blank line ends whatever block was open, which is what tells a wrapped bullet from the
+  // paragraph after the list.
+  let blank = false
 
   for (const line of text.split('\n')) {
     if (line.trimStart().startsWith('```')) {
@@ -58,10 +64,16 @@ function blocksOf(text: string): Block[] {
         fence = { kind: 'code', lines: [] }
         blocks.push(fence)
       }
+      blank = false
       continue
     }
     if (fence) {
       fence.lines.push(line)
+      continue
+    }
+
+    if (!line.trim()) {
+      blank = true
       continue
     }
 
@@ -72,19 +84,30 @@ function blocksOf(text: string): Block[] {
     if (bullet ?? numbered) {
       const ordered = !bullet
       const item = (bullet ?? numbered)![1]!
-      if (last?.kind === 'list' && last.ordered === ordered) last.items.push(item)
+      if (!blank && last?.kind === 'list' && last.ordered === ordered) last.items.push(item)
       else blocks.push({ kind: 'list', ordered, items: [item] })
+      blank = false
       continue
     }
-    if (!line.trim()) continue
-    if (last?.kind === 'para') last.lines.push(line)
+    // An indented line under a bullet is that bullet wrapping, not a paragraph of its own.
+    if (!blank && last?.kind === 'list') {
+      const open = last.items.length - 1
+      last.items[open] = `${last.items[open]} ${line.trim()}`
+      continue
+    }
+    if (!blank && last?.kind === 'para') last.lines.push(line)
     else blocks.push({ kind: 'para', lines: [line] })
+    blank = false
   }
 
   return blocks
 }
 
-export function Markdown({ text }: { text: string }) {
+/**
+ * `hardWraps` is the difference between the two readers. A chat bubble keeps a single newline the
+ * person typed; a docs paragraph wrapped at the source's column width must not show those wraps.
+ */
+export function Markdown({ text, hardWraps = true }: { text: string; hardWraps?: boolean }) {
   return (
     <>
       {blocksOf(text).map((block, index) => {
@@ -112,8 +135,11 @@ export function Markdown({ text }: { text: string }) {
           )
         }
         return (
-          <p key={index} className="my-1 first:mt-0 last:mb-0 whitespace-pre-wrap">
-            {inline(block.lines.join('\n'), String(index))}
+          <p
+            key={index}
+            className={`my-1 first:mt-0 last:mb-0 ${hardWraps ? 'whitespace-pre-wrap' : ''}`}
+          >
+            {inline(block.lines.join(hardWraps ? '\n' : ' '), String(index))}
           </p>
         )
       })}

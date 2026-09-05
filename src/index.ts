@@ -1,6 +1,7 @@
 export * from './abi'
 export * from './adapters'
 export * from './adapters/fake'
+export * from './docs'
 export * from './components/Auth'
 export * from './components/Chat'
 export * from './components/RecordForm'

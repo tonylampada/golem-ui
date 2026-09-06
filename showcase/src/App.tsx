@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Auth, Shell, type Route } from 'golem-ui'
 import { Canvas } from './Canvas'
 import { ChatColumn } from './ChatColumn'
+import { AdapterDetail, AdaptersIndex } from './screens/Adapters'
 import { ApiIndex, ApiPage } from './screens/Api'
 import { authConfig } from './auth-config'
 import { chat, clock, files, identity, navigation, records } from './adapters'
@@ -28,6 +29,9 @@ export function App() {
           <a href="#/api" className="font-medium text-white underline">
             API
           </a>
+          <a href="#/adapters" className="font-medium text-white underline">
+            Adapters
+          </a>
           <a href={SITE_URL} className="font-medium text-white underline">
             Site
           </a>
@@ -42,8 +46,13 @@ export function App() {
 function screenFor(route: Route) {
   const path = route.path
 
-  // The API pages are the kit's spec, so they sit outside the guard: signed out is how most
-  // readers arrive, and an agent reading them has no account at all.
+  // The API and adapter pages are the kit's spec, so they sit outside the guard: signed out is how
+  // most readers arrive, and an agent reading them has no account at all.
+  if (path === '/adapters') return <AdaptersIndex />
+  if (path.startsWith('/adapters/')) {
+    const slug = path.slice('/adapters/'.length)
+    return <AdapterDetail key={slug} slug={slug} navigation={navigation} />
+  }
   if (path === '/api') return <ApiIndex navigation={navigation} />
   if (path.startsWith('/api/')) {
     const slug = path.slice('/api/'.length)

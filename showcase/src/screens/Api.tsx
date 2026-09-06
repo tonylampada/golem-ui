@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { NavigationAdapter } from 'golem-ui'
+import { adapterDocsNamed } from 'golem-ui'
 import { configFields, rejectsUnknownFields, STRICT_NOTE } from '../../../docs/config-fields'
 import { CodeBlock, DocBlocks, Prose } from '../../../docs/Prose'
 import {
@@ -78,6 +79,9 @@ export function ApiIndex({ navigation }: { navigation: NavigationAdapter }) {
       </ul>
 
       <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+        <a href="#/adapters" className="font-medium underline">
+          The adapters they take
+        </a>
         <a href={APP_URL} className="font-medium underline">
           The showcase app
         </a>
@@ -86,6 +90,17 @@ export function ApiIndex({ navigation }: { navigation: NavigationAdapter }) {
         </a>
       </div>
     </Page>
+  )
+}
+
+/** The adapter's name, linked to its own page — the contract behind the calls listed beside it. */
+function AdapterName({ name }: { name: string }) {
+  const docs = adapterDocsNamed(name)
+  if (!docs) return <code className="font-mono text-sm font-semibold">{name}</code>
+  return (
+    <a href={`#/adapters/${docs.slug}`} className="font-mono text-sm font-semibold underline">
+      {name}
+    </a>
   )
 }
 
@@ -190,7 +205,7 @@ export function ApiPage({ slug, navigation }: { slug: string; navigation: Naviga
                 key={`${adapter.adapter}-${index}`}
                 className="rounded-xl border border-neutral-200 bg-white p-3"
               >
-                <code className="font-mono text-sm font-semibold">{adapter.adapter}</code>
+                <AdapterName name={adapter.adapter} />
                 <div className="mt-1">
                   <Prose text={adapter.calls} />
                 </div>

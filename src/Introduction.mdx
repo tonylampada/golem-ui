@@ -17,7 +17,8 @@ first time.
 - **adapters** are TypeScript interfaces (`Records`, `Files`, `Identity`, `Chat`, `Clock`,
   `Navigation`). A component never imports a data layer, a router or a fetch; it calls only what it
   was handed. `golem-ui` ships an in-memory fake of each, which is what every story on this site
-  runs on.
+  runs on. Each has **<a href="./?path=/docs/adapters-overview--docs" target="_top">a page of its
+  own</a>**: every method, what an implementation has to guarantee, and what it rejects with.
 
 **<a href="https://tonylampada.github.io/golem-ui/app/" target="_top">See the components in a real
 app →</a>** — the showcase is a small demo built only from this kit on the fake adapters, phone

@@ -20,7 +20,9 @@ that an agent assembling a screen from these components, unattended, gets it rig
   are the documentation.
 - **Adapters are interfaces, never imports.** A component calls what it is handed. If it needs
   something new from the world, extend the adapter interface in `src/adapters/`, extend the fake in
-  `src/adapters/fake/`, and keep both minimal: cut what your component does not call.
+  `src/adapters/fake/`, and keep both minimal: cut what your component does not call. The method you
+  add gains a row in `src/adapters/<name>.docs.ts` in the same commit — that file is the contract,
+  and README's **Adding an adapter** checklist is the task when the adapter is new.
 - **Examples are the single source.** `<X>.examples.tsx` feeds both the stories and the tests. Adapters
   in that file are built once at module scope, so props identity is stable across renders.
 - **Every doc page ends with the invalid-config story**, so the reader sees the error card.

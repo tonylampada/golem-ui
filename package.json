@@ -1,6 +1,6 @@
 {
   "name": "golem-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "description": "UI components with one ABI — config + adapters — built so an agent can assemble a screen correctly the first time.",

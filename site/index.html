@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>golem-ui — UI components an agent can assemble</title>
+    <meta
+      name="description"
+      content="A React component kit with one ABI — config plus adapters — built so an agent assembling a screen unattended gets it right the first time."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#c0603a" />
+    <link rel="icon" type="image/png" href="./assets/favicon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body class="bg-white text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
+    <a
+      href="#index"
+      class="sr-only rounded-md bg-clay-600 px-3 py-2 text-white focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-20"
+      >Skip to the index</a
+    >
+
+    <header
+      class="sticky top-0 z-10 border-b border-neutral-200 bg-white/85 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/85"
+    >
+      <div class="mx-auto flex max-w-5xl items-center gap-2.5 px-4 py-3">
+        <img
+          src="./assets/logo.png"
+          alt=""
+          width="32"
+          height="32"
+          class="size-8 shrink-0 rounded-lg"
+        />
+        <span class="font-semibold tracking-tight">golem-ui</span>
+        <span
+          class="hidden rounded-full border border-neutral-300 px-2 py-0.5 text-xs text-neutral-500 sm:inline dark:border-neutral-700 dark:text-neutral-400"
+          >MIT</span
+        >
+        <nav class="ml-auto flex items-center gap-4 text-sm">
+          <a
+            href="app/"
+            class="text-neutral-600 hover:text-clay-600 dark:text-neutral-300 dark:hover:text-clay-300"
+            >Showcase</a
+          >
+          <a
+            href="app/#/api"
+            class="text-neutral-600 hover:text-clay-600 dark:text-neutral-300 dark:hover:text-clay-300"
+            >API</a
+          >
+          <a
+            href="https://github.com/tonylampada/golem-ui"
+            class="text-neutral-600 hover:text-clay-600 dark:text-neutral-300 dark:hover:text-clay-300"
+            >GitHub</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4">
+      <!-- Hero -->
+      <section class="py-12 sm:py-16">
+        <img
+          src="./assets/logo.png"
+          alt="The golem-ui mark: a clay figure with a glyph on its brow"
+          width="384"
+          height="384"
+          class="mb-6 size-20 rounded-2xl shadow-sm sm:size-24"
+        />
+        <h1 class="text-4xl font-semibold tracking-tight sm:text-6xl">golem-ui</h1>
+        <p
+          class="mt-4 max-w-2xl text-lg leading-relaxed text-neutral-600 sm:text-xl dark:text-neutral-300"
+        >
+          UI components with
+          <strong class="font-semibold text-clay-600 dark:text-clay-300">one ABI</strong>, built so
+          an agent assembling a screen unattended gets it right the first time.
+        </p>
+
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a
+            href="app/"
+            class="rounded-lg bg-clay-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-clay-700"
+            >Open the showcase</a
+          >
+          <a
+            href="app/#/api"
+            class="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:border-clay-400 hover:text-clay-600 dark:border-neutral-700 dark:hover:border-clay-500 dark:hover:text-clay-300"
+            >Read the API pages</a
+          >
+        </div>
+
+        <img
+          src="./assets/hero.png"
+          alt="Loose blocks on the left resolving into an assembled screen layout on the right"
+          width="1280"
+          height="720"
+          class="mt-10 w-full rounded-xl ring-1 ring-neutral-200 dark:brightness-90 dark:ring-neutral-800"
+        />
+      </section>
+
+      <!-- What it is -->
+      <section class="border-t border-neutral-200 py-12 dark:border-neutral-800">
+        <h2 class="text-2xl font-semibold tracking-tight">What it is</h2>
+        <div
+          class="mt-5 max-w-2xl space-y-4 leading-relaxed text-neutral-700 dark:text-neutral-300"
+        >
+          <p>
+            A React component kit whose first reader is an agent. Nine components — shell, chat,
+            record list, record form, report, timeline, upload, editor, auth — cover the bones of a
+            small app that several people use together. A person never assembles a screen from them
+            by hand; an agent does, from a sentence of intent, and every choice in the kit is judged
+            by whether that makes the agent's output right the first time.
+          </p>
+          <p>
+            Every component has the same outer shape:
+            <code class="rounded bg-neutral-100 px-1.5 py-0.5 text-sm dark:bg-neutral-800"
+              >config</code
+            >
+            and
+            <code class="rounded bg-neutral-100 px-1.5 py-0.5 text-sm dark:bg-neutral-800"
+              >adapters</code
+            >. Config is plain JSON-serializable data — what the component <em>is</em> — validated
+            by a schema on mount, with unknown fields rejected and a bad value drawing a loud error
+            card that names the field and the rule. Adapters are how the component talks to the
+            world: records, files, identity, chat, clock, navigation. A component never imports a
+            data layer, a router or a fetch. It calls what it was handed.
+          </p>
+          <p>
+            The split is the whole trick. Config is <em>generated</em>, adapters are <em>wired</em>,
+            so a wrong query never reads as a wrong layout. The kit ships an in-memory fake of every
+            adapter, so stories, tests and the showcase run with no backend and no network. The docs
+            are generated from the same schemas that do the validating, which is why what the agent
+            reads cannot drift from what runs.
+          </p>
+        </div>
+      </section>
+
+      <!-- Quick start -->
+      <section class="border-t border-neutral-200 py-12 dark:border-neutral-800">
+        <h2 class="text-2xl font-semibold tracking-tight">Quick start</h2>
+        <p class="mt-3 text-neutral-600 dark:text-neutral-400">
+          Not on npm yet — install from the repository until the first release.
+        </p>
+
+        <div
+          class="mt-5 overflow-x-auto rounded-xl bg-neutral-900 p-4 text-sm dark:ring-1 dark:ring-neutral-800"
+        >
+          <pre
+            class="font-mono leading-relaxed text-neutral-100"
+          ><code>pnpm add golem-ui</code></pre>
+        </div>
+
+        <div
+          class="mt-3 overflow-x-auto rounded-xl bg-neutral-900 p-4 text-sm dark:ring-1 dark:ring-neutral-800"
+        >
+          <pre
+            class="font-mono leading-relaxed text-neutral-100"
+          ><code>import { Shell } from 'golem-ui'
+import 'golem-ui/styles.css'
+
+&lt;Shell
+  config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768, showTopBar: true }}
+  adapters={{ identity, navigation }}
+  chat={&lt;AgentChat /&gt;}
+  canvas={&lt;TodayScreen /&gt;}
+/&gt;</code></pre>
+        </div>
+
+        <p class="mt-4 text-sm text-neutral-600 dark:text-neutral-400">
+          Every other component takes the same two props. The
+          <a
+            href="app/#/api"
+            class="text-clay-600 underline underline-offset-2 hover:text-clay-700 dark:text-clay-300"
+            >API pages</a
+          >
+          carry each one's config table, its adapters, a running example and its failure modes.
+        </p>
+      </section>
+
+      <!-- Index -->
+      <section id="index" class="border-t border-neutral-200 py-12 dark:border-neutral-800">
+        <h2 class="text-2xl font-semibold tracking-tight">Everything that is deployed</h2>
+
+        <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+          <li>
+            <a
+              href="app/"
+              class="group block h-full rounded-xl border border-neutral-200 p-5 hover:border-clay-400 hover:bg-clay-50 dark:border-neutral-800 dark:hover:border-clay-600 dark:hover:bg-neutral-900"
+            >
+              <h3 class="font-medium group-hover:text-clay-700 dark:group-hover:text-clay-300">
+                Showcase app
+              </h3>
+              <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
+                A demo bike shop built only from these components on the fakes. Phone first, sign in
+                as anyone.
+              </p>
+              <p class="mt-3 font-mono text-xs text-neutral-500 dark:text-neutral-500">/app/</p>
+            </a>
+          </li>
+
+          <li>
+            <a
+              href="app/#/api"
+              class="group block h-full rounded-xl border border-neutral-200 p-5 hover:border-clay-400 hover:bg-clay-50 dark:border-neutral-800 dark:hover:border-clay-600 dark:hover:bg-neutral-900"
+            >
+              <h3 class="font-medium group-hover:text-clay-700 dark:group-hover:text-clay-300">
+                API pages
+              </h3>
+              <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
+                One page per component, five fixed sections, readable signed out on a phone. This is
+                the spec the agent reads.
+              </p>
+              <p class="mt-3 font-mono text-xs text-neutral-500 dark:text-neutral-500">
+                /app/#/api
+              </p>
+            </a>
+          </li>
+
+          <li>
+            <a
+              href="app/#/adapters"
+              class="group block h-full rounded-xl border border-neutral-200 p-5 hover:border-clay-400 hover:bg-clay-50 dark:border-neutral-800 dark:hover:border-clay-600 dark:hover:bg-neutral-900"
+            >
+              <h3 class="font-medium group-hover:text-clay-700 dark:group-hover:text-clay-300">
+                Adapters
+              </h3>
+              <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
+                The interfaces a component talks to the world through, and the in-memory fakes that
+                stand in for them.
+              </p>
+              <p class="mt-3 font-mono text-xs text-neutral-500 dark:text-neutral-500">
+                /app/#/adapters
+              </p>
+            </a>
+          </li>
+
+          <li>
+            <a
+              href="storybook/"
+              class="group block h-full rounded-xl border border-neutral-200 p-5 hover:border-clay-400 hover:bg-clay-50 dark:border-neutral-800 dark:hover:border-clay-600 dark:hover:bg-neutral-900"
+            >
+              <h3 class="font-medium group-hover:text-clay-700 dark:group-hover:text-clay-300">
+                Storybook
+              </h3>
+              <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
+                Every example as a live story, including the invalid-config one. A desktop site.
+              </p>
+              <p class="mt-3 font-mono text-xs text-neutral-500 dark:text-neutral-500">
+                /storybook/
+              </p>
+            </a>
+          </li>
+
+          <li>
+            <a
+              href="https://github.com/tonylampada/golem-ui"
+              class="group block h-full rounded-xl border border-neutral-200 p-5 hover:border-clay-400 hover:bg-clay-50 dark:border-neutral-800 dark:hover:border-clay-600 dark:hover:bg-neutral-900"
+            >
+              <h3 class="font-medium group-hover:text-clay-700 dark:group-hover:text-clay-300">
+                Repository
+              </h3>
+              <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-400">
+                Source, issues and the eight-step checklist for adding a component. MIT.
+              </p>
+              <p class="mt-3 font-mono text-xs text-neutral-500 dark:text-neutral-500">
+                github.com/tonylampada/golem-ui
+              </p>
+            </a>
+          </li>
+
+          <li>
+            <div
+              class="h-full rounded-xl border border-dashed border-neutral-300 p-5 dark:border-neutral-700"
+            >
+              <h3 class="flex flex-wrap items-center gap-2 font-medium text-neutral-500">
+                npm package
+                <span
+                  class="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-normal text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                  >not yet published</span
+                >
+              </h3>
+              <p class="mt-1.5 text-sm text-neutral-500 dark:text-neutral-500">
+                The name is held. Until the first release, install from the repository.
+              </p>
+              <p class="mt-3 font-mono text-xs text-neutral-400 dark:text-neutral-600">
+                npmjs.com/package/golem-ui
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer
+      class="border-t border-neutral-200 py-8 text-sm text-neutral-500 dark:border-neutral-800"
+    >
+      <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4">
+        <span>golem-ui — part of Golem. MIT.</span>
+        <a
+          href="https://github.com/tonylampada/golem-ui"
+          class="ml-auto hover:text-clay-600 dark:hover:text-clay-300"
+          >GitHub</a
+        >
+      </div>
+    </footer>
+  </body>
+</html>

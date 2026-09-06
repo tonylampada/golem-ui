@@ -116,7 +116,7 @@ export const apiComponents: ApiComponent[] = componentDocs.map((docs) => ({
   ...byName[docs.name]!,
 }))
 
-export const STORYBOOK_URL = 'https://tonylampada.github.io/golem-ui/'
+export const STORYBOOK_URL = 'https://tonylampada.github.io/golem-ui/storybook/'
 
 export function storybookHref(docs: ComponentDocs): string {
   return `${STORYBOOK_URL}?path=/docs/${docs.storybookPath}--docs`

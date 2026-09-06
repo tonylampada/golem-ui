@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": false,
   "license": "MIT",
-  "description": "UI components with one ABI — config + adapters — built so an agent can assemble a screen correctly the first time.",
+  "description": "UI components with one ABI \u2014 config + adapters \u2014 built so an agent can assemble a screen correctly the first time.",
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -29,12 +29,14 @@
   "scripts": {
     "dev": "storybook dev -p 6006",
     "dev-showcase": "vite --config showcase/vite.config.ts",
+    "dev-site": "vite --config site/vite.config.ts",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "vite build && tsc -p tsconfig.build.json",
-    "build-storybook": "storybook build",
+    "build-site": "vite build --config site/vite.config.ts",
+    "build-storybook": "storybook build -o dist-site/storybook",
     "build-showcase": "vite build --config showcase/vite.config.ts",
     "format": "prettier --write ."
   },

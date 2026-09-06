@@ -7,7 +7,7 @@ const root = import.meta.dirname
 
 export default defineConfig({
   root,
-  // The showcase is published under the Storybook site, at /golem-ui/app/.
+  // The showcase is a folder of the project site, at /golem-ui/app/.
   base: '/golem-ui/app/',
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -16,8 +16,8 @@ export default defineConfig({
     alias: { 'golem-ui': resolve(root, '../src/index.ts') },
   },
   build: {
-    // Straight into the Pages artifact Storybook produced, so CI uploads one directory.
-    outDir: resolve(root, '../storybook-static/app'),
+    // Straight into the Pages artifact the landing build created, so CI uploads one directory.
+    outDir: resolve(root, '../dist-site/app'),
     emptyOutDir: true,
   },
 })

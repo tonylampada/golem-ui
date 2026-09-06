@@ -33,9 +33,20 @@ that an agent assembling a screen from these components, unattended, gets it rig
 - **Docs are written with the `writing-for-agents` skill loaded**: README lines, component pages, the
   template, `showcase/README.md`, this file. Load it before writing a sentence of prose.
 
+## The site
+
+One Pages artifact, `dist-site/`, filled by three builds in that order — the first clears it, the
+other two write folders into it.
+
+- `/` — the landing page: the pitch, the quick start, the index of everything else. Source `site/`,
+  plain HTML and Tailwind, `pnpm build-site`.
+- `/app/` — the showcase, and the API pages at `#/api`. Source `showcase/`, `pnpm build-showcase`.
+- `/storybook/` — every story. Source `src/**/*.stories.tsx` and `.storybook/`, `pnpm build-storybook`.
+
 ## Verification bar
 
-`pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm build-storybook && pnpm build-showcase`
+`pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm build-site && pnpm build-storybook &&
+pnpm build-showcase`
 green locally, then green in CI, then the component **opened on the live docs site**, on its
 `#/api/<x>` page, and on the live showcase, at a phone width and a desktop width. A done report
 names the URL you opened and what you saw.

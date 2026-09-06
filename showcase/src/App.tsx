@@ -6,7 +6,7 @@ import { ApiIndex, ApiPage } from './screens/Api'
 import { authConfig } from './auth-config'
 import { chat, clock, files, identity, navigation, records } from './adapters'
 
-const DOCS_URL = 'https://tonylampada.github.io/golem-ui/'
+const SITE_URL = 'https://tonylampada.github.io/golem-ui/'
 
 const canvasAdapters = { records, clock, files, identity, navigation }
 const authAdapters = { identity, navigation }
@@ -28,8 +28,8 @@ export function App() {
           <a href="#/api" className="font-medium text-white underline">
             API
           </a>
-          <a href={DOCS_URL} className="font-medium text-white underline">
-            Docs
+          <a href={SITE_URL} className="font-medium text-white underline">
+            Site
           </a>
         </span>
       </div>

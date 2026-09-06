@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+/* Clay, sampled from the logo and hero the generator produced, so type and chrome sit in the same
+   family as the artwork instead of beside it. */
+@theme {
+  --color-clay-50: #fbf6f2;
+  --color-clay-100: #f5e7de;
+  --color-clay-200: #e8c9b5;
+  --color-clay-300: #d9a888;
+  --color-clay-400: #cf7d55;
+  --color-clay-500: #c0603a;
+  --color-clay-600: #a84f2d;
+  --color-clay-700: #8a3f24;
+  --color-clay-800: #6b311c;
+  --color-clay-900: #4a2213;
+  --color-sand: #ebe8e4;
+}

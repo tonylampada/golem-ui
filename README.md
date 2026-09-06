@@ -3,12 +3,14 @@
 UI components with **one ABI**, built so an agent assembling a screen unattended gets it right the
 first time. Part of [Golem](https://github.com/tonylampada/golem-ui). MIT.
 
-**Docs site (the spec, for the agent): https://tonylampada.github.io/golem-ui/**
+**The site: https://tonylampada.github.io/golem-ui/** — the pitch, the quick start, and an index of
+everything below it:
 
-**Showcase (a demo app, for people, phone first): https://tonylampada.github.io/golem-ui/app/**
-
-**API pages (the same spec, phone first, readable signed out):
-https://tonylampada.github.io/golem-ui/app/#/api**
+- **Showcase** (a demo app, for people, phone first): https://tonylampada.github.io/golem-ui/app/
+- **API pages** (the spec, phone first, readable signed out):
+  https://tonylampada.github.io/golem-ui/app/#/api
+- **Storybook** (every example as a live story, desktop):
+  https://tonylampada.github.io/golem-ui/storybook/
 
 ## The ABI
 
@@ -51,7 +53,8 @@ https://tonylampada.github.io/golem-ui/app/#/api**
 8. Give it a place in the showcase: `showcase/README.md` names the screen it replaces, and that
    screen is plain markup waiting for it. A component nobody can see working is not finished.
 
-`pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm build-storybook && pnpm build-showcase`
+`pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm build-site && pnpm build-storybook &&
+pnpm build-showcase`
 
 ## Install
 

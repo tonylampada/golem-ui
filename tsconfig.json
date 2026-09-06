@@ -20,5 +20,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "docs", ".storybook", "showcase", "*.config.ts", "eslint.config.js"]
+  "include": ["src", "docs", ".storybook", "showcase", "site", "*.config.ts", "eslint.config.js"]
 }

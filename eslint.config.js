@@ -6,7 +6,7 @@ import storybook from 'eslint-plugin-storybook'
 import prettier from 'eslint-config-prettier'
 
 export default tseslint.config(
-  { ignores: ['dist', 'storybook-static', 'node_modules', '!.storybook'] },
+  { ignores: ['dist', 'dist-site', 'node_modules', '!.storybook'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   reactHooks.configs.flat['recommended-latest'],

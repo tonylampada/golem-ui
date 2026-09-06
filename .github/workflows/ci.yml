@@ -30,13 +30,15 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # The three sites write into one directory and upload as one artifact. Order matters:
+      # build-site clears dist-site, the other two fill their own folders under it.
+      - run: pnpm build-site
       - run: pnpm build-storybook
-      # Writes into storybook-static/app, so the two sites upload as one artifact.
       - run: pnpm build-showcase
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
-          path: storybook-static
+          path: dist-site
 
   deploy:
     if: github.ref == 'refs/heads/main'

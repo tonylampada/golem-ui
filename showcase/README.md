@@ -1,7 +1,8 @@
 # showcase
 
 A demo app built only from `golem-ui` components on the kit's fake adapters. No backend, no
-network. Published beside the docs at **https://tonylampada.github.io/golem-ui/app/**, phone first.
+network. Published under the project site at **https://tonylampada.github.io/golem-ui/app/**, phone
+first.
 
 It also carries the kit's **API pages** at `#/api` and `#/api/<component>` — Storybook's docs are a
 desktop site, these are the same five sections on a phone. They sit outside `Auth.Guard`, so a
@@ -18,9 +19,9 @@ the root install through `pnpm dev-showcase` and `pnpm build-showcase`, and `sho
 aliases `golem-ui` to `src/index.ts`. A component appears here the moment it lands in `src/`, with
 no build and no version bump.
 
-`pnpm build-showcase` writes into `storybook-static/app`, which is why it runs after
-`pnpm build-storybook` in CI: one Pages artifact carries Storybook at the root and the showcase
-under `/app/`.
+`pnpm build-showcase` writes into `dist-site/app`, which is why it runs after `pnpm build-site` in
+CI: that build clears `dist-site` and puts the landing page at the root, and Storybook and the
+showcase then fill `/storybook/` and `/app/` under it. One Pages artifact carries all three.
 
 ## Where each component lands
 

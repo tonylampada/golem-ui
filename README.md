@@ -100,10 +100,66 @@ pnpm build-showcase`
 ## Install
 
 ```sh
-pnpm add golem-ui
+npm i golem-ui react react-dom
 ```
 
+React 19 is a peer dependency. Import the stylesheet once, at your app's entry:
+
 ```tsx
-import { Shell } from 'golem-ui'
+import { Shell, fakeIdentity, fakeNavigation } from 'golem-ui'
 import 'golem-ui/styles.css'
+
+const adapters = {
+  identity: fakeIdentity(),
+  navigation: fakeNavigation({ path: '/today', params: {} }),
+}
+
+export function App() {
+  return (
+    <Shell
+      config={{ title: 'Northgate Cycles' }}
+      adapters={adapters}
+      chat={<AgentChat />}
+      canvas={<TodayScreen />}
+    />
+  )
+}
 ```
+
+In a TypeScript app, the `.css` import needs the ambient declaration Vite ships: keep
+`/// <reference types="vite/client" />` in `src/vite-env.d.ts`, as `npm create vite` writes it.
+
+`scripts/smoke-pack.sh` runs that install end to end — it packs the kit, installs the tarball into a
+throwaway Vite app outside the repo, and typechecks and builds it.
+
+## Releasing
+
+Every release after the first ships from GitHub Actions with npm [trusted
+publishing](https://docs.npmjs.com/trusted-publishers): the workflow mints its own short-lived
+credential from an OIDC token, so there is no `NPM_TOKEN` secret anywhere and the published tarball
+carries provenance.
+
+```sh
+# bump "version" in package.json and add the entry to CHANGELOG.md, then:
+git commit -am "Release 0.1.1"
+git tag v0.1.1
+git push origin main --tags
+```
+
+The tag starts `.github/workflows/release.yml`, which runs lint, typecheck, tests and the build,
+checks the tag matches `package.json`, and publishes. A tag whose version disagrees with
+`package.json` fails before the publish step.
+
+### The two one-time steps, for the captain
+
+1. **Publish 0.1.0 by hand**, from a shell logged in to npm. Trusted publishing is configured per
+   package, and the package has to exist first.
+
+   ```sh
+   npm login
+   pnpm build && npm publish --provenance --access public
+   ```
+
+2. **Turn on trusted publishing** at npmjs.com → the `golem-ui` package → Settings → Trusted
+   publishing → GitHub Actions, with organization/user `tonylampada`, repository `golem-ui`,
+   workflow `release.yml`, and no environment. From then on the tag is the whole release.

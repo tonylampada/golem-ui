@@ -91,9 +91,12 @@ function revisingRecords(afterMs: number): FakeRecords {
     subscribe(collection, listener) {
       const unsubscribe = records.subscribe(collection, listener)
       const timer = setTimeout(() => {
-        void records.update('dna', 'dna', {
-          body: dnaBody.replace(RULES, revisedRules),
-          version: 5,
+        void records.get<DnaDocument>('dna', 'dna').then((current) => {
+          if (!current) return
+          return records.update('dna', 'dna', {
+            body: current.body.replace(RULES, revisedRules),
+            version: current.version + 1,
+          })
         })
       }, afterMs)
       return () => {
@@ -170,10 +173,14 @@ export const agentEdit: EditorExample = {
 export const conflict: EditorExample = {
   name: 'A conflict, with the choice',
   summary:
-    'The person has an unsaved edit to the turnaround rule and the agent rewrites the same lines. The merge stops, both versions are shown, and nothing is applied until Keep mine or Take theirs is pressed.',
+    'The person has an edit to the turnaround rule still sitting unsaved — `autosaveMs` is five seconds here so it is still in hand when the agent rewrites the same lines a second and a half in. The merge stops, both versions are shown, and nothing is applied until Keep mine or Take theirs is pressed.',
   viewportWidth: 390,
   height: 640,
-  props: { config: document, adapters: conflictAdapters, draft: localEdit },
+  props: {
+    config: { ...document, autosaveMs: 5000 },
+    adapters: conflictAdapters,
+    draft: localEdit,
+  },
 }
 
 export const readOnly: EditorExample = {

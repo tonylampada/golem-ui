@@ -1,6 +1,19 @@
 export type { Unsubscribe } from './common'
-export { RecordRefusedError, refusedFields } from './records'
-export type { RecordsAdapter, RecordQuery, RecordPage, FilterValue, FieldRefusal } from './records'
+export {
+  RecordRefusedError,
+  VersionConflictError,
+  VERSION_FIELD,
+  conflictingRecord,
+  refusedFields,
+} from './records'
+export type {
+  RecordsAdapter,
+  RecordQuery,
+  RecordPage,
+  FilterValue,
+  FieldRefusal,
+  UpdateOptions,
+} from './records'
 export { fileId } from './files'
 export type { FileHandle, FileRef, FilesAdapter, UploadOptions } from './files'
 export type { IdentityAdapter, SignUpInput, User } from './identity'

@@ -1,49 +1,77 @@
-import { useState } from 'react'
-import { Panel, Screen } from '../ui'
+import { useRef, useState } from 'react'
+import { Editor } from 'golem-ui'
+import type { ClockAdapter, EditorConfigInput, RecordsAdapter } from 'golem-ui'
+import { DNA_REVISED_RULES, DNA_RULES, dnaDocument } from '../seed'
 
-const dna = `# Northgate Cycles
+/**
+ * The workspace DNA, in the one component the whole idea rests on. `/dna` is guarded to the owner,
+ * so this is also where the demo shows a role turning somebody away.
+ */
+export const dnaConfig: EditorConfigInput = {
+  collection: 'dna',
+  id: dnaDocument.id,
+  bodyField: 'body',
+  versionField: 'version',
+  autosaveMs: 1000,
+  preview: 'split',
+  outline: true,
+  readOnly: false,
+  placeholder: 'Write the workspace DNA in markdown…',
+  highlightMs: 4000,
+  locale: 'en-GB',
+}
 
-A neighbourhood bike repair shop. Five people, one bench diary, one counter.
+/** How long the fake agent takes to answer, so there is time to be mid-sentence when it lands. */
+const AGENT_DELAY_MS = 2000
 
-## Records
+export function Dna({ records, clock }: { records: RecordsAdapter; clock: ClockAdapter }) {
+  const [asked, setAsked] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-- **job** — ticket, customer, bike, service, assignee, status, quote, hours, approved, notes
-- **log entry** — date, label, detail, kind (win | note | goal)
-- **attachment** — a photo or an invoice, attached to a job
-
-## Screens
-
-- Today: what is on the bench right now
-- Repair jobs: the whole board, newest first
-- Daily report: written every morning from yesterday's tickets
-- Shop log: what changed, in order
-- Photos & invoices
-- Team & access
-
-## Rules
-
-- A ticket is *ready* only when it has been called in to the customer.
-- Turnaround target is three days, measured from the ticket date.
-`
-
-/** Placeholder for the Editor component: the markdown the agent compiles the app from. */
-export function Dna() {
-  const [text, setText] = useState(dna)
+  /**
+   * The fake agent: two seconds after it is asked, it rewrites the Rules section and puts the
+   * version up. Nothing else about the write is special — it goes through the same `Records`
+   * adapter the person's own saves do, which is the whole point.
+   */
+  const askTheAgent = () => {
+    if (timer.current) clearTimeout(timer.current)
+    setAsked(true)
+    timer.current = setTimeout(() => {
+      void records.get<{ body: string; version: number }>('dna', dnaDocument.id).then((current) => {
+        if (!current) return
+        return records.update('dna', dnaDocument.id, {
+          body: current.body.includes(DNA_RULES)
+            ? current.body.replace(DNA_RULES, DNA_REVISED_RULES)
+            : `${current.body}\n${DNA_REVISED_RULES}\n`,
+          version: current.version + 1,
+        })
+      })
+      setAsked(false)
+    }, AGENT_DELAY_MS)
+  }
 
   return (
-    <Screen title="Workspace DNA" lead="The markdown the agent reads before it changes anything.">
-      <Panel className="p-0">
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          spellCheck={false}
-          className="block h-96 w-full resize-y rounded-xl bg-white p-4 font-mono text-xs leading-relaxed text-neutral-800"
-        />
-      </Panel>
-      <p className="text-xs text-neutral-500">
-        Edits here are local to the demo. In the real app the agent watches this document and the
-        app follows it.
-      </p>
-    </Screen>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 bg-white px-4 py-3 sm:px-6">
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold tracking-tight">Workspace DNA</h1>
+          <p className="mt-0.5 text-sm text-neutral-500">
+            The markdown the agent reads before it changes anything — and writes back to.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={askTheAgent}
+          disabled={asked}
+          className="shrink-0 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {asked ? 'The agent is writing…' : 'Ask the agent to revise'}
+        </button>
+      </div>
+
+      <div className="min-h-0 flex-1">
+        <Editor config={dnaConfig} adapters={{ records, clock }} />
+      </div>
+    </div>
   )
 }

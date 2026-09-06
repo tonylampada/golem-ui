@@ -1,8 +1,11 @@
 import {
   RecordRefusedError,
+  VersionConflictError,
+  VERSION_FIELD,
   type FilterValue,
   type RecordQuery,
   type RecordsAdapter,
+  type UpdateOptions,
 } from '../records'
 import { createEmitter } from './emitter'
 
@@ -130,11 +133,28 @@ export function fakeRecords(
       return { ...insert(collection, data) } as T
     },
 
-    async update<T>(collection: string, id: string, patch: Record<string, unknown>) {
+    async update<T>(
+      collection: string,
+      id: string,
+      patch: Record<string, unknown>,
+      options?: UpdateOptions,
+    ) {
       refuseIfAsked()
       const at = indexOf(collection, id)
       if (at === -1) throw new Error(`There is no ${collection} record with the id ${id}.`)
-      const next = { ...rows(collection)[at]!, ...patch, id }
+
+      const current = rows(collection)[at]!
+      if (options) {
+        const field = options.versionField ?? VERSION_FIELD
+        if (current[field] !== options.expectedVersion) {
+          throw new VersionConflictError(
+            `This ${collection} record is at ${field} ${String(current[field])}, not ${options.expectedVersion}. Somebody else wrote to it first.`,
+            { ...current },
+          )
+        }
+      }
+
+      const next = { ...current, ...patch, id }
       rows(collection)[at] = next
       emitterFor(collection).emit()
       return { ...next } as T

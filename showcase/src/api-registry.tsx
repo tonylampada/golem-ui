@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { ZodType } from 'zod'
 import {
   Chat,
+  Editor,
   RecordForm,
   RecordList,
   Report,
@@ -13,6 +14,7 @@ import {
 } from 'golem-ui'
 import { authConfigSchema } from '../../src/components/Auth/Auth.config'
 import { chatConfigSchema } from '../../src/components/Chat/Chat.config'
+import { editorConfigSchema } from '../../src/components/Editor/Editor.config'
 import { recordFormConfigSchema } from '../../src/components/RecordForm/RecordForm.config'
 import { recordListConfigSchema } from '../../src/components/RecordList/RecordList.config'
 import { reportConfigSchema } from '../../src/components/Report/Report.config'
@@ -21,6 +23,7 @@ import { timelineConfigSchema } from '../../src/components/Timeline/Timeline.con
 import { uploadConfigSchema } from '../../src/components/Upload/Upload.config'
 import * as authExamples from '../../src/components/Auth/Auth.examples'
 import * as chatExamples from '../../src/components/Chat/Chat.examples'
+import * as editorExamples from '../../src/components/Editor/Editor.examples'
 import * as recordFormExamples from '../../src/components/RecordForm/RecordForm.examples'
 import * as recordListExamples from '../../src/components/RecordList/RecordList.examples'
 import * as reportExamples from '../../src/components/Report/Report.examples'
@@ -82,6 +85,12 @@ const byName: Record<string, Omit<ApiComponent, 'docs'>> = {
     schema: reportConfigSchema,
     example: <Report {...reportExamples.today.props} />,
     invalid: <Report {...reportExamples.invalidConfig.props} />,
+    exampleHeight: 620,
+  },
+  Editor: {
+    schema: editorConfigSchema,
+    example: <Editor {...editorExamples.editing.props} />,
+    invalid: <Editor {...editorExamples.invalidConfig.props} />,
     exampleHeight: 620,
   },
   Timeline: {

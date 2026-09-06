@@ -24,24 +24,25 @@ under `/app/`.
 
 ## Where each component lands
 
-`Shell`, `Chat`, `Auth`, `RecordList`, `RecordForm`, `Report`, `Timeline` and `Upload` exist today.
-Every other screen is plain markup standing in one component's place, so adding that component is a
-swap of markup for JSX inside one file, and nothing else moves.
+Every component in the kit is on a screen here, and **no screen is a placeholder any more**: the
+markup that stood in for `Editor` on `/dna` was the last of it. What is left of `src/ui.tsx` is the
+demo's own page furniture — a screen heading, a panel, a status chip — not a component waiting to be
+replaced.
 
-| File                      | Route        | Component that replaces it    | What it stands in for                          |
-| ------------------------- | ------------ | ----------------------------- | ---------------------------------------------- |
-| `src/App.tsx`             | —            | **Shell** (already used)      | The frame: chat column, canvas, top bar, tabs  |
-| `src/ChatColumn.tsx`      | —            | **Chat** (already used)       | The conversation with the agent                |
-| `src/screens/Jobs.tsx`    | `/jobs`      | **RecordList** (already used) | Repair tickets, newest first                   |
-| `src/screens/JobForm.tsx` | `/jobs/new`  | **RecordForm** (already used) | A blank ticket, written into the collection    |
-| `src/screens/JobForm.tsx` | `/jobs/<id>` | **RecordForm** (already used) | The same form in edit mode, on one ticket      |
-| `src/screens/Report.tsx`  | `/report`    | **Report** (already used)     | The daily document, dated and printable        |
-| `src/screens/Log.tsx`     | `/log`       | **Timeline** (already used)   | Dated shop entries, filterable                 |
-| `src/screens/Files.tsx`   | `/files`     | **Upload** (already used)     | Photos and invoices, with a gallery            |
-| `src/screens/Dna.tsx`     | `/dna`       | **Editor**                    | The workspace DNA, live-updated by the agent   |
-| —                         | `/team`      | **Auth** (already used)       | Members, roles, invite by link                 |
-| `src/screens/Today.tsx`   | `/today`     | _a composition_               | Report + RecordList + Timeline on one screen   |
-| `src/screens/Api.tsx`     | `/api`       | _the kit's own spec_          | Every component's page, signed out, on a phone |
+| File                      | Route        | Component            | What the screen is                             |
+| ------------------------- | ------------ | -------------------- | ---------------------------------------------- |
+| `src/App.tsx`             | —            | **Shell**            | The frame: chat column, canvas, top bar, tabs  |
+| `src/ChatColumn.tsx`      | —            | **Chat**             | The conversation with the agent                |
+| `src/screens/Jobs.tsx`    | `/jobs`      | **RecordList**       | Repair tickets, newest first                   |
+| `src/screens/JobForm.tsx` | `/jobs/new`  | **RecordForm**       | A blank ticket, written into the collection    |
+| `src/screens/JobForm.tsx` | `/jobs/<id>` | **RecordForm**       | The same form in edit mode, on one ticket      |
+| `src/screens/Report.tsx`  | `/report`    | **Report**           | The daily document, dated and printable        |
+| `src/screens/Log.tsx`     | `/log`       | **Timeline**         | Dated shop entries, filterable                 |
+| `src/screens/Files.tsx`   | `/files`     | **Upload**           | Photos and invoices, with a gallery            |
+| `src/screens/Dna.tsx`     | `/dna`       | **Editor**           | The workspace DNA, written by both writers     |
+| —                         | `/team`      | **Auth**             | Members, roles, invite by link                 |
+| `src/screens/Today.tsx`   | `/today`     | _a composition_      | Report + RecordList + Timeline on one screen   |
+| `src/screens/Api.tsx`     | `/api`       | _the kit's own spec_ | Every component's page, signed out, on a phone |
 
 `/jobs` and Today's "on the bench" block are the same `RecordList` on the same `jobs` collection,
 told apart by config alone: Today adds `scope: { status: ['waiting', 'in progress'] }` and
@@ -65,6 +66,15 @@ moment you go there. The seeded files are the ones the shop log already attaches
 and every picture in them is drawn by `placeholderImage` when the page loads, a few hundred bytes of
 SVG apiece. There are no photographs in this repository.
 
+`/dna` is `Editor` on the `dna` collection, one record, `preview: 'split'` so the rendering sits
+beside the source at desktop width and behind a toggle on a phone. **Ask the agent to revise** in
+that screen's header is the fake agent: two seconds later it rewrites the Rules section through the
+same `Records.update` the person's own saves go through, and the version goes up. Keep typing while
+you wait and watch what happens — an edit somewhere else in the document merges in and the agent's
+lines wear a coloured gutter for four seconds; an edit on the turnaround rule itself stops the merge
+and asks which version stays. The document is seeded at `version: 4` and every save sends the version
+it read, so neither writer can flatten the other.
+
 `/jobs/new` and `/jobs/<id>` are the same `RecordForm` in the same way: one field list in
 `src/screens/JobForm.tsx`, `mode: 'create'` on one route and `mode: 'edit'` on the other. The ticket
 number is required on create and `readOnly` on edit, because the shop writes it once when the bike
@@ -78,7 +88,7 @@ Saving returns to `/jobs`, where the list shows the change through `subscribe` w
 
 `Identity`, `Records`, `Files`, `Clock` and `Chat` are the kit's fakes, seeded from `src/seed.ts` —
 `fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word, and
-`fakeRecords` gets the shop's tickets, reports and log, and `fakeFiles` gets the shop's folder of
+`fakeRecords` gets the shop's tickets, reports, log and the one DNA document, and `fakeFiles` gets the shop's folder of
 photos and paperwork. Writing goes through the `Records` adapter's
 own `create`, `update` and `remove`, so the ticket form talks to the same interface a server would
 sit behind. One adapter is the app's own, with its reason written above it in that file:
@@ -107,6 +117,8 @@ The captain opens this on a phone. Every change is checked at **390px wide** bef
 - `Upload`'s gallery is two columns on a phone and four on a desktop, and its drop zone carries a
   camera button below 768 because `capture: 'environment'` opens the rear camera on a phone and is
   ignored on a laptop.
+- `Editor` puts its toolbar along the bottom below 768 and falls back from `split` to the preview
+  toggle, because two panes on a phone are two half-panes.
 - `Timeline` scrolls inside its own box, so its day headers stick and the log never pushes the
   screen out sideways; the composer's row folds nothing, so it stays one line on a phone.
 - The page never scrolls sideways. Wide things — the screen nav, a `RecordList` table — scroll

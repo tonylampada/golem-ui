@@ -1,0 +1,5 @@
+export { Editor } from './Editor'
+export type { EditorAdapters, EditorSlots } from './Editor'
+export { editorConfigSchema } from './Editor.config'
+export type { EditorConfig, EditorConfigInput } from './Editor.config'
+export { editorDocs } from './Editor.docs'

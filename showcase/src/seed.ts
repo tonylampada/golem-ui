@@ -460,6 +460,58 @@ export const shopFiles: FakeFileSeed[] = [
   },
 ]
 
+/**
+ * The workspace DNA: the markdown the agent reads before it changes anything, and the one document
+ * in the demo two writers share. `version` goes up on every write, and the Editor sends the version
+ * it read back with each save, so the person and the agent cannot flatten one another.
+ */
+export type DnaDocument = {
+  id: string
+  title: string
+  body: string
+  version: number
+}
+
+export const DNA_RULES = `## Rules
+
+- A ticket is *ready* only when it has been called in to the customer.
+- Turnaround target is three days, measured from the ticket date.`
+
+/** What the agent writes into the Rules section when Nadia asks it to revise the document. */
+export const DNA_REVISED_RULES = `## Rules
+
+- A ticket is *ready* only when it has been called in to the customer.
+- Turnaround target is **three days**, measured from the ticket date, and the counter quotes four
+  on anything with suspension while the bench is booked out.
+- A quote over $200 needs the owner's sign-off before the work starts.`
+
+export const dnaDocument: DnaDocument = {
+  id: 'dna',
+  title: 'Workspace DNA',
+  version: 4,
+  body: `# Northgate Cycles
+
+A neighbourhood bike repair shop. Five people, one bench diary, one counter.
+
+## Records
+
+- **job** — ticket, customer, bike, service, assignee, status, quote, hours, approved, notes
+- **log entry** — at, body, kind (note | done | problem | parts), actor
+- **attachment** — a photo or an invoice, attached to a job
+
+## Screens
+
+- Today: what is on the bench right now
+- Repair jobs: the whole board, newest first
+- Daily report: written every morning from yesterday's tickets
+- Shop log: what changed, in order
+- Photos & invoices
+- Team & access
+
+${DNA_RULES}
+`,
+}
+
 export const conversation: ChatMessage[] = [
   {
     id: 'm-1',

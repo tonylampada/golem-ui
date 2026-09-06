@@ -1,0 +1,64 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks'
+import { ConfigTable } from '../../../docs/ConfigTable'
+import { AdapterTable, CodeBlock, DocBlocks, Prose, SlotTable } from '../../../docs/Prose'
+import { editorConfigSchema } from './Editor.config'
+import { editorDocs } from './Editor.docs'
+import * as EditorStories from './Editor.stories'
+
+<Meta of={EditorStories} name="Docs" />
+
+# Editor
+
+<a href="https://tonylampada.github.io/golem-ui/app/#/api/editor" target="_top">
+  The same page on a phone →
+</a>
+
+## What it is for
+
+<Prose text={editorDocs.purpose} />
+
+## The configuration object
+
+<ConfigTable schema={editorConfigSchema} />
+
+<DocBlocks blocks={editorDocs.configNotes} />
+
+## The adapters it needs
+
+<AdapterTable rows={editorDocs.adapters} />
+
+<Prose text={editorDocs.adapterNotes} />
+
+## The slots it exposes
+
+<SlotTable rows={editorDocs.slots} />
+
+## One complete example
+
+<CodeBlock code={editorDocs.example} />
+
+<Canvas of={EditorStories.Editing} />
+
+The rendering, and the same document with source and rendering side by side — `split` only above
+768px, because two panes on a phone are two half-panes:
+
+<Canvas of={EditorStories.Preview} />
+<Canvas of={EditorStories.SplitDesktop} />
+
+The agent rewriting the Rules section a second and a half after mount. Type into the document before
+then and watch the merge land around what you are writing; the lines it wrote keep a coloured gutter
+for four seconds:
+
+<Canvas of={EditorStories.AgentEdit} />
+
+The same arrival when the person was editing those very lines. The merge stops and asks:
+
+<Canvas of={EditorStories.Conflict} />
+
+<Canvas of={EditorStories.ReadOnly} />
+
+## Failure modes
+
+<Prose text={editorDocs.failureModes} />
+
+<Canvas of={EditorStories.InvalidConfig} />

@@ -52,7 +52,7 @@ function screenFor(path: string, a: CanvasAdapters) {
       // The one screen a mechanic cannot open, so the guard is visible in the demo.
       return (
         <Auth.Guard config={authConfig} adapters={auth} roles={[DNA_ROLE]}>
-          <Dna />
+          <Dna records={a.records} clock={a.clock} />
         </Auth.Guard>
       )
     case '/team':

@@ -90,3 +90,22 @@
     transform: none;
   }
 }
+
+/* Editor's arrival mark: the lines the agent just wrote hold a coloured gutter, then let go of it.
+   The hold is most of the window and the fade is the tail, so the eye catches it and the document
+   goes back to being a document. `highlightMs` sets the whole span; the component passes it in. */
+@keyframes golem-editor-mark {
+  0%,
+  55% {
+    background-color: #fef3c7;
+    box-shadow: inset 3px 0 0 0 #d97706;
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 3px 0 0 0 transparent;
+  }
+}
+
+.golem-editor-mark {
+  animation: golem-editor-mark var(--golem-mark-ms, 4000ms) ease-out forwards;
+}

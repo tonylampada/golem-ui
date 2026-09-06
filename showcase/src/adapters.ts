@@ -12,6 +12,7 @@ import {
 import {
   cannedReplies,
   conversation,
+  dnaDocument,
   jobs,
   reports,
   shopFiles,
@@ -95,6 +96,7 @@ export const clock = fakeClock(TODAY, TIME_ZONE)
 export const files = fakeFiles({ seed: shopFiles, now: () => clock.now() })
 
 export const records = fakeRecords({
+  dna: [{ ...dnaDocument }],
   jobs: jobs.map((job) => ({ ...job })),
   log: shopLog.map((entry) => ({ ...entry })),
   reports: reports.map((report) => ({ ...report })),

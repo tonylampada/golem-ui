@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
 /**
- * The plain markup the showcase draws with today. Everything here is a placeholder for a kit
- * component; `showcase/README.md` says which one replaces which screen.
+ * The demo's own page furniture — a screen heading, a panel, a status chip. Every screen that was a
+ * placeholder for a kit component now uses that component, so nothing here is standing in for one.
  */
 
 export function Screen({

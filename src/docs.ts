@@ -1,6 +1,7 @@
 import type { ComponentDocs } from './abi'
 import { authDocs } from './components/Auth/Auth.docs'
 import { chatDocs } from './components/Chat/Chat.docs'
+import { editorDocs } from './components/Editor/Editor.docs'
 import { recordFormDocs } from './components/RecordForm/RecordForm.docs'
 import { recordListDocs } from './components/RecordList/RecordList.docs'
 import { reportDocs } from './components/Report/Report.docs'
@@ -20,6 +21,7 @@ export const componentDocs: ComponentDocs[] = [
   recordListDocs,
   recordFormDocs,
   reportDocs,
+  editorDocs,
   timelineDocs,
   uploadDocs,
 ]

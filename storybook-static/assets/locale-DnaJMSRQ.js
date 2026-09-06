@@ -1,0 +1,1 @@
+function n(t=new Date("2026-01-01T09:00:00Z"),e="UTC"){return{now:()=>new Date(t),timeZone:()=>e}}function a(t){try{return new Intl.DateTimeFormat(t),!0}catch{return!1}}function r(t){try{return new Intl.DateTimeFormat("en-CA",{timeZone:t}),t}catch{return"UTC"}}export{r as a,n as f,a as i};

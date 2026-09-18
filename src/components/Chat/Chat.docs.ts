@@ -81,6 +81,8 @@ import 'golem-ui/styles.css'
   thinking row.
 - **Sending rejects.** Chat keeps the cleared composer clear, so it never overwrites a newer draft, and
   shows the error from the adapter. The adapter still owns the failed message and its retry.
+- **History rejects.** Chat shows the adapter error and keeps any conversation delivered through
+  \`subscribe\`; a live update never disappears behind a late history failure.
 - **The reader has scrolled up.** New messages stop moving the list; it follows the newest message
   only while it is already within 48px of the bottom. A stream cannot yank the page out from under
   someone reading.

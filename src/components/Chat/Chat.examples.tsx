@@ -86,27 +86,47 @@ const streamingAdapters: ChatAdapters = {
   ]),
 }
 
-const deliveryAdapters: ChatAdapters = {
-  chat: frozenChat(
-    [
-      {
-        id: 'm-pending',
+/** A neutral send that visibly moves through pending, failed, and retry-confirmed states. */
+function deliveryChat(): ChatAdapter {
+  const messages: ChatMessage[] = []
+  const listeners = new Set<(messages: ChatMessage[]) => void>()
+  let nextId = 1
+  const emit = () => listeners.forEach((listener) => listener([...messages]))
+
+  return {
+    async history() {
+      return [...messages]
+    },
+    async send(text, attachments) {
+      const id = `delivery-${nextId++}`
+      messages.push({
+        id,
         role: 'user',
-        text: 'Please hold the blue Kona frame.',
-        at: '2026-09-10T09:21:00Z',
+        text,
+        at: new Date().toISOString(),
+        attachments,
         delivery: 'pending',
-      },
-      {
-        id: 'm-failed',
-        role: 'user',
-        text: 'I will call when the wheel is ready.',
-        at: '2026-09-10T09:22:00Z',
-        delivery: 'failed',
-      },
-    ],
-    async () => {},
-  ),
+      })
+      emit()
+      setTimeout(() => {
+        const index = messages.findIndex((message) => message.id === id)
+        if (index >= 0) messages[index] = { ...messages[index]!, delivery: 'failed' }
+        emit()
+      }, 500)
+    },
+    async retry(messageId) {
+      const index = messages.findIndex((message) => message.id === messageId)
+      if (index >= 0) messages[index] = { ...messages[index]!, delivery: undefined }
+      emit()
+    },
+    subscribe(listener) {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+  }
 }
+
+const deliveryAdapters: ChatAdapters = { chat: deliveryChat() }
 
 /** The one adapter that really runs: it echoes, then streams its reply word by word. */
 const liveAdapters: ChatAdapters = {
@@ -146,7 +166,7 @@ export const streaming: ChatExample = {
 export const delivery: ChatExample = {
   name: 'Delivery states',
   summary:
-    'A message stays visible while sending or after a failed send; failed messages can retry when the adapter supports it.',
+    'Send a neutral message to watch Sending become Not sent, then Retry confirm the same bubble.',
   viewportWidth: 380,
   props: { config: { agentName: 'Golem', userName: 'Nadia' }, adapters: deliveryAdapters },
 }

@@ -194,6 +194,24 @@ describe('Chat', () => {
     expect(screen.queryByText('Sending')).not.toBeInTheDocument()
   })
 
+  it('shows a history error without replacing a live conversation', async () => {
+    const messages = [agentMessage('m-live', 'The blue Kona frame is held.')]
+    const adapter: ChatAdapter = {
+      history: async () => {
+        throw new Error('Conversation is unavailable.')
+      },
+      async send() {},
+      subscribe(listener) {
+        listener(messages)
+        return () => {}
+      },
+    }
+    render(<Chat config={{}} adapters={{ chat: adapter }} />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Conversation is unavailable.')
+    expect(screen.getByText('The blue Kona frame is held.')).toBeInTheDocument()
+  })
+
   it('retains failed messages, retries them when supported, and catches rejected work', async () => {
     const retry = vi.fn(async () => {
       throw new Error('Still offline.')

@@ -20,8 +20,9 @@ export interface ChatSlots {
 /** How close to the bottom still counts as "reading the newest message". */
 const PIN_SLACK = 48
 
-function useConversation(adapter: ChatAdapter): ChatMessage[] {
+function useConversation(adapter: ChatAdapter): { messages: ChatMessage[]; loadError: string } {
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
     let live = true
@@ -35,14 +36,17 @@ function useConversation(adapter: ChatAdapter): ChatMessage[] {
       .then((next) => {
         if (live && !receivedUpdate) setMessages(next)
       })
-      .catch(() => {})
+      .catch((error: unknown) => {
+        if (live)
+          setLoadError(error instanceof Error ? error.message : 'Conversation could not be loaded.')
+      })
     return () => {
       live = false
       unsubscribe()
     }
   }, [adapter])
 
-  return messages
+  return { messages, loadError }
 }
 
 /**
@@ -191,7 +195,7 @@ function Thinking({ name }: { name: string }) {
 }
 
 function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdapters, ChatSlots>) {
-  const messages = useConversation(adapters.chat)
+  const { messages, loadError } = useConversation(adapters.chat)
   const [draft, setDraft] = useState('')
   const [staged, setStaged] = useState<ChatAttachment[]>([])
   // Bumped on every send, so a hosted picker remounts with nothing on it: the files went with the
@@ -269,12 +273,12 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
         {thinking && <Thinking name={config.agentName} />}
       </div>
 
-      {sendError && (
+      {(loadError || sendError) && (
         <p
           role="alert"
           className="shrink-0 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300"
         >
-          {sendError}
+          {loadError || sendError}
         </p>
       )}
 

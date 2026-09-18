@@ -86,7 +86,7 @@ function AttachmentChips({
         <span
           key={file.id}
           data-golem-chat-attachment={file.name}
-          className="inline-flex max-w-full items-center gap-1 rounded-full border border-current/20 bg-black/5 px-2 py-0.5 text-xs"
+          className="inline-flex max-w-full items-center gap-1 rounded-full border border-current/20 bg-black/5 dark:bg-white/10 px-2 py-0.5 text-xs"
         >
           <span aria-hidden="true">📄</span>
           <span className="truncate">{file.name}</span>
@@ -115,7 +115,7 @@ function Bubble({ message, config }: { message: ChatMessage; config: ChatConfig 
         data-golem-chat-message={message.role}
         data-streaming={message.streaming ? 'true' : undefined}
         className={`max-w-[85%] min-w-0 rounded-2xl px-3 py-2 text-sm leading-relaxed break-words ${
-          mine ? 'bg-neutral-900 text-white' : 'border border-neutral-200 bg-white text-neutral-800'
+          mine ? 'bg-neutral-900 dark:bg-neutral-200 text-white dark:text-neutral-900' : 'border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
         }`}
       >
         {/* The reader's own text is never markdown: they typed characters, not a document. */}
@@ -150,7 +150,7 @@ function Thinking({ name }: { name: string }) {
           />
         ))}
       </span>
-      <span className="text-xs text-neutral-500">{name} is thinking…</span>
+      <span className="text-xs text-neutral-500 dark:text-neutral-400">{name} is thinking…</span>
     </div>
   )
 }
@@ -197,7 +197,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
   return (
     <div
       data-golem-component="Chat"
-      className="golem-chat flex h-full min-h-0 w-full flex-col bg-neutral-50 text-neutral-900"
+      className="golem-chat flex h-full min-h-0 w-full flex-col bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100"
     >
       <div
         ref={feed}
@@ -218,12 +218,12 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       </div>
 
       {attach ? (
-        <div key={sent} className="shrink-0 border-t border-neutral-200 bg-white px-3 pt-2">
+        <div key={sent} className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 pt-2">
           {attach(setStaged)}
         </div>
       ) : (
         staged.length > 0 && (
-          <div className="shrink-0 border-t border-neutral-200 bg-white px-3 pt-2">
+          <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 pt-2">
             <AttachmentChips
               attachments={staged}
               onRemove={(id) => setStaged((files) => files.filter((file) => file.id !== id))}
@@ -233,7 +233,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       )}
 
       <form
-        className="flex shrink-0 items-end gap-2 border-t border-neutral-200 bg-white p-3"
+        className="flex shrink-0 items-end gap-2 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3"
         onSubmit={(event) => {
           event.preventDefault()
           send()
@@ -262,7 +262,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
               onClick={() => fileInput.current?.click()}
               title="Attach a file"
               aria-label="Attach a file"
-              className="shrink-0 rounded-full border border-neutral-300 px-3 py-2.5 text-sm"
+              className="shrink-0 rounded-full border border-neutral-300 dark:border-neutral-700 px-3 py-2.5 text-sm"
             >
               📎
             </button>
@@ -283,11 +283,11 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
           }}
           placeholder={config.placeholder}
           aria-label={config.placeholder}
-          className="min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 px-4 py-2.5 text-base leading-6"
+          className="min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-base leading-6"
         />
         <button
           type="submit"
-          className="shrink-0 rounded-full bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white"
+          className="shrink-0 rounded-full bg-neutral-900 dark:bg-neutral-200 px-4 py-2.5 text-sm font-medium text-white dark:text-neutral-900"
         >
           Send
         </button>

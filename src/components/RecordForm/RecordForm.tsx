@@ -518,7 +518,11 @@ function RecordFormBody({
                     <ReadOnlyValue field={field} value={conflict.row[field.key]} />
                   </dd>
                   <dd className="min-w-0 break-words">
-                    <ReadOnlyValue field={field} value={values[field.key]} />
+                    {edits[field.key] !== undefined && edits[field.key] !== base[field.key] ? (
+                      <ReadOnlyValue field={field} value={values[field.key]} />
+                    ) : (
+                      <span className="text-neutral-400">not changed</span>
+                    )}
                   </dd>
                 </div>
               ))}

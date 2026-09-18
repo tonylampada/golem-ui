@@ -249,6 +249,8 @@ describe('RecordForm', () => {
     expect(within(dialog).getByText('Kona Rove, 2019 (green)')).toBeInTheDocument()
     expect(within(dialog).getByText('Wheel truing')).toBeInTheDocument()
     expect(within(dialog).queryByText(/^Version/)).not.toBeInTheDocument()
+    // The second writer never touched the bike, so Keep mine would not write it either.
+    expect(within(dialog).getByText('not changed')).toBeInTheDocument()
     expect(second.getByLabelText(/^Service/)).toHaveValue('New rim')
     expect(second.queryByRole('status')).not.toBeInTheDocument()
     expect(await saved()).toMatchObject({ service: 'Wheel truing', version: 2 })

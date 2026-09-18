@@ -148,7 +148,7 @@ import 'golem-ui/styles.css'
   that names none is a single line above the buttons. Both take back the optimistic success line.
 - **Someone else saved first.** A \`VersionConflictError\` carrying the current record keeps every
   unsaved value on screen and lists the fields of this form that the other save changed, beside the
-  reader's own values; the version field itself is left out of that list. Nothing is written until the
+  reader's value for each field they changed; the version field itself is left out of that list. Nothing is written until the
   reader picks. *Keep mine* writes only the fields the reader changed, against the newer version, so the
   other save's remaining changes survive; if a third save got in meanwhile, the choice comes back.
   *Take theirs* drops the unsaved values and shows the stored record. Cancel asks before discarding, as

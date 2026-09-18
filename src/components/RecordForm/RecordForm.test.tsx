@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { fakeIdentity, fakeRecords, type FakeRecords } from '../../adapters/fake'
@@ -176,6 +176,114 @@ describe('RecordForm', () => {
       expect(await store.get('jobs', 'j-4187')).toMatchObject({ quote: 175 }),
     )
     expect(await store.get('jobs', 'j-4187')).toMatchObject({ ticket: '#4187' })
+  })
+
+  it('sends the version it loaded, in the configured field, and advances it after a save', async () => {
+    const store = fakeRecords({ jobs: [{ ...examples.ticket, rev: 4 }] })
+    const update = vi.spyOn(store, 'update')
+    await mount({ over: { mode: 'edit', versionField: 'rev' }, records: store, recordId: 'j-4187' })
+
+    await userEvent.type(screen.getByLabelText(/^Service/), '!')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(1))
+    expect(update).toHaveBeenLastCalledWith(
+      'jobs',
+      'j-4187',
+      { service: 'Rear wheel rebuild!', rev: 5 },
+      { expectedVersion: 4, versionField: 'rev' },
+    )
+
+    await userEvent.type(screen.getByLabelText(/^Service/), '?')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(2))
+    expect(update.mock.lastCall![3]).toEqual({ expectedVersion: 5, versionField: 'rev' })
+  })
+
+  it('writes an unversioned record with a plain patch', async () => {
+    const store = fakeRecords({ jobs: [examples.ticket] })
+    const update = vi.spyOn(store, 'update')
+    await mount({ over: { mode: 'edit' }, records: store, recordId: 'j-4187' })
+
+    await userEvent.type(screen.getByLabelText(/^Service/), '!')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(1))
+    expect(update).toHaveBeenLastCalledWith('jobs', 'j-4187', { service: 'Rear wheel rebuild!' })
+  })
+
+  it('stops a stale save, keeps the unsaved values, and lets the reader pick a side', async () => {
+    const store = fakeRecords({ jobs: [{ ...examples.ticket, version: 1 }] })
+    const onCancel = vi.fn()
+    render(
+      <>
+        {['first', 'second'].map((who) => (
+          <section key={who} aria-label={who}>
+            <RecordForm
+              config={config({ mode: 'edit' })}
+              adapters={{ records: store, identity }}
+              recordId="j-4187"
+              onCancel={onCancel}
+            />
+          </section>
+        ))}
+      </>,
+    )
+    await flush()
+    const first = within(screen.getByRole('region', { name: 'first' }))
+    const second = within(screen.getByRole('region', { name: 'second' }))
+    const saved = () => store.get<Record<string, unknown>>('jobs', 'j-4187')
+
+    // The first writer changes the bike and the service; the second, the service and the quote.
+    await userEvent.type(first.getByLabelText(/^Bike/), ' (green)')
+    await userEvent.clear(first.getByLabelText(/^Service/))
+    await userEvent.type(first.getByLabelText(/^Service/), 'Wheel truing')
+    await userEvent.click(first.getByRole('button', { name: 'Save' }))
+    await waitFor(async () => expect(await saved()).toMatchObject({ version: 2 }))
+
+    await userEvent.clear(second.getByLabelText(/^Service/))
+    await userEvent.type(second.getByLabelText(/^Service/), 'New rim')
+    await userEvent.clear(second.getByLabelText(/^Quote/))
+    await userEvent.type(second.getByLabelText(/^Quote/), '210')
+    await userEvent.click(second.getByRole('button', { name: 'Save' }))
+
+    const dialog = await second.findByRole('alertdialog', { name: 'Saved by someone else' })
+    expect(within(dialog).getByText('Kona Rove, 2019 (green)')).toBeInTheDocument()
+    expect(within(dialog).getByText('Wheel truing')).toBeInTheDocument()
+    expect(within(dialog).queryByText(/^Version/)).not.toBeInTheDocument()
+    expect(second.getByLabelText(/^Service/)).toHaveValue('New rim')
+    expect(second.queryByRole('status')).not.toBeInTheDocument()
+    expect(await saved()).toMatchObject({ service: 'Wheel truing', version: 2 })
+
+    // Cancel still asks first, and keeping on editing brings the choice back.
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    await userEvent.click(second.getByRole('button', { name: 'Keep editing' }))
+    expect(onCancel).not.toHaveBeenCalled()
+
+    // Another write lands before the reader chooses, so keeping theirs meets a newer version.
+    await store.update('jobs', 'j-4187', { notes: 'Rim tape arrived.', version: 3 })
+    await userEvent.click(second.getByRole('button', { name: 'Keep mine' }))
+    await second.findByText('Rim tape arrived.')
+    expect(second.getByLabelText(/^Quote/)).toHaveValue(210)
+    expect(await saved()).toMatchObject({ version: 3, service: 'Wheel truing' })
+
+    await userEvent.click(second.getByRole('button', { name: 'Keep mine' }))
+    await waitFor(async () => expect(await saved()).toMatchObject({ version: 4 }))
+    // Only what the second writer changed was written; the bike and the notes survive.
+    expect(await saved()).toMatchObject({
+      bike: 'Kona Rove, 2019 (green)',
+      notes: 'Rim tape arrived.',
+      service: 'New rim',
+      quote: 210,
+    })
+
+    // The first form is now stale; taking theirs shows the stored record with nothing unsaved.
+    await userEvent.type(first.getByLabelText(/^Customer/), '!')
+    await userEvent.click(first.getByRole('button', { name: 'Save' }))
+    await first.findByRole('alertdialog', { name: 'Saved by someone else' })
+    await userEvent.click(first.getByRole('button', { name: 'Take theirs' }))
+    expect(first.getByLabelText(/^Service/)).toHaveValue('New rim')
+    expect(first.getByLabelText(/^Customer/)).toHaveValue('Delia Marchetti')
+    expect(first.queryByText('Unsaved changes')).not.toBeInTheDocument()
+    expect(await saved()).toMatchObject({ customer: 'Delia Marchetti', version: 4 })
   })
 
   it('renders an error card naming the enum field with no options', () => {

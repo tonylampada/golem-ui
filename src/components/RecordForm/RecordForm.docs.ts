@@ -67,8 +67,8 @@ a field list can be written once and read by both.`,
     },
     {
       adapter: 'Records',
-      calls: '`update(collection, id, patch)`',
-      why: "Edit mode's submit. Only what the reader changed goes in.",
+      calls: '`update(collection, id, patch, { expectedVersion, versionField }?)`',
+      why: "Edit mode's submit. Only what the reader changed goes in, with the version it loaded when the record has one.",
     },
     {
       adapter: 'Records',
@@ -92,7 +92,13 @@ reader has confirmed discarding anything unsaved — where those go next is the 
 
 **Refusals name fields.** A rejection carrying \`fields: [{ field, message }]\` — a
 \`RecordRefusedError\`, or anything shaped like one — puts each sentence under its own control and
-focuses the first. A rejection without them shows its \`message\` as one line above the buttons.`,
+focuses the first. A rejection without them shows its \`message\` as one line above the buttons.
+
+**A versioned record is saved against the version it was read at.** When the loaded record holds a
+number in \`versionField\` (\`version\` by default), \`update\` gets that number as \`expectedVersion\`
+and the patch sets the field one higher — the same contract \`Editor\` keeps. A store that honours it
+rejects a save that arrived second with a \`VersionConflictError\` carrying the record as it now
+stands. A record with no number there is saved with a plain patch.`,
 
   example: `import { RecordForm, fakeIdentity, fakeRecords } from 'golem-ui'
 import 'golem-ui/styles.css'
@@ -140,6 +146,13 @@ import 'golem-ui/styles.css'
   record for: the form will not open blank and quietly create a second record.
 - **The adapter refuses.** A rejection naming fields lands under them and focuses the first; one
   that names none is a single line above the buttons. Both take back the optimistic success line.
+- **Someone else saved first.** A \`VersionConflictError\` carrying the current record keeps every
+  unsaved value on screen and lists the fields of this form that the other save changed, beside the
+  reader's own values; the version field itself is left out of that list. Nothing is written until the
+  reader picks. *Keep mine* writes only the fields the reader changed, against the newer version, so the
+  other save's remaining changes survive; if a third save got in meanwhile, the choice comes back.
+  *Take theirs* drops the unsaved values and shows the stored record. Cancel asks before discarding, as
+  it always does. A conflict carrying no record shows its \`message\` like any other rejection.
 - **The save is optimistic.** The success line appears before the adapter has answered, so a slow
   store still feels immediate. A refusal takes it back — nothing is lost, but a reader who looks
   away at the wrong moment can see the line and then the error.

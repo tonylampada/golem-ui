@@ -54,6 +54,11 @@ Fields the store owns, shown formatted with no control, and a delete that asks o
 <Canvas of={RecordFormStories.ReadOnlyFields} />
 <Canvas of={RecordFormStories.DeleteWithConfirm} />
 
+Two forms on one versioned ticket. Save one, then the other: the second keeps what was typed and
+asks whether to keep it or take what the first saved:
+
+<Canvas of={RecordFormStories.TwoPeopleSaveOneTicket} />
+
 ## Failure modes
 
 <Prose text={recordFormDocs.failureModes} />

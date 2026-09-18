@@ -765,24 +765,129 @@ describe('Editor focus', () => {
       expect(source().value).toBe(`Mine, unsaved.\n${added}\n${examples.handbookBody}`)
     })
 
-    it('compares carriage returns as they are, on both sides', async () => {
+    describe('on a record with CRLF line endings', () => {
       const crlf = examples.handbookBody.replaceAll('\n', '\r\n')
-      const records = fakeRecords({
-        handbook: [{ id: 'bench', title: 'Bench handbook', body: crlf, version: 1 }],
-      })
-      const { ask } = host(records)
-      await flush()
       // The server's lines, each keeping its CR, joined by newlines.
-      const serverLines = crlf.split('\n').slice(brakes - 1, brakes + 3)
+      const serverLines = crlf
+        .split('\n')
+        .slice(brakes - 1, brakes + 3)
+        .join('\n')
+      const above = 'Mine, typed above.'
+      const crlfStore = () =>
+        fakeRecords({
+          handbook: [{ id: 'bench', title: 'Bench handbook', body: crlf, version: 1 }],
+        })
+      const stored = async (records: FakeRecords) =>
+        String((await records.get<{ id: string; body: string }>('handbook', 'bench'))!.body)
+      /** Types into the textarea itself, which hands back its value with bare LFs. */
+      const typeAbove = (text: string) =>
+        userEvent.type(source(), `${text}{Enter}`, {
+          initialSelectionStart: 0,
+          initialSelectionEnd: 0,
+        })
 
-      ask({ line: brakes, endLine: brakes + 3, version: 1, text: serverLines.join('\n') })
-      await flush()
-      expect(focused()).toHaveLength(4)
+      it('marks the offered lines, with or without their CRs', async () => {
+        const { ask } = host(crlfStore())
+        await flush()
+        expect(source().value).toBe(examples.handbookBody)
 
-      // The same passage without its CRs is not in this document.
-      ask({ line: brakes, endLine: brakes + 3, version: 1, text: passage })
-      await flush()
-      expect(focused()).toEqual([])
+        ask({ line: brakes, endLine: brakes + 3, version: 1, text: serverLines })
+        await flush()
+        expect(focused()).toEqual(shown)
+
+        ask({ line: brakes, endLine: brakes + 3, version: 1, text: passage, key: 'lf' })
+        await flush()
+        expect(focused()).toEqual(shown)
+      })
+
+      it('finds the passage below a typed line, and saves the edit with CRLF', async () => {
+        const records = crlfStore()
+        const update = vi.spyOn(records, 'update')
+        const { ask } = host(records)
+        await flush()
+        ask({ line: brakes, endLine: brakes + 3, version: 1, text: serverLines })
+        await flush()
+
+        await typeAbove(above)
+        expect(source().value).toBe(`${above}\n${examples.handbookBody}`)
+        expect(update).not.toHaveBeenCalled()
+
+        ask({ line: brakes, endLine: brakes + 3, version: 1, text: serverLines, key: 'again' })
+        await flush()
+        expect(focused()).toEqual(shown)
+        const row = document.querySelector('[data-golem-focus]')
+        expect([...row!.parentElement!.children].indexOf(row!)).toBe(brakes)
+
+        await userEvent.keyboard('{Control>}s{/Control}')
+        await waitFor(() => expect(status()).toBe('Saved 13:20'))
+        expect(await stored(records)).toBe(`${above}\r\n${crlf}`)
+      })
+
+      it('merges another writer’s CRLF version into typed lines, and saves both with CRLF', async () => {
+        const records = crlfStore()
+        const { ask } = host(records)
+        await flush()
+        await typeAbove(above)
+
+        const theirs = `${crlf}\r\nTheirs, at the end.`
+        await act(async () => {
+          await records.update('handbook', 'bench', { body: theirs, version: 2 })
+        })
+        await waitFor(() => expect(source().value).toContain('Theirs, at the end.'))
+        // Their one line, not the whole document: the typed CRLF-less draft merged line by line.
+        expect(markedLines()).toEqual(['Theirs, at the end.'])
+        expect(status()).toBe('Unsaved changes')
+
+        ask({ line: brakes, endLine: brakes + 3, version: 2, text: serverLines })
+        await flush()
+        expect(focused()).toEqual(shown)
+
+        await userEvent.keyboard('{Control>}s{/Control}')
+        await waitFor(() => expect(status()).toBe('Saved 13:20'))
+        expect(await stored(records)).toBe(`${above}\r\n${theirs}`)
+      })
+
+      it('keeps both writers’ lines and CRLF through a refused save and a conflict', async () => {
+        const records = crlfStore()
+        host(records)
+        await flush()
+        await typeAbove(above)
+        const bleed = source().value.indexOf('Bleed with')
+        await userEvent.type(source(), 'Mine: ', {
+          initialSelectionStart: bleed,
+          initialSelectionEnd: bleed,
+        })
+
+        // Written behind this editor's back: it only hears of it when its save is refused.
+        const theirs = crlf.replace('Bleed with', 'Theirs: bleed with')
+        await records.update('handbook', 'bench', { body: theirs, version: 2 })
+        await userEvent.keyboard('{Control>}s{/Control}')
+        await waitFor(() =>
+          expect(screen.getByRole('button', { name: 'Keep mine' })).toBeInTheDocument(),
+        )
+
+        await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+        await waitFor(() => expect(source().value).toContain('Mine: Bleed with'))
+        source().focus()
+        await userEvent.keyboard('{Control>}s{/Control}')
+        await waitFor(() => expect(status()).toBe('Saved 13:20'))
+        const body = await stored(records)
+        expect(body).toBe(`${above}\r\n${crlf.replace('Bleed with', 'Mine: Bleed with')}`)
+        expect(body).not.toMatch(/(?<!\r)\n/)
+      })
+
+      it('leaves an untouched record’s bytes alone, and an LF record LF', async () => {
+        const records = handbook()
+        const update = vi.spyOn(records, 'update')
+        host(records)
+        await flush()
+        await typeAbove(above)
+        await userEvent.keyboard('{Control>}s{/Control}')
+        await waitFor(() => expect(status()).toBe('Saved 13:20'))
+        expect(update.mock.calls[0]![2]).toMatchObject({
+          body: `${above}\n${examples.handbookBody}`,
+        })
+      })
     })
   })
 })

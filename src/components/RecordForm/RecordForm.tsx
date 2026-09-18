@@ -301,6 +301,12 @@ function RecordFormBody({
    * out, so whatever else the other writer changed survives.
    */
   const keepMine = () => {
+    // The controls stay live while the choice is open, so what is on screen is checked again.
+    const failures = validateAll(editable, values)
+    if (failures.length > 0) {
+      land(failures)
+      return
+    }
     const mine = Object.fromEntries(
       Object.entries(edits).filter(([key, value]) => value !== base[key]),
     )

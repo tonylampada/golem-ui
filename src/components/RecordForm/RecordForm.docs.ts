@@ -149,8 +149,9 @@ import 'golem-ui/styles.css'
 - **Someone else saved first.** A \`VersionConflictError\` carrying the current record keeps every
   unsaved value on screen and lists the fields of this form that the other save changed, beside the
   reader's value for each field they changed; the version field itself is left out of that list. Nothing is written until the
-  reader picks. *Keep mine* writes only the fields the reader changed, against the newer version, so the
-  other save's remaining changes survive; if a third save got in meanwhile, the choice comes back.
+  reader picks. *Keep mine* checks the form again, since the controls stay editable, then writes
+  only the fields the reader changed, against the newer version, so the other save's remaining
+  changes survive; if a third save got in meanwhile, the choice comes back.
   *Take theirs* drops the unsaved values and shows the stored record. Cancel asks before discarding, as
   it always does. A conflict carrying no record shows its \`message\` like any other rejection.
 - **The save is optimistic.** The success line appears before the adapter has answered, so a slow

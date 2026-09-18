@@ -288,6 +288,37 @@ describe('RecordForm', () => {
     expect(await saved()).toMatchObject({ customer: 'Delia Marchetti', version: 4 })
   })
 
+  it('checks the form again before Keep mine, and keeps the choice open while it fails', async () => {
+    const store = fakeRecords({ jobs: [{ ...examples.ticket, version: 1 }] })
+    const update = vi.spyOn(store, 'update')
+    await mount({ over: { mode: 'edit' }, records: store, recordId: 'j-4187' })
+    await store.update('jobs', 'j-4187', { bike: 'Kona Rove, 2020', version: 2 })
+    update.mockClear()
+
+    await userEvent.type(screen.getByLabelText(/^Service/), '!')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await screen.findByRole('alertdialog', { name: 'Saved by someone else' })
+
+    await userEvent.clear(screen.getByLabelText(/^Customer/))
+    await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+    expect(screen.getByText('Customer is required.')).toBeInTheDocument()
+    expect(document.activeElement).toBe(screen.getByLabelText(/^Customer/))
+    expect(screen.getByRole('alertdialog', { name: 'Saved by someone else' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Service/)).toHaveValue('Rear wheel rebuild!')
+    expect(update).toHaveBeenCalledTimes(1)
+
+    await userEvent.type(screen.getByLabelText(/^Customer/), 'Delia Marchetti-Ross')
+    await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(2))
+    expect(update.mock.lastCall![3]).toEqual({ expectedVersion: 2, versionField: 'version' })
+    expect(await store.get('jobs', 'j-4187')).toMatchObject({
+      customer: 'Delia Marchetti-Ross',
+      service: 'Rear wheel rebuild!',
+      bike: 'Kona Rove, 2020',
+      version: 3,
+    })
+  })
+
   it('renders an error card naming the enum field with no options', () => {
     render(<RecordForm {...examples.invalidConfig.props} />)
 

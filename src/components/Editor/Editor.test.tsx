@@ -595,6 +595,32 @@ describe('Editor moving between records', () => {
     expect(status()).toBe('Unsaved changes')
   })
 
+  it('gives neither the focus mark nor the draft slot to another store holding the same record', async () => {
+    const first = handbook()
+    const second = handbook()
+    const writes = [vi.spyOn(first, 'update'), vi.spyOn(second, 'update')]
+    const clock = fakeClock(examples.TODAY)
+    const at = (records: FakeRecords, draft?: string) => (
+      <Editor
+        config={config({ collection: 'handbook', id: 'bench', autosaveMs: 30_000 })}
+        adapters={{ records, clock }}
+        draft={draft}
+        focus={{ line: 6, key: 'a' }}
+      />
+    )
+    const view = render(at(first))
+    await flush()
+    expect(document.querySelectorAll('[data-golem-focus]')).toHaveLength(1)
+
+    // Same id, same fields, same text, same request, and now a draft: only the store is different.
+    view.rerender(at(second, `${examples.handbookBody}x`))
+    await flush()
+    expect(source().value).toBe(examples.handbookBody)
+    expect(status()).toBe('Saved')
+    expect(document.querySelectorAll('[data-golem-focus]')).toHaveLength(0)
+    for (const write of writes) expect(write).not.toHaveBeenCalled()
+  })
+
   it('does not carry a focus mark to another record with the same text', async () => {
     const move = host(
       handbook([{ id: 'twin', title: 'Twin', body: examples.handbookBody, version: 1 }]),

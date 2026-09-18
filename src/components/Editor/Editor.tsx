@@ -156,7 +156,7 @@ function EditorBody({
    * out. Coming back restores it, and the load that follows merges it against the latest version.
    */
   const record = `${config.collection}/${config.id}/${config.bodyField}/${config.versionField}`
-  const opened = useRef({ record, records, first: record })
+  const opened = useRef({ record, records, first: { record, records } })
   const parked = useRef(
     new WeakMap<RecordsAdapter, Map<string, { doc: Doc; pending: DocRecord | null }>>(),
   )
@@ -288,7 +288,10 @@ function EditorBody({
             const body = String(record[config.bodyField] ?? '')
             // The draft slot is the first record's unsaved work, never another record's.
             const opening =
-              opened.current.record === opened.current.first ? (openWith ?? body) : body
+              opened.current.record === opened.current.first.record &&
+              opened.current.records === opened.current.first.records
+                ? (openWith ?? body)
+                : body
             history.reset(opening)
             setDoc({
               draft: opening,
@@ -364,24 +367,25 @@ function EditorBody({
    * edit — the person's or the agent's — takes it down rather than leaving it on shifted lines.
    */
   const ask = focus ? `${focus.line}:${focus.endLine ?? ''}:${focus.key ?? ''}` : ''
-  const asked = useRef({ ask: '', record, done: true })
+  const asked = useRef({ ask: '', record, records, done: true })
   const [spot, setSpot] = useState<{
     start: number
     end: number
     draft: string
     record: string
+    records: RecordsAdapter
   } | null>(null)
   const scrollToSpot = useRef(false)
 
   useEffect(() => {
-    if (ask !== asked.current.ask) asked.current = { ask, record, done: ask === '' }
-  }, [ask, record])
+    if (ask !== asked.current.ask) asked.current = { ask, record, records, done: ask === '' }
+  }, [ask, record, records])
 
   useEffect(() => {
     const request = asked.current
     if (request.done || !focus) return
     const current = docRef.current
-    if (request.record !== record || !Number.isFinite(focus.line)) {
+    if (request.record !== record || request.records !== records || !Number.isFinite(focus.line)) {
       request.done = true
       return
     }
@@ -393,8 +397,8 @@ function EditorBody({
     const end = Math.max(start, clamp(Number.isFinite(focus.endLine) ? focus.endLine! : start))
     scrollToSpot.current = true
     setMode('source')
-    setSpot({ start: start - 1, end, draft: current.draft, record })
-  }, [ask, record, focus, doc.status, doc.conflict])
+    setSpot({ start: start - 1, end, draft: current.draft, record, records })
+  }, [ask, record, records, focus, doc.status, doc.conflict])
 
   // Centre the passage in the source pane, or put its top in view with two lines above it when it is
   // taller than the pane. Only the pane scrolls: the caret and the page stay where they are.
@@ -419,7 +423,10 @@ function EditorBody({
       for (let line = mark.start; line < mark.end; line++) rows.add(line)
     return rows
   }, [doc.marks])
-  const shown = spot && spot.record === record && spot.draft === doc.draft ? spot : null
+  const shown =
+    spot && spot.record === record && spot.records === records && spot.draft === doc.draft
+      ? spot
+      : null
 
   const write = (text: string, caret?: [number, number]) => {
     history.remember(text)

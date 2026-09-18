@@ -146,8 +146,8 @@ import 'golem-ui/styles.css'
 - **\`focus\` counts lines of the text on screen.** That is the record's body, or the person's draft
   when they have unsaved changes above the passage — the component cannot know which lines the
   caller counted in. A request waits while the record loads or a conflict is open, and belongs to
-  the record open when it arrived: move to another \`id\` before it lands and it is dropped, not
-  applied to the wrong document.
+  the record and the \`records\` adapter open when it arrived: move to another \`id\` or store
+  before it lands and it is dropped, not applied to the wrong document.
 - **\`focus\` shows the source, not the preview.** A toggle editor showing the preview switches to
   the source pane, and \`split\` leaves the preview where it was. Source lines have no reliable
   position in the rendering, so the component does not pretend to scroll it.
@@ -160,7 +160,8 @@ import 'golem-ui/styles.css'
   written on the way out. A save still in flight settles against the record that sent it. Coming
   back restores the draft, and the load that follows merges it against the latest version, so a
   write made meanwhile is a merge or a conflict, never a loss. Unmounting drops parked drafts.
-- **The \`draft\` slot belongs to the first record opened.** Another record opens on its own body.
+- **The \`draft\` slot belongs to the first record opened, in the first store.** Any other record,
+  or the same record through another \`records\` adapter, opens on its own body.
 - **A new adapter object on every render** makes Editor re-subscribe and re-fetch on every render.
   Build adapters once, outside render.`,
 }

@@ -91,6 +91,10 @@ Build adapters once, outside render.`,
       slot: 'draft',
       what: 'Unsaved work from a previous session — a local draft store, say. The editor opens on it instead of the record’s body, dirty against the record’s version, so the next thing the agent writes is merged rather than dropped on top of it.',
     },
+    {
+      slot: 'focus',
+      what: '`{ line, endLine?, key? }` — a passage to show, in 1-based source lines with `endLine` inclusive. The source pane scrolls it into the middle and tints it until the person clicks or edits. Out-of-range lines are clamped to the document; a `line` that is not a number is ignored. The same range again needs a new `key`. Caret, selection, draft and keyboard focus are left where they are.',
+    },
   ],
 
   example: `import { Editor, fakeClock, fakeRecords } from 'golem-ui'
@@ -139,6 +143,20 @@ import 'golem-ui/styles.css'
   for a line the agent wrote.
 - **\`readOnly\` blocks the writing, not the reading.** The source and the preview stay, the toolbar
   loses its actions, the autosave never runs, and nothing typed into the source reaches the record.
+- **\`focus\` counts lines of the text on screen.** That is the record's body, or the person's draft
+  when they have unsaved changes above the passage — the component cannot know which lines the
+  caller counted in. A request waits while the record loads or a conflict is open, and belongs to
+  the record open when it arrived: move to another \`id\` before it lands and it is dropped, not
+  applied to the wrong document.
+- **\`focus\` shows the source, not the preview.** A toggle editor showing the preview switches to
+  the source pane, and \`split\` leaves the preview where it was. Source lines have no reliable
+  position in the rendering, so the component does not pretend to scroll it.
+- **The focus tint lasts until the text changes.** Any edit — the person's or a merged agent version
+  — or a click in the source takes it down, so it never sits on lines that moved under it.
+- **Changing \`id\` opens the other record from scratch.** A draft the autosave has not sent yet is
+  saved to the record it was written in first, against the version it read. If that record moved
+  on in the meantime the store refuses the write and the draft is gone, because there is no screen
+  left to merge it on — keep \`autosaveMs\` short. Unmounting sends nothing.
 - **A new adapter object on every render** makes Editor re-subscribe and re-fetch on every render.
   Build adapters once, outside render.`,
 }

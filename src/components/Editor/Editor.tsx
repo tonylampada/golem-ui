@@ -29,6 +29,18 @@ export interface EditorSlots {
    * thing that arrives from the agent is merged rather than dropped on top of it.
    */
   draft?: string
+  /**
+   * A passage to show: 1-based source lines, `endLine` inclusive, clamped to the document. The source
+   * pane scrolls to it and marks it until the person clicks or edits; keyboard focus, caret and draft
+   * are left alone. Send a new `key` to show the same range again.
+   */
+  focus?: EditorFocus
+}
+
+export interface EditorFocus {
+  line: number
+  endLine?: number
+  key?: string
 }
 
 /** Below this the source and the preview cannot both fit, so `split` falls back to `toggle`. */
@@ -116,12 +128,14 @@ function EditorBody({
   config,
   adapters,
   draft: openWith,
+  focus,
 }: GolemProps<EditorConfig, EditorAdapters, EditorSlots>) {
   const { records, clock } = adapters
   const root = useRef<HTMLDivElement>(null)
   const textarea = useRef<HTMLTextAreaElement>(null)
   const overlay = useRef<HTMLDivElement>(null)
   const preview = useRef<HTMLDivElement>(null)
+  const sourcePane = useRef<HTMLDivElement>(null)
 
   const [doc, setDocState] = useState<Doc>(EMPTY)
   const docRef = useRef(doc)
@@ -136,6 +150,9 @@ function EditorBody({
   const selection = useRef<[number, number] | null>(null)
   /** An incoming version that arrived while a conflict was open, applied once it is settled. */
   const pending = useRef<DocRecord | null>(null)
+  /** The record the doc belongs to. Another one opens from scratch rather than merging into it. */
+  const record = `${config.collection}/${config.id}`
+  const opened = useRef({ record, collection: config.collection, id: config.id })
 
   const wide = useContainerWidth(root) >= SPLIT_ABOVE
   const split = config.preview === 'split' && wide
@@ -203,6 +220,7 @@ function EditorBody({
         { [config.bodyField]: body, [config.versionField]: expected + 1 },
         { expectedVersion: expected, versionField: config.versionField },
       )
+      if (opened.current.record !== record) return
       setDoc({
         base: body,
         version: Number(saved[config.versionField] ?? expected + 1),
@@ -212,6 +230,7 @@ function EditorBody({
         savedAt: clock.now(),
       })
     } catch (cause) {
+      if (opened.current.record !== record) return
       const theirs = conflictingRecord(cause)
       if (theirs) {
         setDoc({ status: 'dirty' })
@@ -220,11 +239,29 @@ function EditorBody({
       }
       setDoc({ status: 'error', error: message(cause) })
     }
-  }, [applyIncoming, clock, config, records, setDoc])
+  }, [applyIncoming, clock, config, record, records, setDoc])
 
   // The document, and the subscription that brings every later version of it. Nothing polls.
   useEffect(() => {
     let live = true
+    if (opened.current.record !== record) {
+      // Work not yet saved goes to the record it was written in, against the version it read. A
+      // refusal means that record moved on meanwhile, and there is no screen left to merge it on.
+      const left = docRef.current
+      if (!config.readOnly && (left.status === 'dirty' || left.status === 'error')) {
+        void records
+          .update(
+            opened.current.collection,
+            opened.current.id,
+            { [config.bodyField]: left.draft, [config.versionField]: left.version + 1 },
+            { expectedVersion: left.version, versionField: config.versionField },
+          )
+          .catch(() => {})
+      }
+      opened.current = { record, collection: config.collection, id: config.id }
+      pending.current = null
+      setDoc(EMPTY)
+    }
 
     const load = () =>
       records.get<DocRecord>(config.collection, config.id).then(
@@ -267,10 +304,12 @@ function EditorBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     records,
+    record,
     config.collection,
     config.id,
     config.bodyField,
     config.versionField,
+    config.readOnly,
     applyIncoming,
     history,
     setDoc,
@@ -308,6 +347,53 @@ function EditorBody({
     textarea.current.setSelectionRange(wanted[0], wanted[1])
   }, [doc.draft])
 
+  /**
+   * A focus request belongs to the record open when it arrived, and is applied once, when that record
+   * has loaded and no conflict is open. The mark it leaves is tied to the draft it was drawn on, so any
+   * edit — the person's or the agent's — takes it down rather than leaving it on shifted lines.
+   */
+  const ask = focus ? `${focus.line}:${focus.endLine ?? ''}:${focus.key ?? ''}` : ''
+  const asked = useRef({ ask: '', record, done: true })
+  const [spot, setSpot] = useState<{ start: number; end: number; draft: string } | null>(null)
+  const scrollToSpot = useRef(false)
+
+  useEffect(() => {
+    if (ask !== asked.current.ask) asked.current = { ask, record, done: ask === '' }
+  }, [ask, record])
+
+  useEffect(() => {
+    const request = asked.current
+    if (request.done || !focus) return
+    const current = docRef.current
+    if (request.record !== record || !Number.isFinite(focus.line)) {
+      request.done = true
+      return
+    }
+    if (current.status === 'loading' || current.conflict !== null) return
+    request.done = true
+    const count = current.draft.split('\n').length
+    const clamp = (line: number) => Math.min(Math.max(Math.trunc(line), 1), count)
+    const start = clamp(focus.line)
+    const end = Math.max(start, clamp(Number.isFinite(focus.endLine) ? focus.endLine! : start))
+    scrollToSpot.current = true
+    setMode('source')
+    setSpot({ start: start - 1, end, draft: current.draft })
+  }, [ask, record, focus, doc.status, doc.conflict])
+
+  // Centre the passage in the source pane, or put its top in view with two lines above it when it is
+  // taller than the pane. Only the pane scrolls: the caret and the page stay where they are.
+  useLayoutEffect(() => {
+    const pane = sourcePane.current
+    const rows = overlay.current?.children
+    if (!scrollToSpot.current || !spot || !pane || !rows) return
+    scrollToSpot.current = false
+    const origin = pane.getBoundingClientRect().top - pane.scrollTop
+    const top = rows[spot.start]!.getBoundingClientRect().top - origin
+    const bottom = rows[spot.end - 1]!.getBoundingClientRect().bottom - origin
+    pane.scrollTop =
+      bottom - top > pane.clientHeight ? top - 48 : (top + bottom - pane.clientHeight) / 2
+  }, [spot, showSource])
+
   const lines = useMemo(() => doc.draft.split('\n'), [doc.draft])
   const scanned = useMemo(() => scanSource(lines), [lines])
   const headings = useMemo(() => headingsOf(lines), [lines])
@@ -317,6 +403,7 @@ function EditorBody({
       for (let line = mark.start; line < mark.end; line++) rows.add(line)
     return rows
   }, [doc.marks])
+  const shown = spot && spot.draft === doc.draft ? spot : null
 
   const write = (text: string, caret?: [number, number]) => {
     history.remember(text)
@@ -471,6 +558,7 @@ function EditorBody({
           <>
             {showSource && (
               <div
+                ref={sourcePane}
                 data-golem-pane="source"
                 className={`min-h-0 flex-1 overflow-auto ${split ? 'sm:border-r sm:border-neutral-200' : ''}`}
               >
@@ -483,17 +571,21 @@ function EditorBody({
                     style={{ '--golem-mark-ms': `${config.highlightMs}ms` } as CSSProperties}
                     className="pointer-events-none absolute inset-0 p-4 break-words whitespace-pre-wrap"
                   >
-                    {scanned.map((line, index) => (
-                      <div
-                        key={index}
-                        data-golem-marked={marked.has(index) ? 'true' : undefined}
-                        className={`-mx-2 px-2 ${LINE_CLASS[line.kind]} ${
-                          marked.has(index) ? 'golem-editor-mark' : ''
-                        }`}
-                      >
-                        {line.text === '' ? ' ' : <SourceRow line={line} index={index} />}
-                      </div>
-                    ))}
+                    {scanned.map((line, index) => {
+                      const focused = shown !== null && index >= shown.start && index < shown.end
+                      return (
+                        <div
+                          key={index}
+                          data-golem-marked={marked.has(index) ? 'true' : undefined}
+                          data-golem-focus={focused ? 'true' : undefined}
+                          className={`-mx-2 px-2 ${LINE_CLASS[line.kind]} ${
+                            marked.has(index) ? 'golem-editor-mark' : ''
+                          } ${focused ? 'golem-editor-focus' : ''}`}
+                        >
+                          {line.text === '' ? ' ' : <SourceRow line={line} index={index} />}
+                        </div>
+                      )
+                    })}
                   </div>
                   <textarea
                     ref={textarea}
@@ -504,6 +596,7 @@ function EditorBody({
                     spellCheck={false}
                     onChange={(event) => write(event.target.value)}
                     onKeyDown={onKeyDown}
+                    onPointerDown={() => setSpot(null)}
                     className="relative block w-full resize-none overflow-hidden bg-transparent p-4 font-mono text-[13px] leading-6 break-words whitespace-pre-wrap text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400"
                   />
                 </div>

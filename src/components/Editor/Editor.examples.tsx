@@ -192,6 +192,120 @@ export const readOnly: EditorExample = {
   props: { config: { ...document, readOnly: true }, adapters: readOnlyAdapters },
 }
 
+/**
+ * A document long enough that a passage in the middle is off screen on open: the Northgate Cycles
+ * bench handbook, one section per job the shop does. `handbookLine` finds a line in it by its text,
+ * so the examples and the tests name a passage rather than a number that drifts when a line moves.
+ */
+const BENCH_JOBS = [
+  [
+    'Taking a bike in',
+    'the ticket is written at the counter, with the customer there',
+    'the bike gets a tag on the saddle with the ticket number',
+  ],
+  [
+    'Safety check',
+    'brakes, headset, quick releases and tyres, in that order',
+    'anything unsafe is written on the ticket before any other work',
+  ],
+  [
+    'Tune-up',
+    'gears indexed, brakes bedded, chain measured with the gauge',
+    'a chain past 0.75 is quoted, never replaced unasked',
+  ],
+  [
+    'Wheel truing',
+    'lateral first, then radial, then dish',
+    'a spoke that breaks twice is a rebuild quote, not a third spoke',
+  ],
+  [
+    'Suspension service',
+    'lower-leg service on the bench, damper work goes out to the specialist',
+    'the sag is written on the ticket before and after',
+  ],
+  [
+    'Hydraulic brakes',
+    'bleed with the lever level and the caliper lowest',
+    'pads contaminated with fluid are replaced, never cleaned',
+  ],
+  [
+    'E-bike intake',
+    'the battery comes off first and goes to the charging shelf',
+    'no motor is opened in the shop; it goes back to the maker',
+  ],
+  [
+    'Parts ordering',
+    'order from the distributor list pinned above the bench',
+    'a part over $60 is approved by the customer before it is ordered',
+  ],
+  [
+    'Calling the customer',
+    'call when the work is done, not when the parts arrive',
+    'a ticket is ready only once the call is logged',
+  ],
+  [
+    'Closing the day',
+    'every bike on the stand is tagged and every ticket has a status',
+    'the float is counted by two people',
+  ],
+]
+
+export const handbookBody = [
+  '# Northgate Cycles bench handbook',
+  '',
+  'How the bench does each job, written down so the next person does it the same way.',
+  '',
+  ...BENCH_JOBS.flatMap(([title, first, second], index) => [
+    `## ${index + 1}. ${title}`,
+    '',
+    `- ${first![0]!.toUpperCase()}${first!.slice(1)}.`,
+    `- ${second![0]!.toUpperCase()}${second!.slice(1)}.`,
+    '- Anything unusual goes in the ticket notes, in a sentence the next person can act on.',
+    '',
+    'Ask at the counter if the ticket does not say enough to start. A guess on the bench is a',
+    'second visit for the customer.',
+    '',
+  ]),
+].join('\n')
+
+/** The 1-based line of the first line in the handbook that contains `text`. */
+export const handbookLine = (text: string) =>
+  handbookBody.split('\n').findIndex((line) => line.includes(text)) + 1
+
+/** A second record in the same collection, for a host that moves between documents. */
+export const handbooks: DnaDocument[] = [
+  { id: 'bench', title: 'Bench handbook', body: handbookBody, version: 1 },
+  { id: 'counter', title: 'Counter handbook', body: dnaBody, version: 1 },
+]
+
+const handbookAdapters: EditorAdapters = {
+  records: fakeRecords({ handbook: handbooks.map((one) => ({ ...one })) }),
+  clock,
+}
+
+export const focusPassage: EditorExample = {
+  name: 'Opened at a passage',
+  summary:
+    'A long handbook opened with `focus` on the Hydraulic brakes section, halfway down: the source pane scrolls it to the middle and tints it, with the lines around it still in view. `split` at desktop width, the toggle on a phone. Click or type and the tint goes; the caret, the draft and keyboard focus are never touched. A new `key` shows the same passage again.',
+  viewportWidth: 900,
+  height: 640,
+  props: {
+    config: {
+      ...document,
+      preview: 'split',
+      collection: 'handbook',
+      id: 'bench',
+      placeholder: 'Write the handbook…',
+    },
+    adapters: handbookAdapters,
+    focus: {
+      line: handbookLine('Hydraulic brakes'),
+      endLine: handbookLine('Pads contaminated'),
+      key: 'first',
+    },
+  },
+}
+
 export const invalidConfig: EditorExample = {
   name: 'Invalid config',
   summary:
@@ -211,5 +325,6 @@ export const editorExamples = [
   agentEdit,
   conflict,
   readOnly,
+  focusPassage,
   invalidConfig,
 ]

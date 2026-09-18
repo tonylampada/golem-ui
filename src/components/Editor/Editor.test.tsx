@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { fakeClock, fakeRecords, type FakeRecords } from '../../adapters/fake'
@@ -477,17 +477,137 @@ describe('Editor focus', () => {
     expect(source().value).toBe(examples.dnaBody)
     expect(status()).toBe('Saved')
     expect(focused()).toEqual([])
-    // The draft left behind was saved to its own record, not merged into this one.
-    await expect(records.get('handbook', 'bench')).resolves.toMatchObject({
-      body: `${examples.handbookBody}x`,
-      version: 2,
-    })
+    // Nothing was written on the way out: the draft left behind is parked, not saved.
+    await expect(records.get('handbook', 'bench')).resolves.toMatchObject({ version: 1 })
 
     // A request sent with the move belongs to the record it moved to.
     ask({ line: 1, key: 'b' }, { id: 'bench' })
     await flush()
     expect(source().value).toBe(`${examples.handbookBody}x`)
     expect(focused()).toEqual(['# Northgate Cycles bench handbook'])
+  })
+})
+
+describe('Editor moving between records', () => {
+  const handbook = (extra: examples.DnaDocument[] = []) =>
+    fakeRecords({ handbook: [...examples.handbooks, ...extra].map((one) => ({ ...one })) })
+  const focused = () => document.querySelectorAll('[data-golem-focus]').length
+  const mine = examples.handbookBody.replace('Bleed with', 'Mine: bleed with')
+  const theirs = examples.handbookBody.replace('Bleed with', 'Theirs: bleed with')
+
+  function host(first: FakeRecords) {
+    const clock = fakeClock(examples.TODAY)
+    const at = (over: Partial<EditorConfigInput>, records = first, focus?: EditorFocus) => (
+      <Editor
+        config={config({ collection: 'handbook', id: 'bench', autosaveMs: 30_000, ...over })}
+        adapters={{ records, clock }}
+        focus={focus}
+      />
+    )
+    const view = render(at({}))
+    return (...args: Parameters<typeof at>) => view.rerender(at(...args))
+  }
+
+  it('keeps a draft whose save was refused while away, and asks about it on return', async () => {
+    const store = handbook()
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    // A store whose save is still in flight when the person leaves, and whose other writer this
+    // editor does not hear about until the save is refused.
+    const records: FakeRecords = {
+      ...store,
+      subscribe: () => () => {},
+      update: (async (...args: Parameters<FakeRecords['update']>) => {
+        await gate
+        return store.update(...args)
+      }) as FakeRecords['update'],
+    }
+    const move = host(records)
+    await flush()
+
+    fireEvent.change(source(), { target: { value: mine } })
+    await store.update('handbook', 'bench', { body: theirs, version: 2 })
+    source().focus()
+    await userEvent.keyboard('{Meta>}s{/Meta}')
+    expect(status()).toBe('Saving…')
+
+    move({ id: 'counter' })
+    await flush()
+    expect(source().value).toBe(examples.dnaBody)
+
+    await act(async () => release())
+    await flush()
+    expect(source().value).toBe(examples.dnaBody)
+
+    move({ id: 'bench' })
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Keep mine' })).toBeInTheDocument(),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+    expect(source().value).toBe(mine)
+    expect(status()).toBe('Unsaved changes')
+  })
+
+  it('keeps an open conflict across a move', async () => {
+    const records = handbook()
+    const move = host(records)
+    await flush()
+    fireEvent.change(source(), { target: { value: mine } })
+    await act(async () => {
+      await records.update('handbook', 'bench', { body: theirs, version: 2 })
+    })
+    expect(screen.getByRole('button', { name: 'Keep mine' })).toBeInTheDocument()
+
+    move({ id: 'counter' })
+    await flush()
+    move({ id: 'bench' })
+    await flush()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+    expect(source().value).toBe(mine)
+  })
+
+  it('never writes a draft to another field or another store', async () => {
+    const records = handbook()
+    const other = handbook()
+    const writes = [vi.spyOn(records, 'update'), vi.spyOn(other, 'update')]
+    const move = host(records)
+    await flush()
+    await userEvent.type(source(), 'x')
+
+    move({ bodyField: 'title' })
+    await flush()
+    expect(source().value).toBe('Bench handbook')
+
+    move({}, other)
+    await flush()
+    expect(source().value).toBe(examples.handbookBody)
+
+    for (const write of writes) expect(write).not.toHaveBeenCalled()
+    await expect(records.get('handbook', 'bench')).resolves.toMatchObject({
+      body: examples.handbookBody,
+      title: 'Bench handbook',
+    })
+
+    move({}, records)
+    await flush()
+    expect(source().value).toBe(`${examples.handbookBody}x`)
+    expect(status()).toBe('Unsaved changes')
+  })
+
+  it('does not carry a focus mark to another record with the same text', async () => {
+    const move = host(
+      handbook([{ id: 'twin', title: 'Twin', body: examples.handbookBody, version: 1 }]),
+    )
+    await flush()
+    move({}, undefined, { line: 6, key: 'a' })
+    await flush()
+    expect(focused()).toBe(1)
+
+    move({ id: 'twin' }, undefined, { line: 6, key: 'a' })
+    await flush()
+    expect(source().value).toBe(examples.handbookBody)
+    expect(focused()).toBe(0)
   })
 })
 

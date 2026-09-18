@@ -272,21 +272,38 @@ export const handbookBody = [
 export const handbookLine = (text: string) =>
   handbookBody.split('\n').findIndex((line) => line.includes(text)) + 1
 
-/** A second record in the same collection, for a host that moves between documents. */
+/**
+ * More records in the same collection, for a host that moves between documents. `twin` is a copy of
+ * the bench handbook kept for the second shop, word for word: two records, one text.
+ */
 export const handbooks: DnaDocument[] = [
   { id: 'bench', title: 'Bench handbook', body: handbookBody, version: 1 },
   { id: 'counter', title: 'Counter handbook', body: dnaBody, version: 1 },
+  { id: 'twin', title: 'Bench handbook, second shop', body: handbookBody, version: 1 },
 ]
 
+/** The store under the focus example, exported so its story can play the other writer. */
+export const handbookStore = fakeRecords({ handbook: handbooks.map((one) => ({ ...one })) })
+
+/**
+ * The same store, answering a save a second and a half late — long enough to leave the record, or
+ * for somebody else to write it, while the save is still out.
+ */
 const handbookAdapters: EditorAdapters = {
-  records: fakeRecords({ handbook: handbooks.map((one) => ({ ...one })) }),
+  records: {
+    ...handbookStore,
+    update: ((...args: Parameters<FakeRecords['update']>) =>
+      new Promise((resolve) => setTimeout(resolve, 1500)).then(() =>
+        handbookStore.update(...args),
+      )) as FakeRecords['update'],
+  },
   clock,
 }
 
 export const focusPassage: EditorExample = {
   name: 'Opened at a passage',
   summary:
-    'A long handbook opened with `focus` on the Hydraulic brakes section, halfway down: the source pane scrolls it to the middle and tints it, with the lines around it still in view. `split` at desktop width, the toggle on a phone. Click or type and the tint goes; the caret, the draft and keyboard focus are never touched. A new `key` shows the same passage again.',
+    'A long handbook opened with `focus` on the Hydraulic brakes section, halfway down: the source pane scrolls it to the middle and tints it, with the lines around it still in view. `split` at desktop width, the toggle on a phone. Click or type and the tint goes; the caret, the draft and keyboard focus are never touched. A new `key` shows the same passage again. The store answers a save a second and a half late, so a record can be left while its save is still out.',
   viewportWidth: 900,
   height: 640,
   props: {

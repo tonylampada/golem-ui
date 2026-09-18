@@ -41,7 +41,8 @@ export const Conflict = story(examples.conflict)
 export const ReadOnly = story(examples.readOnly)
 /**
  * The host's side of `focus`, as buttons: ask for a passage, ask for the same one again with a new
- * key, ask for another one, or move to the other record. Each is a prop change and nothing more.
+ * key, ask for another one, or move to another record. Each is a prop change and nothing more. The
+ * last button is a second writer, for leaving a record mid-save and coming back to a conflict.
  */
 function FocusHost(props: examples.EditorProps) {
   const [focus, setFocus] = useState(props.focus)
@@ -59,7 +60,16 @@ function FocusHost(props: examples.EditorProps) {
     examples.handbookLine('Parts ordering'),
     examples.handbookLine('A part over $60'),
   ] as const
-  const button = 'rounded-lg border border-neutral-300 bg-white px-2 py-1 text-xs font-medium'
+  /** Another writer rewrites the first brakes line of the bench handbook, straight into the store. */
+  const otherWriter = () =>
+    void examples.handbookStore.get<examples.DnaDocument>('handbook', 'bench').then((bench) =>
+      examples.handbookStore.update('handbook', 'bench', {
+        body: bench!.body.replace('- Bleed with', '- Always bleed with'),
+        version: bench!.version + 1,
+      }),
+    )
+  const button =
+    'rounded-lg border border-neutral-300 bg-white px-2 py-1 text-xs font-medium disabled:opacity-40'
 
   return (
     <div className="flex h-full flex-col">
@@ -73,12 +83,19 @@ function FocusHost(props: examples.EditorProps) {
         <button type="button" className={button} onClick={() => ask(0, 9999)}>
           Out of range
         </button>
-        <button
-          type="button"
-          className={button}
-          onClick={() => setId(id === 'bench' ? 'counter' : 'bench')}
-        >
-          Open {id === 'bench' ? 'counter' : 'bench'}
+        {['bench', 'counter', 'twin'].map((record) => (
+          <button
+            key={record}
+            type="button"
+            className={button}
+            disabled={record === id}
+            onClick={() => setId(record)}
+          >
+            Open {record}
+          </button>
+        ))}
+        <button type="button" className={button} onClick={otherWriter}>
+          Someone else edits bench
         </button>
       </div>
       <div className="min-h-0 flex-1">

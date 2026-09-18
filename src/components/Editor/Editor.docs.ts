@@ -152,11 +152,15 @@ import 'golem-ui/styles.css'
   the source pane, and \`split\` leaves the preview where it was. Source lines have no reliable
   position in the rendering, so the component does not pretend to scroll it.
 - **The focus tint lasts until the text changes.** Any edit — the person's or a merged agent version
-  — or a click in the source takes it down, so it never sits on lines that moved under it.
-- **Changing \`id\` opens the other record from scratch.** A draft the autosave has not sent yet is
-  saved to the record it was written in first, against the version it read. If that record moved
-  on in the meantime the store refuses the write and the draft is gone, because there is no screen
-  left to merge it on — keep \`autosaveMs\` short. Unmounting sends nothing.
+  — a click in the source, or a move to another record takes it down, so it never sits on lines that
+  moved under it or on a second record that happens to hold the same text.
+- **Moving to another record parks this one.** Changing \`collection\`, \`id\`, \`bodyField\`,
+  \`versionField\` or the \`records\` adapter opens that record fresh and keeps the one left behind —
+  draft, the version it read, an open conflict — for as long as the editor stays mounted. Nothing is
+  written on the way out. A save still in flight settles against the record that sent it. Coming
+  back restores the draft, and the load that follows merges it against the latest version, so a
+  write made meanwhile is a merge or a conflict, never a loss. Unmounting drops parked drafts.
+- **The \`draft\` slot belongs to the first record opened.** Another record opens on its own body.
 - **A new adapter object on every render** makes Editor re-subscribe and re-fetch on every render.
   Build adapters once, outside render.`,
 }

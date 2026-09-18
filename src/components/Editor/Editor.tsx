@@ -150,9 +150,16 @@ function EditorBody({
   const selection = useRef<[number, number] | null>(null)
   /** An incoming version that arrived while a conflict was open, applied once it is settled. */
   const pending = useRef<DocRecord | null>(null)
-  /** The record the doc belongs to. Another one opens from scratch rather than merging into it. */
-  const record = `${config.collection}/${config.id}`
-  const opened = useRef({ record, collection: config.collection, id: config.id })
+  /**
+   * The record the doc belongs to, read through which fields and which store. Moving to another one
+   * parks this doc — draft, versions, an open conflict — untouched, and nothing is written on the way
+   * out. Coming back restores it, and the load that follows merges it against the latest version.
+   */
+  const record = `${config.collection}/${config.id}/${config.bodyField}/${config.versionField}`
+  const opened = useRef({ record, records, first: record })
+  const parked = useRef(
+    new WeakMap<RecordsAdapter, Map<string, { doc: Doc; pending: DocRecord | null }>>(),
+  )
 
   const wide = useContainerWidth(root) >= SPLIT_ABOVE
   const split = config.preview === 'split' && wide
@@ -213,6 +220,14 @@ function EditorBody({
     const expected = current.version
     setDoc({ status: 'saving' })
 
+    // The answer belongs to the record that asked, which may be parked by the time it comes back.
+    const here = () => opened.current.record === record && opened.current.records === records
+    const settle = (patch: (doc: Doc) => Partial<Doc>) => {
+      if (here()) return setDoc(patch(docRef.current))
+      const away = parked.current.get(records)?.get(record)
+      if (away) away.doc = { ...away.doc, ...patch(away.doc) }
+    }
+
     try {
       const saved = await records.update<DocRecord>(
         config.collection,
@@ -220,47 +235,42 @@ function EditorBody({
         { [config.bodyField]: body, [config.versionField]: expected + 1 },
         { expectedVersion: expected, versionField: config.versionField },
       )
-      if (opened.current.record !== record) return
-      setDoc({
+      settle((doc) => ({
         base: body,
         version: Number(saved[config.versionField] ?? expected + 1),
         // The person kept typing while the write was in flight, so there is already more to send.
-        status: docRef.current.draft === body ? 'saved' : 'dirty',
+        status: doc.draft === body ? 'saved' : 'dirty',
         error: null,
         savedAt: clock.now(),
-      })
+      }))
     } catch (cause) {
-      if (opened.current.record !== record) return
       const theirs = conflictingRecord(cause)
-      if (theirs) {
+      if (theirs && here()) {
         setDoc({ status: 'dirty' })
         applyIncoming(theirs as DocRecord)
         return
       }
-      setDoc({ status: 'error', error: message(cause) })
+      // A parked refusal stays dirty; coming back loads the latest version and merges against it.
+      settle(() => (theirs ? { status: 'dirty' } : { status: 'error', error: message(cause) }))
     }
   }, [applyIncoming, clock, config, record, records, setDoc])
 
   // The document, and the subscription that brings every later version of it. Nothing polls.
   useEffect(() => {
     let live = true
-    if (opened.current.record !== record) {
-      // Work not yet saved goes to the record it was written in, against the version it read. A
-      // refusal means that record moved on meanwhile, and there is no screen left to merge it on.
-      const left = docRef.current
-      if (!config.readOnly && (left.status === 'dirty' || left.status === 'error')) {
-        void records
-          .update(
-            opened.current.collection,
-            opened.current.id,
-            { [config.bodyField]: left.draft, [config.versionField]: left.version + 1 },
-            { expectedVersion: left.version, versionField: config.versionField },
-          )
-          .catch(() => {})
-      }
-      opened.current = { record, collection: config.collection, id: config.id }
-      pending.current = null
-      setDoc(EMPTY)
+    if (opened.current.record !== record || opened.current.records !== records) {
+      const left = opened.current
+      const shelf = parked.current.get(left.records) ?? new Map()
+      parked.current.set(
+        left.records,
+        shelf.set(left.record, { doc: docRef.current, pending: pending.current }),
+      )
+      const back = parked.current.get(records)?.get(record)
+      parked.current.get(records)?.delete(record)
+      opened.current = { ...left, record, records }
+      pending.current = back?.pending ?? null
+      history.reset(back?.doc.draft ?? '')
+      setDoc(back?.doc ?? EMPTY)
     }
 
     const load = () =>
@@ -276,7 +286,9 @@ function EditorBody({
           }
           if (docRef.current.status === 'loading') {
             const body = String(record[config.bodyField] ?? '')
-            const opening = openWith ?? body
+            // The draft slot is the first record's unsaved work, never another record's.
+            const opening =
+              opened.current.record === opened.current.first ? (openWith ?? body) : body
             history.reset(opening)
             setDoc({
               draft: opening,
@@ -309,7 +321,6 @@ function EditorBody({
     config.id,
     config.bodyField,
     config.versionField,
-    config.readOnly,
     applyIncoming,
     history,
     setDoc,
@@ -354,7 +365,12 @@ function EditorBody({
    */
   const ask = focus ? `${focus.line}:${focus.endLine ?? ''}:${focus.key ?? ''}` : ''
   const asked = useRef({ ask: '', record, done: true })
-  const [spot, setSpot] = useState<{ start: number; end: number; draft: string } | null>(null)
+  const [spot, setSpot] = useState<{
+    start: number
+    end: number
+    draft: string
+    record: string
+  } | null>(null)
   const scrollToSpot = useRef(false)
 
   useEffect(() => {
@@ -377,7 +393,7 @@ function EditorBody({
     const end = Math.max(start, clamp(Number.isFinite(focus.endLine) ? focus.endLine! : start))
     scrollToSpot.current = true
     setMode('source')
-    setSpot({ start: start - 1, end, draft: current.draft })
+    setSpot({ start: start - 1, end, draft: current.draft, record })
   }, [ask, record, focus, doc.status, doc.conflict])
 
   // Centre the passage in the source pane, or put its top in view with two lines above it when it is
@@ -403,7 +419,7 @@ function EditorBody({
       for (let line = mark.start; line < mark.end; line++) rows.add(line)
     return rows
   }, [doc.marks])
-  const shown = spot && spot.draft === doc.draft ? spot : null
+  const shown = spot && spot.record === record && spot.draft === doc.draft ? spot : null
 
   const write = (text: string, caret?: [number, number]) => {
     history.remember(text)

@@ -74,6 +74,8 @@ interface Doc {
   /** Set while the two disagree; the source pane is replaced by the choice until it is empty. */
   conflict: Merge3Chunk[] | null
   choices: ('mine' | 'theirs' | null)[]
+  /** The record's line break. `draft` and `base` always hold `\n`, as a textarea does. */
+  eol: '\n' | '\r\n'
 }
 
 const EMPTY: Doc = {
@@ -86,6 +88,17 @@ const EMPTY: Doc = {
   marks: [],
   conflict: null,
   choices: [],
+  eol: '\n',
+}
+
+/**
+ * A body whose every line break is CRLF is held with bare LF — a textarea turns CRLF into LF on the
+ * first keystroke anyway — and written back with CRLF. Any other body, mixed ones too, is held as is.
+ */
+function decode(body: string): { text: string; eol: Doc['eol'] } {
+  return body.includes('\r\n') && !/\r(?!\n)|(?<!\r)\n/.test(body)
+    ? { text: body.replaceAll('\r\n', '\n'), eol: '\r\n' }
+    : { text: body, eol: '\n' }
 }
 
 /**
@@ -97,6 +110,7 @@ function passageOf(
   lines: string[],
   focus: EditorFocus,
   atVersion: boolean,
+  eol: Doc['eol'],
 ): [number, number] | null {
   const first = Math.trunc(focus.line) - 1
   const last = Number.isFinite(focus.endLine) ? Math.trunc(focus.endLine!) : first + 1
@@ -105,7 +119,9 @@ function passageOf(
     const start = clamp(first)
     return [start, Math.max(start, clamp(last - 1)) + 1]
   }
-  const want = focus.text.split('\n')
+  // The offered lines of a CRLF record keep their CRs, the last one's too; the draft has none.
+  const text = eol === '\n' ? focus.text : focus.text.replaceAll('\r\n', '\n').replace(/\r$/, '')
+  const want = text.split('\n')
   const holds = (at: number) => want.every((line, index) => lines[at + index] === line)
   if (atVersion && last - first === want.length && holds(first)) return [first, last]
   let found: number | null = null
@@ -215,7 +231,7 @@ function EditorBody({
   const applyIncoming = useCallback(
     (record: DocRecord) => {
       const current = docRef.current
-      const theirs = String(record[config.bodyField] ?? '')
+      const { text: theirs, eol } = decode(String(record[config.bodyField] ?? ''))
       const version = Number(record[config.versionField] ?? current.version)
 
       if (current.conflict !== null) {
@@ -229,6 +245,7 @@ function EditorBody({
         setDoc({
           base: theirs,
           version,
+          eol,
           status: 'conflict',
           error: null,
           conflict: merged.chunks,
@@ -243,6 +260,7 @@ function EditorBody({
         draft: text,
         base: theirs,
         version,
+        eol,
         status: text === theirs ? 'saved' : 'dirty',
         error: null,
         marks: config.highlightMs > 0 ? theirLines : [],
@@ -257,7 +275,8 @@ function EditorBody({
     if (config.readOnly || current.status === 'conflict' || current.status === 'loading') return
     if (current.draft === current.base) return
 
-    const body = current.draft
+    const text = current.draft
+    const body = current.eol === '\n' ? text : text.replaceAll('\n', current.eol)
     const expected = current.version
     setDoc({ status: 'saving' })
 
@@ -277,10 +296,10 @@ function EditorBody({
         { expectedVersion: expected, versionField: config.versionField },
       )
       settle((doc) => ({
-        base: body,
+        base: text,
         version: Number(saved[config.versionField] ?? expected + 1),
         // The person kept typing while the write was in flight, so there is already more to send.
-        status: doc.draft === body ? 'saved' : 'dirty',
+        status: doc.draft === text ? 'saved' : 'dirty',
         error: null,
         savedAt: clock.now(),
       }))
@@ -332,17 +351,21 @@ function EditorBody({
             return
           }
           if (docRef.current.status === 'loading') {
-            const body = String(record[config.bodyField] ?? '')
+            const { text: body, eol } = decode(String(record[config.bodyField] ?? ''))
             // The draft slot is the first record's unsaved work, never another record's.
             const opening =
+              openWith !== undefined &&
               opened.current.record === opened.current.first.record &&
               opened.current.records === opened.current.first.records
-                ? (openWith ?? body)
+                ? eol === '\n'
+                  ? openWith
+                  : openWith.replaceAll('\r\n', '\n')
                 : body
             history.reset(opening)
             setDoc({
               draft: opening,
               base: body,
+              eol,
               version: Number(record[config.versionField] ?? 0),
               status: opening === body ? 'saved' : 'dirty',
               error: null,
@@ -446,7 +469,7 @@ function EditorBody({
     if (Number.isFinite(focus.version) && current.version < focus.version!) return
     request.done = true
     const atVersion = current.version === focus.version && current.draft === current.base
-    const passage = passageOf(current.draft.split('\n'), focus, atVersion)
+    const passage = passageOf(current.draft.split('\n'), focus, atVersion, current.eol)
     // A passage that cannot be placed leaves nothing marked, not even the last request's mark.
     if (!passage) return setSpot(null)
     scrollToSpot.current = true

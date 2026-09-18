@@ -148,9 +148,9 @@ import 'golem-ui/styles.css'
   caller counted in. A request waits while the record loads or a conflict is open, and belongs to
   the record and the \`records\` adapter open when it arrived: move to another \`id\` or store
   before it lands and it is dropped, not applied to the wrong document.
-- **\`focus.text\` is matched whole line by whole line, exactly.** No trimming, no case folding, no
-  line-ending rewrite: a body with CRLF endings keeps the CR on every line, so the offered lines carry
-  it too. The offered \`line\`..\`endLine\` range picks among several copies only when the editor is
+- **\`focus.text\` is matched whole line by whole line, exactly.** No trimming, no case folding. On a
+  CRLF record the offered lines may keep their CRs, as the server's lines do, or drop them: both
+  match. The offered \`line\`..\`endLine\` range picks among several copies only when the editor is
   on exactly \`version\`, with no unsaved changes, and that range holds the text; anywhere else the
   passage must appear once. A passage that cannot be placed opens the record with nothing tinted and
   nothing scrolled — the last request's tint is taken down too — and the draft is never written.
@@ -170,6 +170,9 @@ import 'golem-ui/styles.css'
   written on the way out. A save still in flight settles against the record that sent it. Coming
   back restores the draft, and the load that follows merges it against the latest version, so a
   write made meanwhile is a merge or a conflict, never a loss. Unmounting drops parked drafts.
+- **A CRLF record stays CRLF.** A body whose every line break is CRLF is edited with bare LFs, as a
+  textarea holds it, and every save writes CRLF back, so an edit changes only the lines it touched.
+  A body with mixed line endings is written back with LFs once the person edits it.
 - **The \`draft\` slot belongs to the first record opened, in the first store.** Any other record,
   or the same record through another \`records\` adapter, opens on its own body.
 - **A new adapter object on every render** makes Editor re-subscribe and re-fetch on every render.

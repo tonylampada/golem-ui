@@ -93,7 +93,7 @@ Build adapters once, outside render.`,
     },
     {
       slot: 'focus',
-      what: '`{ line, endLine?, key? }` — a passage to show, in 1-based source lines with `endLine` inclusive. The source pane scrolls it into the middle and tints it until the person clicks or edits. Out-of-range lines are clamped to the document; a `line` that is not a number is ignored. The same range again needs a new `key`. Caret, selection, draft and keyboard focus are left where they are.',
+      what: '`{ line, endLine?, key?, version?, text? }` — a passage to show, in 1-based source lines with `endLine` inclusive. The source pane scrolls it into the middle and tints it until the person clicks or edits. Out-of-range lines are clamped to the document; a `line` that is not a number is ignored. The same request again needs a new `key`. Caret, selection, draft and keyboard focus are left where they are. `version` is the record version the lines were counted in: the request waits until the editor has read that version or a later one. `text` is the passage itself, its exact lines joined by `\\n`: the editor finds it in the draft on screen instead of trusting `line`, and marks nothing when those lines are missing or appear more than once.',
     },
   ],
 
@@ -148,6 +148,16 @@ import 'golem-ui/styles.css'
   caller counted in. A request waits while the record loads or a conflict is open, and belongs to
   the record and the \`records\` adapter open when it arrived: move to another \`id\` or store
   before it lands and it is dropped, not applied to the wrong document.
+- **\`focus.text\` is matched whole line by whole line, exactly.** No trimming, no case folding, no
+  line-ending rewrite: a body with CRLF endings keeps the CR on every line, so the offered lines carry
+  it too. The offered \`line\`..\`endLine\` range picks among several copies only when the editor is
+  on exactly \`version\`, with no unsaved changes, and that range holds the text; anywhere else the
+  passage must appear once. A passage that cannot be placed opens the record with nothing tinted and
+  nothing scrolled — the last request's tint is taken down too — and the draft is never written.
+- **A \`focus\` waits for a fresh read.** A record opened, or a parked draft brought back,
+  is matched only after its latest version has been read and merged in, so the passage is looked
+  for in the text the person will see, not in the draft as it was left. A request sent in the same
+  render as a move to another record belongs to the record moved to.
 - **\`focus\` shows the source, not the preview.** A toggle editor showing the preview switches to
   the source pane, and \`split\` leaves the preview where it was. Source lines have no reliable
   position in the rendering, so the component does not pretend to scroll it.

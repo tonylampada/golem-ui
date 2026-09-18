@@ -196,12 +196,14 @@ describe('Chat', () => {
 
   it('shows a history error without replacing a live conversation', async () => {
     const messages = [agentMessage('m-live', 'The blue Kona frame is held.')]
+    let update!: (messages: ChatMessage[]) => void
     const adapter: ChatAdapter = {
       history: async () => {
         throw new Error('Conversation is unavailable.')
       },
       async send() {},
       subscribe(listener) {
+        update = listener
         listener(messages)
         return () => {}
       },
@@ -210,6 +212,9 @@ describe('Chat', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Conversation is unavailable.')
     expect(screen.getByText('The blue Kona frame is held.')).toBeInTheDocument()
+
+    act(() => update(messages))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('retains failed messages, retries them when supported, and catches rejected work', async () => {

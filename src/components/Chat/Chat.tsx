@@ -22,23 +22,30 @@ const PIN_SLACK = 48
 
 function useConversation(adapter: ChatAdapter): { messages: ChatMessage[]; loadError: string } {
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [loadError, setLoadError] = useState('')
+  const [loadError, setLoadError] = useState<{ adapter: ChatAdapter; message: string } | null>(null)
 
   useEffect(() => {
     let live = true
     let receivedUpdate = false
     const unsubscribe = adapter.subscribe((next) => {
       receivedUpdate = true
+      setLoadError(null)
       setMessages(next)
     })
     void adapter
       .history()
       .then((next) => {
-        if (live && !receivedUpdate) setMessages(next)
+        if (live && !receivedUpdate) {
+          setLoadError(null)
+          setMessages(next)
+        }
       })
       .catch((error: unknown) => {
         if (live)
-          setLoadError(error instanceof Error ? error.message : 'Conversation could not be loaded.')
+          setLoadError({
+            adapter,
+            message: error instanceof Error ? error.message : 'Conversation could not be loaded.',
+          })
       })
     return () => {
       live = false
@@ -46,7 +53,7 @@ function useConversation(adapter: ChatAdapter): { messages: ChatMessage[]; loadE
     }
   }, [adapter])
 
-  return { messages, loadError }
+  return { messages, loadError: loadError?.adapter === adapter ? loadError.message : '' }
 }
 
 /**

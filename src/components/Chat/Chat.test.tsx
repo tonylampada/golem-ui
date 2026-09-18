@@ -147,6 +147,95 @@ describe('Chat', () => {
     })
   })
 
+  it('keeps an adapter pending message visible until its acknowledgement replaces it', async () => {
+    const messages: ChatMessage[] = []
+    const listeners = new Set<(next: ChatMessage[]) => void>()
+    let acknowledge!: () => void
+    let loadHistory!: (messages: ChatMessage[]) => void
+    const adapter: ChatAdapter = {
+      history() {
+        return new Promise<ChatMessage[]>((resolve) => {
+          loadHistory = resolve
+        })
+      },
+      send(text) {
+        messages.push({
+          id: 'm-send',
+          role: 'user',
+          text,
+          at: '2026-09-10T09:30:00Z',
+          delivery: 'pending',
+        })
+        listeners.forEach((listener) => listener([...messages]))
+        return new Promise<void>((resolve) => {
+          acknowledge = resolve
+        })
+      },
+      subscribe(listener) {
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      },
+    }
+    render(<Chat config={{}} adapters={{ chat: adapter }} />)
+
+    await userEvent.type(screen.getByRole('textbox'), 'Please hold the blue Kona frame.{Enter}')
+    expect(screen.getByRole('status')).toHaveTextContent('Sending')
+    expect(screen.queryByText('Golem is thinking…')).not.toBeInTheDocument()
+
+    await act(async () => loadHistory([]))
+    expect(screen.getByRole('status')).toHaveTextContent('Sending')
+
+    act(() => {
+      messages[0] = { ...messages[0]!, delivery: undefined }
+      listeners.forEach((listener) => listener([...messages]))
+      acknowledge()
+    })
+    expect(document.querySelectorAll('[data-golem-chat-message="user"]')).toHaveLength(1)
+    expect(screen.queryByText('Sending')).not.toBeInTheDocument()
+  })
+
+  it('retains failed messages, retries them when supported, and catches rejected work', async () => {
+    const retry = vi.fn(async () => {
+      throw new Error('Still offline.')
+    })
+    let rejectSend!: (error: Error) => void
+    const adapter: ChatAdapter = {
+      async history() {
+        return [
+          {
+            id: 'm-failed',
+            role: 'user',
+            text: 'Please call me back.',
+            at: '2026-09-10T09:30:00Z',
+            delivery: 'failed',
+          },
+        ]
+      },
+      send() {
+        return new Promise<void>((_resolve, reject) => {
+          rejectSend = reject
+        })
+      },
+      retry,
+      subscribe: () => () => {},
+    }
+    render(<Chat config={{}} adapters={{ chat: adapter }} />)
+    await flush()
+
+    expect(screen.getByText('Please call me back.')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Not sent')
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Still offline.'))
+    expect(retry).toHaveBeenCalledWith('m-failed')
+
+    await userEvent.type(screen.getByRole('textbox'), 'A first draft')
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await userEvent.type(screen.getByRole('textbox'), 'A newer draft')
+    act(() => rejectSend(new Error('Offline.')))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Offline.'))
+    expect(screen.getByRole('textbox')).toHaveValue('A newer draft')
+  })
+
   it('sends what a hosted attach slot staged, and takes the paperclip away', async () => {
     const { adapter, sent } = scriptedChat()
     render(

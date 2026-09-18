@@ -25,10 +25,17 @@ function useConversation(adapter: ChatAdapter): ChatMessage[] {
 
   useEffect(() => {
     let live = true
-    void adapter.history().then((next) => {
-      if (live) setMessages(next)
+    let receivedUpdate = false
+    const unsubscribe = adapter.subscribe((next) => {
+      receivedUpdate = true
+      setMessages(next)
     })
-    const unsubscribe = adapter.subscribe(setMessages)
+    void adapter
+      .history()
+      .then((next) => {
+        if (live && !receivedUpdate) setMessages(next)
+      })
+      .catch(() => {})
     return () => {
       live = false
       unsubscribe()
@@ -107,16 +114,29 @@ function AttachmentChips({
   )
 }
 
-function Bubble({ message, config }: { message: ChatMessage; config: ChatConfig }) {
+function Bubble({
+  message,
+  config,
+  onRetry,
+}: {
+  message: ChatMessage
+  config: ChatConfig
+  onRetry?: (messageId: string) => void
+}) {
   const mine = message.role === 'user'
+  const pending = message.delivery === 'pending'
+  const failed = message.delivery === 'failed'
   return (
     <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
       <div
         data-golem-chat-message={message.role}
         data-streaming={message.streaming ? 'true' : undefined}
+        data-delivery={message.delivery}
         className={`max-w-[85%] min-w-0 rounded-2xl px-3 py-2 text-sm leading-relaxed break-words ${
-          mine ? 'bg-neutral-900 dark:bg-neutral-200 text-white dark:text-neutral-900' : 'border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
-        }`}
+          mine
+            ? 'bg-neutral-900 dark:bg-neutral-200 text-white dark:text-neutral-900'
+            : 'border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
+        } ${pending ? 'opacity-60' : ''} ${failed ? 'ring-1 ring-rose-500 dark:ring-rose-400' : ''}`}
       >
         {/* The reader's own text is never markdown: they typed characters, not a document. */}
         {config.markdown && !mine ? (
@@ -129,6 +149,21 @@ function Bubble({ message, config }: { message: ChatMessage; config: ChatConfig 
         )}
         {message.attachments?.length ? <AttachmentChips attachments={message.attachments} /> : null}
       </div>
+      {mine && pending && (
+        <span role="status" className="mt-0.5 px-1 text-xs text-neutral-500 dark:text-neutral-400">
+          Sending
+        </span>
+      )}
+      {mine && failed && (
+        <span className="mt-0.5 flex items-center gap-2 px-1 text-xs text-rose-700 dark:text-rose-300">
+          <span role="status">Not sent</span>
+          {onRetry && (
+            <button type="button" onClick={() => onRetry(message.id)}>
+              Retry
+            </button>
+          )}
+        </span>
+      )}
       {config.showTimestamps && (
         <span className="mt-0.5 px-1 text-[11px] text-neutral-400">
           {mine ? config.userName : config.agentName} · {hhmm(message.at)}
@@ -162,6 +197,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
   // Bumped on every send, so a hosted picker remounts with nothing on it: the files went with the
   // message, and its chips would otherwise say they are still waiting to be sent.
   const [sent, setSent] = useState(0)
+  const [sendError, setSendError] = useState('')
   const composer = useRef<HTMLTextAreaElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -169,7 +205,9 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
   // than an empty bubble would.
   const visible = messages.filter((message) => message.text || message.attachments?.length)
   const last = messages[messages.length - 1]
-  const thinking = Boolean(last && (last.role === 'user' || (last.streaming && !last.text)))
+  const thinking = Boolean(
+    last && ((last.role === 'user' && !last.delivery) || (last.streaming && !last.text)),
+  )
 
   const { feed, onScroll } = useStickToBottom(
     `${visible.length}:${last?.text.length ?? 0}:${thinking}`,
@@ -191,8 +229,20 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
     setDraft('')
     setStaged([])
     setSent((count) => count + 1)
-    void adapters.chat.send(text, staged.length ? staged : undefined)
+    setSendError('')
+    void adapters.chat.send(text, staged.length ? staged : undefined).catch((error: unknown) => {
+      setSendError(error instanceof Error ? error.message : 'Message could not be sent.')
+    })
   }
+
+  const retry = adapters.chat.retry
+    ? (messageId: string) => {
+        setSendError('')
+        void adapters.chat.retry!(messageId).catch((error: unknown) => {
+          setSendError(error instanceof Error ? error.message : 'Message could not be sent.')
+        })
+      }
+    : undefined
 
   return (
     <div
@@ -212,13 +262,27 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
             {config.emptyState}
           </p>
         ) : (
-          visible.map((message) => <Bubble key={message.id} message={message} config={config} />)
+          visible.map((message) => (
+            <Bubble key={message.id} message={message} config={config} onRetry={retry} />
+          ))
         )}
         {thinking && <Thinking name={config.agentName} />}
       </div>
 
+      {sendError && (
+        <p
+          role="alert"
+          className="shrink-0 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+        >
+          {sendError}
+        </p>
+      )}
+
       {attach ? (
-        <div key={sent} className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 pt-2">
+        <div
+          key={sent}
+          className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 pt-2"
+        >
           {attach(setStaged)}
         </div>
       ) : (

@@ -24,11 +24,16 @@ a polling loop, or a canned script.`,
     {
       signature: 'send(text: string, attachments?: ChatAttachment[]): Promise<void>',
       guarantees: `Resolves nothing. **The sent message reaches the component through \`subscribe\`, not through this
-promise** — the adapter appends it to the conversation and emits, which is what puts the reader's own
-line on screen. \`attachments\` are refs the composer is already holding: a name and a size, never
+promise** — insert it immediately with a stable \`id\` and \`delivery: 'pending'\`, then emit the complete
+conversation. Reconcile that same id to an omitted \`delivery\` when acknowledged, or \`'failed'\` when it cannot be sent. \`attachments\` are refs the composer is already holding: a name and a size, never
 bytes. Getting the bytes somewhere is the \`Files\` adapter's job, done before \`send\` is called.`,
       throws:
-        'An `Error` whose `message` is shown in the composer as written. A send that failed leaves no message in the conversation.',
+        'An `Error` whose `message` is shown in the composer as written. A rejected send leaves its failed message in the conversation.',
+    },
+    {
+      signature: 'retry?(messageId: string): Promise<void>',
+      guarantees:
+        'Optional. Retries the failed message with this stable id and emits the complete conversation as its delivery changes. Omit it when retries are not available.',
     },
     {
       signature: 'subscribe(listener: (messages: ChatMessage[]) => void): Unsubscribe',
@@ -46,6 +51,11 @@ longer \`text\` and \`streaming: true\`; **the last emission of that id drops th
 - A stream that stops without ever dropping the flag leaves the bubble writing forever. If the
   transport can fail mid-reply, emit the id one last time without the flag.
 
+**Delivery belongs to the adapter.** Omit \`delivery\` for a confirmed message; \`'pending'\` is still
+sending and \`'failed'\` remains visible until a retry reconciles it. The component does not keep a
+second optimistic list, so every emission must be the complete conversation, including pending and
+failed messages.
+
 **A \`ChatMessage\` is \`id\`, \`role\` (\`'user'\` or \`'agent'\`), \`text\`, and \`at\` as an ISO datetime.**
 \`text\` is markdown, and the component renders it as such.
 
@@ -55,7 +65,7 @@ attachment has to be openable later.`,
 
   fake: {
     name: 'fakeChat',
-    what: `An in-memory conversation that really streams. \`send\` echoes the reader's message, then writes the
+    what: `An in-memory conversation that really streams. \`send\` echoes a confirmed reader message, then writes the
 next canned reply **word by word under one message id**, thinking bubble first — so a component's
 streaming path is exercised with no backend. \`replies\` are answered in order and loop when they run
 out; an empty list leaves the agent mute. \`tokenDelayMs\` is the whole difference between a story

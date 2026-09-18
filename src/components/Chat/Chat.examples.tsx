@@ -20,12 +20,16 @@ export interface ChatExample {
  */
 
 /** A conversation frozen at one instant: history and nothing after it. Stories need a still frame. */
-function frozenChat(messages: ChatMessage[]): ChatAdapter {
+function frozenChat(
+  messages: ChatMessage[],
+  retry?: (messageId: string) => Promise<void>,
+): ChatAdapter {
   return {
     async history() {
       return messages
     },
     async send() {},
+    ...(retry ? { retry } : {}),
     subscribe: () => () => {},
   }
 }
@@ -82,6 +86,28 @@ const streamingAdapters: ChatAdapters = {
   ]),
 }
 
+const deliveryAdapters: ChatAdapters = {
+  chat: frozenChat(
+    [
+      {
+        id: 'm-pending',
+        role: 'user',
+        text: 'Please hold the blue Kona frame.',
+        at: '2026-09-10T09:21:00Z',
+        delivery: 'pending',
+      },
+      {
+        id: 'm-failed',
+        role: 'user',
+        text: 'I will call when the wheel is ready.',
+        at: '2026-09-10T09:22:00Z',
+        delivery: 'failed',
+      },
+    ],
+    async () => {},
+  ),
+}
+
 /** The one adapter that really runs: it echoes, then streams its reply word by word. */
 const liveAdapters: ChatAdapters = {
   chat: fakeChat(conversation.slice(0, 2), {
@@ -115,6 +141,14 @@ export const streaming: ChatExample = {
   summary: 'A reply half written: one bubble whose text is still growing, with a caret.',
   viewportWidth: 380,
   props: { config: { agentName: 'Golem', userName: 'Nadia' }, adapters: streamingAdapters },
+}
+
+export const delivery: ChatExample = {
+  name: 'Delivery states',
+  summary:
+    'A message stays visible while sending or after a failed send; failed messages can retry when the adapter supports it.',
+  viewportWidth: 380,
+  props: { config: { agentName: 'Golem', userName: 'Nadia' }, adapters: deliveryAdapters },
 }
 
 export const withTimestamps: ChatExample = {
@@ -151,6 +185,7 @@ export const chatExamples = [
   conversationExample,
   empty,
   streaming,
+  delivery,
   withTimestamps,
   live,
   invalidConfig,

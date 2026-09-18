@@ -40,6 +40,7 @@ const story = (example: examples.ChatExample): Story => ({
 export const Conversation = story(examples.conversationExample)
 export const Empty = story(examples.empty)
 export const Streaming = story(examples.streaming)
+export const Delivery = story(examples.delivery)
 export const WithTimestamps = story(examples.withTimestamps)
 export const Live = story(examples.live)
 export const InvalidConfig = story(examples.invalidConfig)

@@ -1,9 +1,9 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { fakeClock, fakeRecords, type FakeRecords } from '../../adapters/fake'
 import { VersionConflictError } from '../../adapters'
-import { Editor } from './Editor'
+import { Editor, type EditorFocus } from './Editor'
 import * as examples from './Editor.examples'
 import type { EditorConfigInput } from './Editor.config'
 
@@ -330,6 +330,310 @@ describe('Editor', () => {
         'The DNA is locked while the agent compiles it.',
       ),
     )
+  })
+})
+
+describe('Editor focus', () => {
+  const handbook = () => fakeRecords({ handbook: examples.handbooks.map((one) => ({ ...one })) })
+  const focusConfig = (over: Partial<EditorConfigInput> = {}) =>
+    config({ collection: 'handbook', id: 'bench', autosaveMs: 30_000, ...over })
+  const focused = () =>
+    [...document.querySelectorAll('[data-golem-focus]')].map((line) => line.textContent)
+  const brakes = examples.handbookLine('Hydraulic brakes')
+  const pads = examples.handbookLine('Pads contaminated')
+  // An empty row is drawn as a no-break space, so it keeps its height.
+  const lines = examples.handbookBody.split('\n').map((line) => line || '\u00a0')
+
+  function host(records: FakeRecords, over: Partial<EditorConfigInput> = {}) {
+    const adapters = { records, clock: fakeClock(examples.TODAY) }
+    const view = render(<Editor config={focusConfig(over)} adapters={adapters} />)
+    return {
+      ...view,
+      ask: (focus: EditorFocus | undefined, more: Partial<EditorConfigInput> = {}) =>
+        view.rerender(
+          <Editor config={focusConfig({ ...over, ...more })} adapters={adapters} focus={focus} />,
+        ),
+    }
+  }
+
+  it('marks the requested lines once the record has loaded', async () => {
+    const records = handbook()
+    render(
+      <Editor
+        config={focusConfig()}
+        adapters={{ records, clock: fakeClock(examples.TODAY) }}
+        focus={{ line: brakes, endLine: pads }}
+      />,
+    )
+    expect(focused()).toEqual([])
+    await flush()
+
+    expect(focused()).toEqual(lines.slice(brakes - 1, pads))
+    expect(focused()[0]).toBe('## 6. Hydraulic brakes')
+  })
+
+  it('leaves the draft, the caret and keyboard focus alone', async () => {
+    const { ask } = host(handbook())
+    await flush()
+    await userEvent.type(source(), 'x')
+    source().setSelectionRange(3, 5)
+    const before = document.activeElement
+
+    ask({ line: brakes, endLine: pads })
+    await flush()
+
+    expect(focused()).toHaveLength(pads - brakes + 1)
+    expect(source().value).toBe(`${examples.handbookBody}x`)
+    expect(status()).toBe('Unsaved changes')
+    expect(document.activeElement).toBe(before)
+    expect([source().selectionStart, source().selectionEnd]).toEqual([3, 5])
+  })
+
+  it('clamps a range past either end of the document, and ignores a line that is not a number', async () => {
+    const { ask } = host(handbook())
+    await flush()
+
+    ask({ line: -4, endLine: 2 })
+    await flush()
+    expect(focused()).toEqual(lines.slice(0, 2))
+
+    ask({ line: 9999 })
+    await flush()
+    expect(focused()).toEqual([lines.at(-1)])
+
+    ask({ line: 12, endLine: 3 })
+    await flush()
+    expect(focused()).toEqual([lines[11]])
+
+    ask({ line: Number.NaN })
+    await flush()
+    expect(focused()).toEqual([lines[11]])
+  })
+
+  it('takes the mark down on a click or an edit, and shows it again only for a new key', async () => {
+    const { ask } = host(handbook())
+    await flush()
+    ask({ line: brakes, key: 'a' })
+    await flush()
+    expect(focused()).toHaveLength(1)
+
+    await userEvent.click(source())
+    expect(focused()).toEqual([])
+
+    ask({ line: brakes, key: 'a' })
+    await flush()
+    expect(focused()).toEqual([])
+
+    ask({ line: brakes, key: 'b' })
+    await flush()
+    expect(focused()).toHaveLength(1)
+
+    await userEvent.keyboard('y')
+    expect(focused()).toEqual([])
+  })
+
+  it('takes the mark down when an agent version merges in', async () => {
+    const records = handbook()
+    const { ask } = host(records)
+    await flush()
+    ask({ line: brakes })
+    await flush()
+
+    await act(async () => {
+      await records.update('handbook', 'bench', {
+        body: `A line the agent added at the top.\n${examples.handbookBody}`,
+        version: 2,
+      })
+    })
+    await waitFor(() => expect(source().value).toContain('the agent added'))
+    expect(focused()).toEqual([])
+  })
+
+  it('switches a toggle editor from the preview to the source', async () => {
+    const { ask } = host(handbook(), { preview: 'toggle' })
+    await flush()
+    await userEvent.click(screen.getByRole('button', { name: 'Preview' }))
+    expect(document.querySelector('[data-golem-pane="source"]')).toBeNull()
+
+    ask({ line: brakes })
+    await flush()
+
+    expect(document.querySelector('[data-golem-pane="preview"]')).toBeNull()
+    expect(focused()).toEqual(['## 6. Hydraulic brakes'])
+  })
+
+  it('drops a request made for one record when the host has moved to another', async () => {
+    const records = handbook()
+    const { ask } = host(records)
+    await flush()
+    ask({ line: brakes, key: 'a' })
+    await flush()
+    await userEvent.type(source(), 'x')
+
+    // The same request stays in props while the host opens the other record.
+    ask({ line: brakes, key: 'a' }, { id: 'counter' })
+    await flush()
+
+    expect(source().value).toBe(examples.dnaBody)
+    expect(status()).toBe('Saved')
+    expect(focused()).toEqual([])
+    // Nothing was written on the way out: the draft left behind is parked, not saved.
+    await expect(records.get('handbook', 'bench')).resolves.toMatchObject({ version: 1 })
+
+    // A request sent with the move belongs to the record it moved to.
+    ask({ line: 1, key: 'b' }, { id: 'bench' })
+    await flush()
+    expect(source().value).toBe(`${examples.handbookBody}x`)
+    expect(focused()).toEqual(['# Northgate Cycles bench handbook'])
+  })
+})
+
+describe('Editor moving between records', () => {
+  const handbook = (extra: examples.DnaDocument[] = []) =>
+    fakeRecords({ handbook: [...examples.handbooks, ...extra].map((one) => ({ ...one })) })
+  const focused = () => document.querySelectorAll('[data-golem-focus]').length
+  const mine = examples.handbookBody.replace('Bleed with', 'Mine: bleed with')
+  const theirs = examples.handbookBody.replace('Bleed with', 'Theirs: bleed with')
+
+  function host(first: FakeRecords) {
+    const clock = fakeClock(examples.TODAY)
+    const at = (over: Partial<EditorConfigInput>, records = first, focus?: EditorFocus) => (
+      <Editor
+        config={config({ collection: 'handbook', id: 'bench', autosaveMs: 30_000, ...over })}
+        adapters={{ records, clock }}
+        focus={focus}
+      />
+    )
+    const view = render(at({}))
+    return (...args: Parameters<typeof at>) => view.rerender(at(...args))
+  }
+
+  it('keeps a draft whose save was refused while away, and asks about it on return', async () => {
+    const store = handbook()
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    // A store whose save is still in flight when the person leaves, and whose other writer this
+    // editor does not hear about until the save is refused.
+    const records: FakeRecords = {
+      ...store,
+      subscribe: () => () => {},
+      update: (async (...args: Parameters<FakeRecords['update']>) => {
+        await gate
+        return store.update(...args)
+      }) as FakeRecords['update'],
+    }
+    const move = host(records)
+    await flush()
+
+    fireEvent.change(source(), { target: { value: mine } })
+    await store.update('handbook', 'bench', { body: theirs, version: 2 })
+    source().focus()
+    await userEvent.keyboard('{Meta>}s{/Meta}')
+    expect(status()).toBe('Saving…')
+
+    move({ id: 'counter' })
+    await flush()
+    expect(source().value).toBe(examples.dnaBody)
+
+    await act(async () => release())
+    await flush()
+    expect(source().value).toBe(examples.dnaBody)
+
+    move({ id: 'bench' })
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Keep mine' })).toBeInTheDocument(),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+    expect(source().value).toBe(mine)
+    expect(status()).toBe('Unsaved changes')
+  })
+
+  it('keeps an open conflict across a move', async () => {
+    const records = handbook()
+    const move = host(records)
+    await flush()
+    fireEvent.change(source(), { target: { value: mine } })
+    await act(async () => {
+      await records.update('handbook', 'bench', { body: theirs, version: 2 })
+    })
+    expect(screen.getByRole('button', { name: 'Keep mine' })).toBeInTheDocument()
+
+    move({ id: 'counter' })
+    await flush()
+    move({ id: 'bench' })
+    await flush()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+    expect(source().value).toBe(mine)
+  })
+
+  it('never writes a draft to another field or another store', async () => {
+    const records = handbook()
+    const other = handbook()
+    const writes = [vi.spyOn(records, 'update'), vi.spyOn(other, 'update')]
+    const move = host(records)
+    await flush()
+    await userEvent.type(source(), 'x')
+
+    move({ bodyField: 'title' })
+    await flush()
+    expect(source().value).toBe('Bench handbook')
+
+    move({}, other)
+    await flush()
+    expect(source().value).toBe(examples.handbookBody)
+
+    for (const write of writes) expect(write).not.toHaveBeenCalled()
+    await expect(records.get('handbook', 'bench')).resolves.toMatchObject({
+      body: examples.handbookBody,
+      title: 'Bench handbook',
+    })
+
+    move({}, records)
+    await flush()
+    expect(source().value).toBe(`${examples.handbookBody}x`)
+    expect(status()).toBe('Unsaved changes')
+  })
+
+  it('gives neither the focus mark nor the draft slot to another store holding the same record', async () => {
+    const first = handbook()
+    const second = handbook()
+    const writes = [vi.spyOn(first, 'update'), vi.spyOn(second, 'update')]
+    const clock = fakeClock(examples.TODAY)
+    const at = (records: FakeRecords, draft?: string) => (
+      <Editor
+        config={config({ collection: 'handbook', id: 'bench', autosaveMs: 30_000 })}
+        adapters={{ records, clock }}
+        draft={draft}
+        focus={{ line: 6, key: 'a' }}
+      />
+    )
+    const view = render(at(first))
+    await flush()
+    expect(document.querySelectorAll('[data-golem-focus]')).toHaveLength(1)
+
+    // Same id, same fields, same text, same request, and now a draft: only the store is different.
+    view.rerender(at(second, `${examples.handbookBody}x`))
+    await flush()
+    expect(source().value).toBe(examples.handbookBody)
+    expect(status()).toBe('Saved')
+    expect(document.querySelectorAll('[data-golem-focus]')).toHaveLength(0)
+    for (const write of writes) expect(write).not.toHaveBeenCalled()
+  })
+
+  it('does not carry a focus mark to another record with the same text', async () => {
+    const move = host(
+      handbook([{ id: 'twin', title: 'Twin', body: examples.handbookBody, version: 1 }]),
+    )
+    await flush()
+    move({}, undefined, { line: 6, key: 'a' })
+    await flush()
+    expect(focused()).toBe(1)
+
+    move({ id: 'twin' }, undefined, { line: 6, key: 'a' })
+    await flush()
+    expect(source().value).toBe(examples.handbookBody)
+    expect(focused()).toBe(0)
   })
 })
 

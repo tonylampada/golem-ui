@@ -33,6 +33,10 @@ export interface EditorSlots {
    * A passage to show: 1-based source lines, `endLine` inclusive, clamped to the document. The source
    * pane scrolls to it and marks it until the person clicks or edits; keyboard focus, caret and draft
    * are left alone. Send a new `key` to show the same range again.
+   *
+   * With `version`, the request waits until the editor holds that version or a later one. With
+   * `text`, the passage is found by its lines in the draft on screen, and nothing is marked when
+   * those lines are not there exactly once.
    */
   focus?: EditorFocus
 }
@@ -41,6 +45,10 @@ export interface EditorFocus {
   line: number
   endLine?: number
   key?: string
+  /** The record version `line` counts in. The request waits until the editor has loaded it. */
+  version?: number
+  /** The passage's exact lines, joined by `\n`. Found in the draft rather than trusted to `line`. */
+  text?: string
 }
 
 /** Below this the source and the preview cannot both fit, so `split` falls back to `toggle`. */
@@ -78,6 +86,35 @@ const EMPTY: Doc = {
   marks: [],
   conflict: null,
   choices: [],
+}
+
+/**
+ * The 0-based `[start, end)` rows a focus request marks in `lines`, or `null` for none. A request
+ * without `text` counts lines, clamped. With `text`, the offered range is trusted only on the exact
+ * version it was counted in, untouched; anywhere else the lines must appear exactly once.
+ */
+function passageOf(
+  lines: string[],
+  focus: EditorFocus,
+  atVersion: boolean,
+): [number, number] | null {
+  const first = Math.trunc(focus.line) - 1
+  const last = Number.isFinite(focus.endLine) ? Math.trunc(focus.endLine!) : first + 1
+  if (focus.text === undefined) {
+    const clamp = (row: number) => Math.min(Math.max(row, 0), lines.length - 1)
+    const start = clamp(first)
+    return [start, Math.max(start, clamp(last - 1)) + 1]
+  }
+  const want = focus.text.split('\n')
+  const holds = (at: number) => want.every((line, index) => lines[at + index] === line)
+  if (atVersion && last - first === want.length && holds(first)) return [first, last]
+  let found: number | null = null
+  for (let at = 0; at + want.length <= lines.length; at++) {
+    if (!holds(at)) continue
+    if (found !== null) return null
+    found = at
+  }
+  return found === null ? null : [found, found + want.length]
 }
 
 const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause))
@@ -160,6 +197,10 @@ function EditorBody({
   const parked = useRef(
     new WeakMap<RecordsAdapter, Map<string, { doc: Doc; pending: DocRecord | null }>>(),
   )
+
+  /** The record whose latest version has been read since it was opened, so a draft is up to date. */
+  const loaded = useRef<{ record: string; records: RecordsAdapter } | null>(null)
+  const [reads, setReads] = useState(0)
 
   const wide = useContainerWidth(root) >= SPLIT_ABOVE
   const split = config.preview === 'split' && wide
@@ -271,8 +312,14 @@ function EditorBody({
       pending.current = back?.pending ?? null
       history.reset(back?.doc.draft ?? '')
       setDoc(back?.doc ?? EMPTY)
+      loaded.current = null
     }
 
+    const read = () => {
+      if (loaded.current?.record === record && loaded.current.records === records) return
+      loaded.current = { record, records }
+      setReads((count) => count + 1)
+    }
     const load = () =>
       records.get<DocRecord>(config.collection, config.id).then(
         (record) => {
@@ -300,9 +347,11 @@ function EditorBody({
               status: opening === body ? 'saved' : 'dirty',
               error: null,
             })
+            read()
             return
           }
           applyIncoming(record)
+          read()
         },
         (cause: unknown) => {
           if (live) setDoc({ status: 'error', error: message(cause) })
@@ -363,10 +412,13 @@ function EditorBody({
 
   /**
    * A focus request belongs to the record open when it arrived, and is applied once, when that record
-   * has loaded and no conflict is open. The mark it leaves is tied to the draft it was drawn on, so any
+   * has been read since it was opened, no conflict is open, and the version it names has arrived. A
+   * parked draft brought back is matched only after the latest version has been merged into it. The mark it leaves is tied to the draft it was drawn on, so any
    * edit — the person's or the agent's — takes it down rather than leaving it on shifted lines.
    */
-  const ask = focus ? `${focus.line}:${focus.endLine ?? ''}:${focus.key ?? ''}` : ''
+  const ask = focus
+    ? JSON.stringify([focus.line, focus.endLine, focus.key, focus.version, focus.text])
+    : ''
   const asked = useRef({ ask: '', record, records, done: true })
   const [spot, setSpot] = useState<{
     start: number
@@ -389,16 +441,18 @@ function EditorBody({
       request.done = true
       return
     }
+    if (loaded.current?.record !== record || loaded.current.records !== records) return
     if (current.status === 'loading' || current.conflict !== null) return
+    if (Number.isFinite(focus.version) && current.version < focus.version!) return
     request.done = true
-    const count = current.draft.split('\n').length
-    const clamp = (line: number) => Math.min(Math.max(Math.trunc(line), 1), count)
-    const start = clamp(focus.line)
-    const end = Math.max(start, clamp(Number.isFinite(focus.endLine) ? focus.endLine! : start))
+    const atVersion = current.version === focus.version && current.draft === current.base
+    const passage = passageOf(current.draft.split('\n'), focus, atVersion)
+    // A passage that cannot be placed leaves nothing marked, not even the last request's mark.
+    if (!passage) return setSpot(null)
     scrollToSpot.current = true
     setMode('source')
-    setSpot({ start: start - 1, end, draft: current.draft, record, records })
-  }, [ask, record, records, focus, doc.status, doc.conflict])
+    setSpot({ start: passage[0], end: passage[1], draft: current.draft, record, records })
+  }, [ask, record, records, focus, reads, doc.status, doc.conflict, doc.version])
 
   // Centre the passage in the source pane, or put its top in view with two lines above it when it is
   // taller than the pane. Only the pane scrolls: the caret and the page stay where they are.

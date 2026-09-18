@@ -486,6 +486,305 @@ describe('Editor focus', () => {
     expect(source().value).toBe(`${examples.handbookBody}x`)
     expect(focused()).toEqual(['# Northgate Cycles bench handbook'])
   })
+
+  describe('with a version and the passage text', () => {
+    // The brakes heading and its two rules: four lines that appear once in the handbook.
+    const passage = lines
+      .slice(brakes - 1, brakes + 3)
+      .join('\n')
+      .replace(' ', '')
+    const shown = passage.split('\n').map((line) => line || ' ')
+    // A line every section carries, so as a passage it is ambiguous.
+    const everywhere =
+      '- Anything unusual goes in the ticket notes, in a sentence the next person can act on.'
+    const everywhereLine = handbookLineAfter(brakes, everywhere)
+    const added = 'A line the agent added at the top.'
+
+    function handbookLineAfter(from: number, text: string) {
+      return examples.handbookBody.split('\n').indexOf(text, from) + 1
+    }
+
+    it('waits for the version, then marks the passage where that version put it', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+
+      // Counted in version 2, which this editor has not loaded yet: nothing, not even on version 1's
+      // copy of the same lines.
+      ask({ line: brakes + 1, endLine: brakes + 4, version: 2, text: passage })
+      await flush()
+      expect(focused()).toEqual([])
+
+      await act(async () => {
+        await records.update('handbook', 'bench', {
+          body: `${added}\n${examples.handbookBody}`,
+          version: 2,
+        })
+      })
+      await waitFor(() => expect(focused()).toEqual(shown))
+      const rows = [...document.querySelectorAll('[data-golem-line]')]
+      expect(rows.length === 0 || rows[brakes]?.hasAttribute('data-golem-focus')).toBe(true)
+      expect(status()).toBe('Saved')
+    })
+
+    it('finds the passage below lines the person added and has not saved, and saves nothing', async () => {
+      const records = handbook()
+      const update = vi.spyOn(records, 'update')
+      const { ask } = host(records)
+      await flush()
+      const mine = `Mine, unsaved.\nAnd another.\n${examples.handbookBody}`
+      fireEvent.change(source(), { target: { value: mine } })
+
+      await act(async () => {
+        await records.get('handbook', 'bench')
+        await records.update('handbook', 'bench', {
+          body: `${examples.handbookBody}\nTheirs, at the end.`,
+          version: 2,
+        })
+      })
+      update.mockClear()
+      await waitFor(() => expect(source().value).toContain('Theirs, at the end.'))
+      source().focus()
+      source().setSelectionRange(2, 4)
+
+      // The line numbers are version 2's, which does not have the person's two lines.
+      ask({ line: brakes, endLine: brakes + 3, version: 2, text: passage })
+      await flush()
+
+      expect(focused()).toEqual(shown)
+      const overlayRows = document.querySelector('[data-golem-focus]')
+      const index = [...overlayRows!.parentElement!.children].indexOf(overlayRows!)
+      expect(index).toBe(brakes + 1)
+      expect(source().value).toBe(
+        `Mine, unsaved.\nAnd another.\n${examples.handbookBody}\nTheirs, at the end.`,
+      )
+      expect(status()).toBe('Unsaved changes')
+      expect(document.activeElement).toBe(source())
+      expect([source().selectionStart, source().selectionEnd]).toEqual([2, 4])
+      expect(update).not.toHaveBeenCalled()
+    })
+
+    it('marks nothing for a passage that is not there, or is there twice, and clears the last mark', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+      ask({ line: brakes, key: 'a' })
+      await flush()
+      expect(focused()).toHaveLength(1)
+      const pane = document.querySelector('[data-golem-pane="source"]') as HTMLElement
+      pane.scrollTop = 7
+
+      ask({ line: brakes, version: 1, text: 'A sentence nobody wrote.' })
+      await flush()
+      expect(focused()).toEqual([])
+      expect(pane.scrollTop).toBe(7)
+
+      ask({ line: brakes, key: 'b' })
+      await flush()
+      expect(focused()).toHaveLength(1)
+
+      // Every section has this line; the draft is dirty, so the offered line cannot pick one.
+      await userEvent.type(source(), 'x')
+      ask({ line: everywhereLine, version: 1, text: everywhere })
+      await flush()
+      expect(focused()).toEqual([])
+      expect(source().value).toBe(`${examples.handbookBody}x`)
+      expect(status()).toBe('Unsaved changes')
+    })
+
+    it('lets the offered range pick among copies only on that exact version, unchanged', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+
+      ask({ line: everywhereLine, version: 1, text: everywhere })
+      await flush()
+      const row = document.querySelector('[data-golem-focus]')
+      expect(row?.textContent).toBe(everywhere)
+      expect([...row!.parentElement!.children].indexOf(row!)).toBe(everywhereLine - 1)
+
+      // The range must hold the text: a range that does not falls back to a unique match, and
+      // there is none.
+      ask({ line: everywhereLine + 1, version: 1, text: everywhere })
+      await flush()
+      expect(focused()).toEqual([])
+    })
+
+    it('does not trust the offered range on a later saved version', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+      await act(async () => {
+        await records.update('handbook', 'bench', {
+          body: `${examples.handbookBody}\nOne more line.`,
+          version: 3,
+        })
+      })
+      await waitFor(() => expect(source().value).toContain('One more line.'))
+      expect(status()).toBe('Saved')
+
+      // Counted in version 2; the editor is on 3. The range still holds the line, but so do others.
+      ask({ line: everywhereLine, version: 2, text: everywhere })
+      await flush()
+      expect(focused()).toEqual([])
+
+      // A unique passage is found wherever it is, whatever line was offered.
+      ask({ line: 1, endLine: 4, version: 2, text: passage })
+      await flush()
+      expect(focused()).toEqual(shown)
+    })
+
+    it('waits out a conflict and marks the passage once it is settled', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+      // A line in the first section, well above the passage.
+      const bleed = examples.handbookBody
+        .split('\n')
+        .find((line) => line.includes('written at the counter'))!
+      fireEvent.change(source(), {
+        target: { value: examples.handbookBody.replace(bleed, `Mine: ${bleed}`) },
+      })
+      await act(async () => {
+        await records.update('handbook', 'bench', {
+          body: `${added}\n${examples.handbookBody.replace(bleed, `Theirs: ${bleed}`)}`,
+          version: 2,
+        })
+      })
+      expect(screen.getByRole('button', { name: 'Keep mine' })).toBeInTheDocument()
+
+      ask({ line: brakes + 1, endLine: brakes + 4, version: 2, text: passage })
+      await flush()
+      expect(document.querySelector('[data-golem-pane="source"]')).toBeNull()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Keep mine' }))
+      await flush()
+      expect(focused()).toEqual(shown)
+      expect(source().value).toContain(`Mine: ${bleed}`)
+      expect(source().value).toContain(added)
+      expect(status()).toBe('Unsaved changes')
+    })
+
+    it('drops a waiting request when the host moves to another record, even one with the text', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+      const request = { line: brakes, endLine: brakes + 3, version: 2, text: passage, key: 'a' }
+      ask(request)
+      await flush()
+
+      ask(request, { id: 'twin' })
+      await flush()
+      await act(async () => {
+        await records.update('handbook', 'twin', { body: examples.handbookBody, version: 2 })
+        await records.update('handbook', 'bench', { body: examples.handbookBody, version: 2 })
+      })
+      await flush()
+      expect(focused()).toEqual([])
+
+      ask(request, { id: 'bench' })
+      await flush()
+      expect(focused()).toEqual([])
+
+      // A new key is a new request, which this record answers.
+      ask({ ...request, key: 'b' }, { id: 'bench' })
+      await flush()
+      expect(focused()).toEqual(shown)
+    })
+
+    it('binds a request sent in the same render as a move to the record moved to', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+
+      ask(
+        { line: brakes, endLine: brakes + 3, version: 1, text: passage, key: 'twin' },
+        { id: 'twin' },
+      )
+      await flush()
+      expect(focused()).toEqual(shown)
+      expect(screen.getByLabelText('Document source')).toHaveValue(examples.handbookBody)
+    })
+
+    it('matches a draft brought back from a move only after the latest version is merged into it', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+      fireEvent.change(source(), { target: { value: `Mine, unsaved.\n${examples.handbookBody}` } })
+
+      ask(undefined, { id: 'counter' })
+      await flush()
+      // While away, another writer puts a line above the passage.
+      await records.update('handbook', 'bench', {
+        body: `${added}\n${examples.handbookBody}`,
+        version: 2,
+      })
+
+      let release = () => {}
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      const get = records.get.bind(records)
+      vi.spyOn(records, 'get').mockImplementation(async (...args) => {
+        await gate
+        return get(...args)
+      })
+      // Offered with the move back, with and without a version: neither may match the parked draft.
+      ask({ line: brakes + 1, endLine: brakes + 4, text: passage, key: 'back' }, { id: 'bench' })
+      await flush()
+      expect(source().value).toBe(`Mine, unsaved.\n${examples.handbookBody}`)
+      expect(focused()).toEqual([])
+
+      await act(async () => release())
+      await flush()
+      expect(source().value).toBe(`Mine, unsaved.\n${added}\n${examples.handbookBody}`)
+      expect(status()).toBe('Unsaved changes')
+      const row = document.querySelector('[data-golem-focus]')
+      expect([...row!.parentElement!.children].indexOf(row!)).toBe(brakes + 1)
+      expect(focused()).toEqual(shown)
+    })
+
+    it('waits for the version gate on a draft brought back from a move', async () => {
+      const records = handbook()
+      const { ask } = host(records)
+      await flush()
+      fireEvent.change(source(), { target: { value: `Mine, unsaved.\n${examples.handbookBody}` } })
+      ask(undefined, { id: 'counter' })
+      await flush()
+
+      ask({ line: brakes + 1, endLine: brakes + 4, version: 2, text: passage }, { id: 'bench' })
+      await flush()
+      expect(source().value).toBe(`Mine, unsaved.\n${examples.handbookBody}`)
+      expect(focused()).toEqual([])
+
+      await act(async () => {
+        await records.update('handbook', 'bench', {
+          body: `${added}\n${examples.handbookBody}`,
+          version: 2,
+        })
+      })
+      await waitFor(() => expect(focused()).toEqual(shown))
+      expect(source().value).toBe(`Mine, unsaved.\n${added}\n${examples.handbookBody}`)
+    })
+
+    it('compares carriage returns as they are, on both sides', async () => {
+      const crlf = examples.handbookBody.replaceAll('\n', '\r\n')
+      const records = fakeRecords({
+        handbook: [{ id: 'bench', title: 'Bench handbook', body: crlf, version: 1 }],
+      })
+      const { ask } = host(records)
+      await flush()
+      // The server's lines, each keeping its CR, joined by newlines.
+      const serverLines = crlf.split('\n').slice(brakes - 1, brakes + 3)
+
+      ask({ line: brakes, endLine: brakes + 3, version: 1, text: serverLines.join('\n') })
+      await flush()
+      expect(focused()).toHaveLength(4)
+
+      // The same passage without its CRs is not in this document.
+      ask({ line: brakes, endLine: brakes + 3, version: 1, text: passage })
+      await flush()
+      expect(focused()).toEqual([])
+    })
+  })
 })
 
 describe('Editor moving between records', () => {

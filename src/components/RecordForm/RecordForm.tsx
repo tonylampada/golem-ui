@@ -55,8 +55,8 @@ const messageOf = (cause: unknown) =>
   cause instanceof Error ? cause.message : 'The write did not go through. Try again.'
 
 const controlClass =
-  'mt-1 w-full rounded-lg border bg-white px-3 py-2.5 text-base text-neutral-900 sm:text-sm'
-const okBorder = 'border-neutral-300'
+  'mt-1 w-full rounded-lg border bg-white px-3 py-2.5 text-base text-neutral-900 sm:text-sm dark:bg-neutral-900 dark:text-neutral-100'
+const okBorder = 'border-neutral-300 dark:border-neutral-700'
 const badBorder = 'border-red-400'
 
 /**
@@ -141,7 +141,7 @@ function ReadOnlyValue({ field, value }: { field: FormField; value: unknown }): 
     if (name === '') return <span className="text-neutral-400">—</span>
     return (
       <span className="flex items-center gap-2">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-semibold text-white">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-semibold text-white dark:bg-neutral-200 dark:text-neutral-900">
           {initials(name)}
         </span>
         {name}
@@ -357,7 +357,7 @@ function RecordFormBody({
 
   if (loaded === null) {
     return (
-      <p className="rounded-xl border border-neutral-200 bg-white px-4 py-8 text-center text-sm text-neutral-500">
+      <p className="rounded-xl border border-neutral-200 bg-white px-4 py-8 dark:border-neutral-800 dark:bg-neutral-900 text-center text-sm text-neutral-500 dark:text-neutral-400">
         Loading…
       </p>
     )
@@ -366,7 +366,7 @@ function RecordFormBody({
     return (
       <p
         role="alert"
-        className="rounded-xl border border-red-300 bg-red-50 px-4 py-6 text-center text-sm text-red-900"
+        className="rounded-xl border border-red-300 bg-red-50 px-4 py-6 text-center text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
       >
         {loaded.error}
       </p>
@@ -481,7 +481,7 @@ function RecordFormBody({
     if (asking === 'cancel') {
       return (
         <div role="alertdialog" aria-label="Discard changes" className="flex flex-wrap gap-2">
-          <p className="w-full text-sm text-neutral-700">
+          <p className="w-full text-sm text-neutral-700 dark:text-neutral-300">
             You have changes that have not been saved.
           </p>
           <button
@@ -497,7 +497,7 @@ function RecordFormBody({
           <button
             type="button"
             onClick={() => setAsking(null)}
-            className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium"
+            className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-sm font-medium"
           >
             Keep editing
           </button>
@@ -507,19 +507,19 @@ function RecordFormBody({
     if (conflict !== null) {
       return (
         <div role="alertdialog" aria-label="Saved by someone else" className="flex flex-wrap gap-2">
-          <p className="w-full text-sm font-medium text-amber-800">
+          <p className="w-full text-sm font-medium text-amber-800 dark:text-amber-300">
             Someone else saved this record after you opened it. Your changes are not saved yet.
           </p>
           {conflict.changed.length === 0 ? (
-            <p className="w-full text-sm text-neutral-700">None of the fields here changed.</p>
+            <p className="w-full text-sm text-neutral-700 dark:text-neutral-300">None of the fields here changed.</p>
           ) : (
             <dl className="mb-1 grid w-full grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 text-sm">
               <dt className="sr-only">Field</dt>
-              <dd className="col-start-2 text-xs text-neutral-500">Saved now</dd>
-              <dd className="text-xs text-neutral-500">Yours</dd>
+              <dd className="col-start-2 text-xs text-neutral-500 dark:text-neutral-400">Saved now</dd>
+              <dd className="text-xs text-neutral-500 dark:text-neutral-400">Yours</dd>
               {conflict.changed.map((field) => (
                 <div key={field.key} className="contents">
-                  <dt className="font-medium text-neutral-700">{field.label}</dt>
+                  <dt className="font-medium text-neutral-700 dark:text-neutral-300">{field.label}</dt>
                   <dd className="min-w-0 break-words">
                     <ReadOnlyValue field={field} value={conflict.row[field.key]} />
                   </dd>
@@ -538,7 +538,7 @@ function RecordFormBody({
             type="button"
             onClick={keepMine}
             disabled={busy}
-            className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+            className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white dark:bg-neutral-200 dark:text-neutral-900 disabled:opacity-60"
           >
             Keep mine
           </button>
@@ -546,7 +546,7 @@ function RecordFormBody({
             type="button"
             onClick={takeTheirs}
             disabled={busy}
-            className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium"
+            className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-sm font-medium"
           >
             Take theirs
           </button>
@@ -554,7 +554,7 @@ function RecordFormBody({
             <button
               type="button"
               onClick={cancel}
-              className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium"
+              className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-sm font-medium"
             >
               Cancel
             </button>
@@ -565,7 +565,7 @@ function RecordFormBody({
     if (asking === 'delete') {
       return (
         <div role="alertdialog" aria-label="Confirm delete" className="flex flex-wrap gap-2">
-          <p className="w-full text-sm text-neutral-700">Deleting this record cannot be undone.</p>
+          <p className="w-full text-sm text-neutral-700 dark:text-neutral-300">Deleting this record cannot be undone.</p>
           <button
             type="button"
             onClick={remove}
@@ -577,7 +577,7 @@ function RecordFormBody({
           <button
             type="button"
             onClick={() => setAsking(null)}
-            className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium"
+            className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-sm font-medium"
           >
             Keep it
           </button>
@@ -589,7 +589,7 @@ function RecordFormBody({
         <button
           type="submit"
           disabled={busy}
-          className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60 sm:flex-none"
+          className="flex-1 rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white dark:bg-neutral-200 dark:text-neutral-900 disabled:opacity-60 sm:flex-none"
         >
           {config.submitLabel}
         </button>
@@ -597,7 +597,7 @@ function RecordFormBody({
           <button
             type="button"
             onClick={cancel}
-            className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium"
+            className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-sm font-medium"
           >
             Cancel
           </button>
@@ -606,7 +606,7 @@ function RecordFormBody({
           <button
             type="button"
             onClick={() => setAsking('delete')}
-            className="ml-auto rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700"
+            className="ml-auto rounded-lg border border-red-300 px-4 dark:border-red-800 py-2.5 text-sm font-medium text-red-700 dark:text-red-300"
           >
             Delete
           </button>
@@ -620,7 +620,7 @@ function RecordFormBody({
       ref={root}
       data-golem-component="RecordForm"
       data-layout={columns === 2 ? 'two-column' : 'single'}
-      className="golem-record-form w-full text-neutral-900"
+      className="golem-record-form w-full text-neutral-900 dark:text-neutral-100 dark:[color-scheme:dark]"
     >
       <form onSubmit={submit} noValidate>
         <div className={`grid gap-4 ${columns === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
@@ -629,10 +629,10 @@ function RecordFormBody({
             const wide = columns === 2 && field.multiline ? 'col-span-2' : ''
             return (
               <div key={field.key} className={wide}>
-                <label htmlFor={id} className="block text-sm font-medium text-neutral-700">
+                <label htmlFor={id} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   {field.label}
                   {field.required && (
-                    <span aria-hidden="true" className="text-red-600">
+                    <span aria-hidden="true" className="text-red-600 dark:text-red-400">
                       {' '}
                       *
                     </span>
@@ -641,7 +641,7 @@ function RecordFormBody({
                 {field.readOnly ? (
                   <p
                     id={id}
-                    className="mt-1 rounded-lg bg-neutral-100 px-3 py-2.5 text-sm text-neutral-700"
+                    className="mt-1 rounded-lg bg-neutral-100 px-3 dark:bg-neutral-800 py-2.5 text-sm text-neutral-700 dark:text-neutral-300"
                   >
                     <ReadOnlyValue field={field} value={values[field.key]} />
                   </p>
@@ -649,7 +649,7 @@ function RecordFormBody({
                   control(field)
                 )}
                 {field.help && (
-                  <p id={`${id}-help`} className="mt-1 text-xs text-neutral-500">
+                  <p id={`${id}-help`} className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                     {field.help}
                   </p>
                 )}
@@ -657,7 +657,7 @@ function RecordFormBody({
                   <p
                     id={`${id}-error`}
                     role="alert"
-                    className="mt-1 text-xs font-medium text-red-700"
+                    className="mt-1 text-xs font-medium text-red-700 dark:text-red-300"
                   >
                     {errors[field.key]}
                   </p>
@@ -668,19 +668,19 @@ function RecordFormBody({
         </div>
 
         {/* Thumb-reachable on a phone, and it stays put while a long form scrolls under it. */}
-        <div className="sticky bottom-0 mt-5 border-t border-neutral-200 bg-white py-3">
+        <div className="sticky bottom-0 mt-5 border-t border-neutral-200 bg-white py-3 dark:border-neutral-800 dark:bg-neutral-900">
           {formError !== null && (
-            <p role="alert" className="mb-2 text-sm font-medium text-red-700">
+            <p role="alert" className="mb-2 text-sm font-medium text-red-700 dark:text-red-300">
               {formError}
             </p>
           )}
           {saved && (
-            <p role="status" className="mb-2 text-sm font-medium text-emerald-700">
+            <p role="status" className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
               {config.successMessage}
             </p>
           )}
           {config.mode === 'edit' && dirty && !saved && (
-            <p className="mb-2 text-xs font-medium text-amber-700">Unsaved changes</p>
+            <p className="mb-2 text-xs font-medium text-amber-700 dark:text-amber-300">Unsaved changes</p>
           )}
           {actions}
         </div>

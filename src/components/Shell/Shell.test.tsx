@@ -56,6 +56,36 @@ describe('Shell', () => {
     expect(screen.queryByText(/What do you want to build/)).not.toBeInTheDocument()
   })
 
+  it('drags the chat edge to a new width, keeps it, and resets on double-click', () => {
+    setViewportWidth(1200)
+    localStorage.removeItem('golem-shell-chat-width')
+    const { unmount } = render(<Shell {...examples.desktop.props} />)
+    const handle = screen.getByRole('separator', { name: 'Resize chat' })
+    const aside = handle.parentElement!
+    expect(aside.style.width).toBe('320px')
+
+    // jsdom has no layout: the frame's rect is all zeros, so clientX is the width itself.
+    handle.setPointerCapture = () => {}
+    act(() => {
+      handle.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 320 }))
+      handle.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 500 }))
+      handle.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 500 }))
+    })
+    expect(aside.style.width).toBe('500px')
+    expect(localStorage.getItem('golem-shell-chat-width')).toBe('500')
+
+    unmount()
+    render(<Shell {...examples.desktop.props} />)
+    const again = screen.getByRole('separator', { name: 'Resize chat' })
+    expect(again.parentElement!.style.width).toBe('500px')
+
+    act(() => {
+      again.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
+    })
+    expect(again.parentElement!.style.width).toBe('320px')
+    expect(localStorage.getItem('golem-shell-chat-width')).toBeNull()
+  })
+
   it('renders an error card naming every invalid field instead of the frame', () => {
     render(<Shell {...examples.invalidConfig.props} />)
 

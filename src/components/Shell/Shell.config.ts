@@ -16,6 +16,15 @@ export const shellConfigSchema = z
       .describe(
         'Viewport width in pixels. Below it the chat and the canvas stop sitting side by side and become tabs.',
       ),
+    chatWidth: z
+      .number()
+      .int()
+      .min(240)
+      .max(960)
+      .default(320)
+      .describe(
+        'Starting width of the chat column in pixels, at desktop width. The reader can drag the edge between chat and canvas to change it, and the choice is kept in this browser.',
+      ),
     showTopBar: z
       .boolean()
       .default(true)

@@ -74,10 +74,10 @@ function ShellFrame({
       ref={root}
       data-golem-component="Shell"
       data-layout={isMobile ? 'mobile' : 'desktop'}
-      className="golem-shell flex h-full min-h-0 w-full flex-col bg-white text-neutral-900"
+      className="golem-shell flex h-full min-h-0 w-full flex-col bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
     >
       {config.showTopBar && (
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
           <button
             type="button"
             onClick={() => adapters.navigation.go('/')}
@@ -86,13 +86,13 @@ function ShellFrame({
             {config.title}
           </button>
           {account ??
-            (user && <span className="shrink-0 text-sm text-neutral-500">{user.name}</span>)}
+            (user && <span className="shrink-0 text-sm text-neutral-500 dark:text-neutral-400">{user.name}</span>)}
         </header>
       )}
 
       {isMobile ? (
         <>
-          <div role="tablist" className="flex shrink-0 border-b border-neutral-200">
+          <div role="tablist" className="flex shrink-0 border-b border-neutral-200 dark:border-neutral-800">
             {(['chat', 'canvas'] as const).map((name) => (
               <button
                 key={name}
@@ -101,7 +101,7 @@ function ShellFrame({
                 aria-selected={tab === name}
                 onClick={() => setTab(name)}
                 className={`flex-1 px-4 py-2 text-sm capitalize ${
-                  tab === name ? 'border-b-2 border-neutral-900 font-medium' : 'text-neutral-500'
+                  tab === name ? 'border-b-2 border-neutral-900 dark:border-neutral-100 font-medium' : 'text-neutral-500 dark:text-neutral-400'
                 }`}
               >
                 {name}
@@ -117,7 +117,7 @@ function ShellFrame({
           }`}
         >
           <aside
-            className={`w-80 shrink-0 border-neutral-200 ${
+            className={`w-80 shrink-0 border-neutral-200 dark:border-neutral-800 ${
               config.chatSide === 'left' ? 'border-r' : 'border-l'
             }`}
           >

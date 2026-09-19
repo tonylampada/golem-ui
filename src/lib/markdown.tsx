@@ -18,7 +18,7 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
     const key = `${keyPrefix}-${index}`
     if (piece.startsWith('`') && piece.endsWith('`') && piece.length > 1) {
       return (
-        <code key={key} className="rounded bg-black/5 px-1 py-0.5 font-mono text-[0.9em]">
+        <code key={key} className="rounded bg-black/5 dark:bg-white/10 px-1 py-0.5 font-mono text-[0.9em]">
           {piece.slice(1, -1)}
         </code>
       )
@@ -199,7 +199,7 @@ export function Markdown({ text, hardWraps = true }: { text: string; hardWraps?:
             <div key={index} className="my-2 overflow-x-auto">
               <table className="w-full border-collapse text-left text-[0.95em]">
                 <thead>
-                  <tr className="border-b border-neutral-300">
+                  <tr className="border-b border-neutral-300 dark:border-neutral-700">
                     {block.headings.map((cell, cellIndex) => (
                       <th key={cellIndex} className="py-1.5 pr-4 font-semibold">
                         {inline(cell, `${index}-h-${cellIndex}`)}
@@ -211,7 +211,7 @@ export function Markdown({ text, hardWraps = true }: { text: string; hardWraps?:
                   {block.rows.map((row, rowIndex) => (
                     <tr
                       key={rowIndex}
-                      className="border-b border-neutral-200 align-top last:border-0"
+                      className="border-b border-neutral-200 dark:border-neutral-800 align-top last:border-0"
                     >
                       {row.map((cell, cellIndex) => (
                         <td key={cellIndex} className="py-1.5 pr-4">

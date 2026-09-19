@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where([data-golem-theme='dark'], [data-golem-theme='dark'] *));
+
 /* Report's print sheet, switched on by its `print` config. A printed report is the document and
    nothing else: the period arrows, the print button and the index are chrome, and paper is not a
    screen — no card border, no grey ground, and no heading stranded at the foot of a page.

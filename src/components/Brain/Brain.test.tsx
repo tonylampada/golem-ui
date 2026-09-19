@@ -33,13 +33,43 @@ describe('Brain', () => {
     await screen.findByText('Root')
 
     rerender(<Brain config={{ openLocation: 'notes.md#L3-L5' }} adapters={{ brain }} />)
-    const mark = await waitFor(() => document.querySelector('[data-golem-brain-highlight]')!)
+    const mark = await waitFor(() => {
+      const found = document.querySelector('[data-golem-brain-highlight]')
+      expect(found).not.toBeNull()
+      return found!
+    })
     expect(mark).toHaveAttribute('data-golem-brain-highlight', 'L3-L5')
     expect(mark).toHaveTextContent('line three line four line five')
     expect(mark).not.toHaveTextContent('line one')
     expect(mark).not.toHaveTextContent('line seven')
     expect(screen.getByText('line one')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'notes.md' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'notes' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('reports what the reader opens through open(), and not what the app passed in', async () => {
+    const open = vi.fn()
+    const brain = {
+      ...fakeBrain({ 'index.md': '# Root', 'a.md': '---\ntype: concept\n---\n# A\n\nseal kit' }),
+      open,
+    }
+    const { rerender } = render(<Brain config={{}} adapters={{ brain }} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'a' }))
+    expect(open).toHaveBeenLastCalledWith('a.md')
+    expect(await screen.findByText('concept')).toBeInTheDocument()
+    expect(screen.queryByText('type: concept')).not.toBeInTheDocument()
+
+    // The app echoing the location back is not a second push.
+    rerender(<Brain config={{ openLocation: 'a.md' }} adapters={{ brain }} />)
+    await flush()
+    expect(open).toHaveBeenCalledTimes(1)
+
+    await userEvent.type(screen.getByRole('searchbox'), 'seal')
+    await userEvent.click(await screen.findByRole('button', { name: /seal kit/ }))
+    expect(open).toHaveBeenLastCalledWith('a.md#L6-L6')
+    expect(document.querySelector('[data-golem-brain-highlight]')).toHaveAttribute(
+      'data-golem-brain-highlight',
+      'L6-L6',
+    )
   })
 
   it('synthesizes an index from front matter when a directory has none', async () => {

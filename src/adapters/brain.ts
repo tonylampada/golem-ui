@@ -29,6 +29,11 @@ export interface BrainAdapter {
   search(query: string): Promise<BrainHit[]>
   /** Fires on any change to any file in the bundle. */
   subscribe(listener: () => void): Unsubscribe
+  /**
+   * Called with the location the reader just opened on its own — a tree tap, a link, a search hit,
+   * back. Optional: an app puts it in the URL so a reload lands on the same document.
+   */
+  open?(location: string): void
   /** Replaces a file's text. Optional: a brain the app keeps read-only omits it. */
   write?(path: string, text: string): Promise<void>
 }

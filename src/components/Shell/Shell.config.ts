@@ -25,6 +25,12 @@ export const shellConfigSchema = z
       .describe(
         'Starting width of the chat column in pixels, at desktop width. The reader can drag the edge between chat and canvas to change it, and the choice is kept in this browser.',
       ),
+    initialTab: z
+      .enum(['chat', 'canvas'])
+      .default('chat')
+      .describe(
+        'Which tab is open at the first paint below the breakpoint. Pass `canvas` when the URL already names a screen, so a reload lands on it rather than on the chat.',
+      ),
     showTopBar: z
       .boolean()
       .default(true)

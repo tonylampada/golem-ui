@@ -51,6 +51,11 @@ description read from each concept's front matter, as the spec allows.`,
         'Calls the listener after any file in the bundle changes, with no payload: the component re-reads what it has open. Returns the function that detaches it.',
     },
     {
+      signature: 'open?(location: string): void',
+      guarantees:
+        'Optional. `Brain` calls it with `path#L<start>-L<end>` (or a bare path) every time the reader opens a document on its own: a tree tap, a link, a search hit, back. Never for a location the app passed in through `openLocation`. Write it into the URL so a reload lands on the same document.',
+    },
+    {
       signature: 'write?(path: string, text: string): Promise<void>',
       guarantees:
         'Optional. Replaces the file at `path` (creating it) and fires `subscribe`. Omit it for a brain the app keeps read-only; `Brain` calls it in no slice yet.',

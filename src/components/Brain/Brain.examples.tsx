@@ -142,25 +142,34 @@ const adapters: BrainAdapters = { brain: fakeBrain(northgateBrain) }
 
 export const rootIndex: BrainExample = {
   name: 'The root index',
-  summary: 'Nothing open yet: the tree on the left and the bundle’s own index.md on the right.',
-  viewportWidth: 900,
+  summary:
+    'Nothing open yet: the list column on the left, the bundle’s own index.md in the reading column.',
+  viewportWidth: 1100,
   props: { config: { title: 'Shop knowledge' }, adapters },
 }
 
 export const openLocation: BrainExample = {
   name: 'A cited passage',
   summary:
-    'openLocation names lines 6–8 of the turnaround policy; the reader opens the file with the range highlighted.',
-  viewportWidth: 900,
+    'openLocation names lines 6–8 of the turnaround policy; the reader opens the file with the range highlighted and the front matter as a chip.',
+  viewportWidth: 1100,
   props: {
     config: { title: 'Shop knowledge', openLocation: 'workshop/turnaround.md#L6-L8' },
     adapters,
   },
 }
 
+export const phoneList: BrainExample = {
+  name: 'Phone: the list',
+  summary: 'Below 768px the reader is one screen at a time. Nothing open is the list, with search.',
+  viewportWidth: 390,
+  props: { config: { title: 'Shop knowledge' }, adapters },
+}
+
 export const phone: BrainExample = {
-  name: 'Phone',
-  summary: 'Below 768px the tree sits above the reader instead of beside it.',
+  name: 'Phone: a document',
+  summary:
+    'A document fills the phone screen with a back affordance in the header; back returns to the list where it was.',
   viewportWidth: 390,
   props: {
     config: { title: 'Shop knowledge', openLocation: 'counter/quotes.md#L8-L9' },
@@ -178,7 +187,7 @@ export const invalidConfig: BrainExample = {
   },
 }
 
-export const brainExamples = [rootIndex, openLocation, phone, invalidConfig]
+export const brainExamples = [rootIndex, openLocation, phoneList, phone, invalidConfig]
 
 /** The conversation behind "Answer with a source": one agent reply carrying the passage it used. */
 export const sourcedConversation: ChatMessage[] = [
@@ -213,7 +222,7 @@ export function AnswerWithASource(): ReactNode {
   }))
   return (
     <div className="flex h-full min-h-0">
-      <div className="w-[340px] shrink-0 border-r border-neutral-200">
+      <div className="w-[340px] shrink-0 border-r border-(--chat-line)">
         <Chat config={{ agentName: 'Golem', userName: 'Nadia' }} adapters={{ chat }} />
       </div>
       <div className="min-w-0 flex-1">

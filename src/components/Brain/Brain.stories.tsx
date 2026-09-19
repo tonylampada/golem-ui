@@ -37,8 +37,22 @@ const story = (example: examples.BrainExample, theme: 'light' | 'dark' = 'light'
 export const RootIndex = story(examples.rootIndex)
 export const CitedPassage = story(examples.openLocation)
 export const CitedPassageDark = story(examples.openLocation, 'dark')
+export const PhoneList = story(examples.phoneList)
 export const Phone = story(examples.phone)
+export const PhoneDark = story(examples.phone, 'dark')
 export const InvalidConfig = story(examples.invalidConfig)
+
+/** Type into the search box and the list column becomes the hits; a hit opens the line highlighted. */
+export const SearchResults: Story = {
+  ...story(examples.rootIndex),
+  name: 'Search results',
+  play: async ({ canvasElement }) => {
+    const input = canvasElement.querySelector<HTMLInputElement>('input[type=search]')!
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    set.call(input, 'seal')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  },
+}
 
 /** Chat beside Brain: click the chip under the agent's reply and the reader opens on the lines it cited. */
 export const AnswerWithASource: Story = {

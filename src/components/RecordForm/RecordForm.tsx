@@ -10,7 +10,13 @@ import {
 } from 'react'
 import { defineComponent, type GolemProps } from '../../abi'
 import type { FormField, RecordRow } from '../../abi/fields'
-import { refusedFields, type IdentityAdapter, type RecordsAdapter, type User } from '../../adapters'
+import {
+  conflictingRecord,
+  refusedFields,
+  type IdentityAdapter,
+  type RecordsAdapter,
+  type User,
+} from '../../adapters'
 import { chipTone, formatValue, initials, userName } from '../../lib/format'
 import { useContainerWidth } from '../../lib/use-container-width'
 import { recordFormConfigSchema, type RecordFormConfig } from './RecordForm.config'
@@ -172,19 +178,25 @@ function RecordFormBody({
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [asking, setAsking] = useState<'cancel' | 'delete' | null>(null)
+  // The row a stale save was refused over, and the fields on this form it changed.
+  const [conflict, setConflict] = useState<{ row: RecordRow; changed: FormField[] } | null>(null)
 
   const controls = useRef<Record<string, HTMLElement | null>>({})
 
-  const base = useMemo(() => {
-    const start: RecordRow = { ...blank }
-    const row = loaded?.row
-    if (row) {
+  const baseOf = useCallback(
+    (row: RecordRow) => {
+      const start: RecordRow = { ...blank }
       for (const field of config.fields) {
         if (row[field.key] !== undefined) start[field.key] = row[field.key]
       }
-    }
-    return { ...start, ...committed }
-  }, [blank, loaded, committed, config.fields])
+      return start
+    },
+    [blank, config.fields],
+  )
+
+  // The row as the store was last known to hold it: loaded, then every write and conflict since.
+  const stored = useMemo(() => ({ ...loaded?.row, ...committed }), [loaded, committed])
+  const base = useMemo(() => baseOf(stored), [baseOf, stored])
 
   const values = useMemo(() => ({ ...base, ...edits }), [base, edits])
 
@@ -214,8 +226,102 @@ function RecordFormBody({
     controls.current[failures[0]!.key]?.focus()
   }, [])
 
+  const versionOf = (row: RecordRow) => {
+    const version = row[config.versionField]
+    return typeof version === 'number' ? version : undefined
+  }
+
+  /**
+   * The one write. `from` is what the store is taken to hold and `next` what the form shows. An edit
+   * of a versioned record goes out with the version it was read at, so a save that arrived second
+   * is refused with the row as it now stands, and the reader chooses instead of anyone overwriting.
+   */
+  const write = (from: RecordRow, next: RecordRow, expected: number | undefined) => {
+    setFormError(null)
+    setErrors({})
+    setBusy(true)
+    // Optimistic: the form says it is saved before the adapter has answered, and a refusal takes
+    // it back. The reader sees the common case immediately and the rare one accurately.
+    setSaved(true)
+
+    const patch = patchOf(editable, next, from)
+    const request =
+      config.mode === 'create'
+        ? adapters.records.create<RecordRow>(config.collection, dataOf(editable, next))
+        : expected === undefined
+          ? adapters.records.update<RecordRow>(config.collection, recordId!, patch)
+          : adapters.records.update<RecordRow>(
+              config.collection,
+              recordId!,
+              { ...patch, [config.versionField]: expected + 1 },
+              { expectedVersion: expected, versionField: config.versionField },
+            )
+
+    void request.then(
+      (row) => {
+        setBusy(false)
+        // What was just written stops counting as unsaved: create empties the form, edit folds the
+        // changes into what the store is now taken to hold.
+        if (config.mode === 'edit') setCommitted((prev) => ({ ...prev, ...next, ...row }))
+        setEdits({})
+        onDone?.(row)
+      },
+      (cause: unknown) => {
+        setBusy(false)
+        setSaved(false)
+        const theirs = conflictingRecord(cause)
+        if (theirs) {
+          const now = baseOf(theirs)
+          setConflict({
+            row: theirs,
+            // The version is bookkeeping, not something the reader chooses between.
+            changed: config.fields.filter(
+              (field) => field.key !== config.versionField && now[field.key] !== from[field.key],
+            ),
+          })
+          return
+        }
+        const refused = refusedFields(cause)
+        if (refused) land(refused.map((one) => ({ key: one.field, message: one.message })))
+        else setFormError(messageOf(cause))
+      },
+    )
+  }
+
+  /** Drops the unsaved values and shows the record as the other writer left it. */
+  const takeTheirs = () => {
+    setCommitted((prev) => ({ ...prev, ...conflict!.row }))
+    setEdits({})
+    setConflict(null)
+    setSaved(false)
+  }
+
+  /**
+   * Writes the reader's changes over the newer version. Only fields the reader actually changed go
+   * out, so whatever else the other writer changed survives.
+   */
+  const keepMine = () => {
+    // The controls stay live while the choice is open, so what is on screen is checked again.
+    const failures = validateAll(editable, values)
+    if (failures.length > 0) {
+      land(failures)
+      return
+    }
+    const mine = Object.fromEntries(
+      Object.entries(edits).filter(([key, value]) => value !== base[key]),
+    )
+    const row = { ...stored, ...conflict!.row }
+    setCommitted((prev) => ({ ...prev, ...conflict!.row }))
+    setEdits(mine)
+    setConflict(null)
+    const from = baseOf(row)
+    write(from, { ...from, ...mine }, versionOf(row))
+  }
+
   const submit = (event: FormEvent) => {
     event.preventDefault()
+    // Enter in a control while the conflict is open must not pick a side for the reader.
+    if (conflict !== null) return
     setFormError(null)
 
     const failures = validateAll(editable, values)
@@ -224,38 +330,7 @@ function RecordFormBody({
       return
     }
 
-    setErrors({})
-    setBusy(true)
-    // Optimistic: the form says it is saved before the adapter has answered, and a refusal takes
-    // it back. The reader sees the common case immediately and the rare one accurately.
-    setSaved(true)
-
-    const write =
-      config.mode === 'create'
-        ? adapters.records.create<RecordRow>(config.collection, dataOf(editable, values))
-        : adapters.records.update<RecordRow>(
-            config.collection,
-            recordId!,
-            patchOf(editable, values, base),
-          )
-
-    void write.then(
-      (row) => {
-        setBusy(false)
-        // What was just written stops counting as unsaved: create empties the form, edit folds the
-        // changes into what the store is now taken to hold.
-        if (config.mode === 'edit') setCommitted((prev) => ({ ...prev, ...edits }))
-        setEdits({})
-        onDone?.(row)
-      },
-      (cause: unknown) => {
-        setBusy(false)
-        setSaved(false)
-        const refused = refusedFields(cause)
-        if (refused) land(refused.map((one) => ({ key: one.field, message: one.message })))
-        else setFormError(messageOf(cause))
-      },
-    )
+    write(base, values, versionOf(stored))
   }
 
   const cancel = () => {
@@ -426,6 +501,64 @@ function RecordFormBody({
           >
             Keep editing
           </button>
+        </div>
+      )
+    }
+    if (conflict !== null) {
+      return (
+        <div role="alertdialog" aria-label="Saved by someone else" className="flex flex-wrap gap-2">
+          <p className="w-full text-sm font-medium text-amber-800">
+            Someone else saved this record after you opened it. Your changes are not saved yet.
+          </p>
+          {conflict.changed.length === 0 ? (
+            <p className="w-full text-sm text-neutral-700">None of the fields here changed.</p>
+          ) : (
+            <dl className="mb-1 grid w-full grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 text-sm">
+              <dt className="sr-only">Field</dt>
+              <dd className="col-start-2 text-xs text-neutral-500">Saved now</dd>
+              <dd className="text-xs text-neutral-500">Yours</dd>
+              {conflict.changed.map((field) => (
+                <div key={field.key} className="contents">
+                  <dt className="font-medium text-neutral-700">{field.label}</dt>
+                  <dd className="min-w-0 break-words">
+                    <ReadOnlyValue field={field} value={conflict.row[field.key]} />
+                  </dd>
+                  <dd className="min-w-0 break-words">
+                    {edits[field.key] !== undefined && edits[field.key] !== base[field.key] ? (
+                      <ReadOnlyValue field={field} value={values[field.key]} />
+                    ) : (
+                      <span className="text-neutral-400">not changed</span>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          <button
+            type="button"
+            onClick={keepMine}
+            disabled={busy}
+            className="rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            Keep mine
+          </button>
+          <button
+            type="button"
+            onClick={takeTheirs}
+            disabled={busy}
+            className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium"
+          >
+            Take theirs
+          </button>
+          {config.cancel === 'back' && (
+            <button
+              type="button"
+              onClick={cancel}
+              className="rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium"
+            >
+              Cancel
+            </button>
+          )}
         </div>
       )
     }

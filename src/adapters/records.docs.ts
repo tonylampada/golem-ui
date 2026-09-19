@@ -71,7 +71,8 @@ sentence under the right control.
   a person: *"A quote over $500 needs the owner's sign-off."* A refusal that names no field shows as
   one line at the top of the form instead.
 - \`VersionConflictError(message, current)\` — an \`update\` that arrived too late. \`current\` is the row
-  as it now stands, and \`Editor\` merges its draft against that record rather than showing an error.
+  as it now stands. \`Editor\` merges its draft against that record; \`RecordForm\` keeps the reader's
+  unsaved values and asks whether to keep them or take the stored ones.
 
 **Every rejection's \`message\` reaches a person unedited.** Write them as sentences, not as codes.
 

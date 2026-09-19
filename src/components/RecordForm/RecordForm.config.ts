@@ -18,6 +18,13 @@ export const recordFormConfigSchema = z
       .describe(
         '`create` opens blank and calls `create`; `edit` loads the record named by the `recordId` prop and calls `update` with only what changed.',
       ),
+    versionField: z
+      .string()
+      .min(1)
+      .default('version')
+      .describe(
+        'The field holding a number that goes up on every write. When the loaded record has a number there, saving sends it as `expectedVersion`, so a save that arrived second is refused and the reader chooses whose values win. A record with no number there saves as a plain update.',
+      ),
     layout: z
       .enum(['single', 'two-column'])
       .default('single')

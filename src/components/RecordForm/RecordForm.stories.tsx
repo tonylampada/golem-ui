@@ -39,4 +39,21 @@ export const Edit = story(examples.edit)
 export const AdapterRefuses = story(examples.refused)
 export const ReadOnlyFields = story(examples.readOnlyFields)
 export const DeleteWithConfirm = story(examples.deletable)
+/** The same example twice over one store, so the second save meets the first one's version. */
+const twoWriters = story(examples.staleSave)
+export const TwoPeopleSaveOneTicket: Story = {
+  ...twoWriters,
+  // Saving is the point of this story, so a save does not stop it with an alert.
+  args: { ...twoWriters.args, onDone: undefined },
+  render: (args) => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+      {['Counter', 'Workshop'].map((who) => (
+        <section key={who} aria-label={who} style={{ flex: '1 1 320px', minWidth: 0 }}>
+          <h2 style={{ fontWeight: 600, marginBottom: 8 }}>{who}</h2>
+          <RecordForm {...args} />
+        </section>
+      ))}
+    </div>
+  ),
+}
 export const InvalidConfig = story(examples.invalidConfig)

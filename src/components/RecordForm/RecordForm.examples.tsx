@@ -182,6 +182,27 @@ export const deletable: RecordFormExample = {
   },
 }
 
+/**
+ * One store behind two forms on the same versioned ticket, as two people at two counters would see
+ * it. Whichever saves second saved over a version that no longer exists, and is asked to choose.
+ */
+const sharedAdapters: RecordFormAdapters = {
+  records: fakeRecords({ jobs: [{ ...ticket, version: 1 }] }),
+  identity,
+}
+
+export const staleSave: RecordFormExample = {
+  name: 'Two people save one ticket',
+  summary:
+    'Both forms load version 1 of the ticket. Save one, then save the other: the second is refused, keeps what was typed, lists what the first changed, and waits for *Keep mine* or *Take theirs*.',
+  viewportWidth: 900,
+  props: {
+    config: { ...editConfig, layout: 'single', cancel: 'back' },
+    adapters: sharedAdapters,
+    recordId: 'j-4187',
+  },
+}
+
 export const invalidConfig: RecordFormExample = {
   name: 'Invalid config',
   summary:
@@ -207,5 +228,6 @@ export const recordFormExamples = [
   refused,
   readOnlyFields,
   deletable,
+  staleSave,
   invalidConfig,
 ]

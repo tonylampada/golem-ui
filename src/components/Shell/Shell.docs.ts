@@ -22,8 +22,8 @@ the \`canvas\` slot). If you want a two-pane layout *inside* the canvas, that is
     },
     {
       adapter: 'Navigation',
-      calls: "`go('/')`",
-      why: 'The title in the top bar is the way home.',
+      calls: "`go('/')`, `subscribe()`",
+      why: 'The title in the top bar is the way home; below the breakpoint a route change brings the canvas tab forward.',
     },
   ],
 

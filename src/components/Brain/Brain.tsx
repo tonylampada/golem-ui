@@ -91,19 +91,54 @@ function Tree({
  * highlight at exactly the lines cited. YAML front matter stays visible, muted, so line numbers in
  * a location still count from line 1 of the file.
  */
-function Reader({ text, start, end }: { text: string; start?: number; end?: number }) {
+const BRAIN_LINK = '#brain:'
+
+/** `../suppliers.md` seen from `workshop/fork-service.md` → `suppliers.md`. */
+function resolvePath(from: string, relative: string): string {
+  const parts = from.split('/').slice(0, -1)
+  for (const part of relative.split('/')) {
+    if (part === '..') parts.pop()
+    else if (part !== '.' && part) parts.push(part)
+  }
+  return parts.join('/')
+}
+
+function Reader({
+  text,
+  path,
+  start,
+  end,
+}: {
+  text: string
+  path: string
+  start?: number
+  end?: number
+}) {
   const marked = useRef<HTMLDivElement>(null)
+  // A relative link in the bundle opens that file in this reader; the click handler on the article
+  // reads the path back off the href.
+  const resolveLink = (href: string) =>
+    /^[a-z]+:/i.test(href) ? undefined : BRAIN_LINK + resolvePath(path, href.split('#')[0]!)
   const lines = text.split('\n')
   const fm = lines[0] === '---' ? lines.indexOf('---', 1) + 1 : 0
 
+  // Scrolls the reader's own box, not the page: a docs page hosting this component stays put.
   useEffect(() => {
-    marked.current?.scrollIntoView?.({ block: 'center' })
+    const mark = marked.current
+    const box = mark?.closest('article')
+    if (!mark || !box) return
+    const offset = mark.getBoundingClientRect().top - box.getBoundingClientRect().top
+    box.scrollTop += offset - box.clientHeight / 2 + mark.clientHeight / 2
   }, [text, start, end])
 
   const run = (from: number, to: number, key: string) =>
     to > from ? (
       <div key={key}>
-        <Markdown text={lines.slice(from, to).join('\n')} hardWraps={false} />
+        <Markdown
+          text={lines.slice(from, to).join('\n')}
+          hardWraps={false}
+          resolveLink={resolveLink}
+        />
       </div>
     ) : null
 
@@ -126,7 +161,11 @@ function Reader({ text, start, end }: { text: string; start?: number; end?: numb
         data-golem-brain-highlight={`L${start}-L${end}`}
         className="-mx-2 my-1 rounded-md border-l-4 border-(--chat-accent) bg-(--chat-accent-soft) px-2 py-1"
       >
-        <Markdown text={lines.slice(from, to).join('\n')} hardWraps={false} />
+        <Markdown
+          text={lines.slice(from, to).join('\n')}
+          hardWraps={false}
+          resolveLink={resolveLink}
+        />
       </div>
       {run(to, lines.length, 'after')}
     </>
@@ -135,7 +174,7 @@ function Reader({ text, start, end }: { text: string; start?: number; end?: numb
 
 function FrontMatter({ lines }: { lines: string[] }) {
   return (
-    <pre className="mb-3 rounded-md bg-(--chat-panel2) px-2 py-1 font-mono text-[11px] text-(--chat-faint)">
+    <pre className="mb-3 overflow-x-auto rounded-md bg-(--chat-panel2) px-2 py-1 font-mono text-[11px] text-(--chat-faint)">
       {lines.join('\n')}
     </pre>
   )
@@ -201,13 +240,21 @@ function BrainPanel({
           </span>
           {toolbar}
         </header>
-        <article className="min-h-0 flex-1 overflow-y-auto px-4 py-3 text-[15px] leading-relaxed">
+        <article
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-3 text-[15px] leading-relaxed"
+          onClick={(event) => {
+            const href = (event.target as HTMLElement).closest('a')?.getAttribute('href') ?? ''
+            if (!href.startsWith(BRAIN_LINK)) return
+            event.preventDefault()
+            setOpen(href.slice(BRAIN_LINK.length))
+          }}
+        >
           {error ? (
             <p role="alert" className="text-sm text-(--chat-danger)">
               {error}
             </p>
           ) : (
-            <Reader key={open} text={text} start={range.start} end={range.end} />
+            <Reader key={open} path={open} text={text} start={range.start} end={range.end} />
           )}
         </article>
       </section>

@@ -102,3 +102,13 @@ describe('Shell', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('chatside')
   })
 })
+
+describe('Shell on a phone', () => {
+  it('brings the canvas tab forward when the route changes', () => {
+    setViewportWidth(420)
+    render(<Shell {...examples.mobile.props} />)
+    expect(screen.getByRole('tab', { name: 'chat' })).toHaveAttribute('aria-selected', 'true')
+    act(() => examples.mobile.props.adapters.navigation.go('/brain'))
+    expect(screen.getByRole('tab', { name: 'canvas' })).toHaveAttribute('aria-selected', 'true')
+  })
+})

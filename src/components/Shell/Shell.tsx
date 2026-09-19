@@ -68,6 +68,9 @@ function ShellFrame({
   account,
 }: GolemProps<ShellConfig, ShellAdapters, ShellSlots>) {
   const [tab, setTab] = useState<'chat' | 'canvas'>('chat')
+  // A route change is a screen the reader asked for (a chip in the chat, a link), so below the
+  // breakpoint the canvas tab comes forward to show it.
+  useEffect(() => adapters.navigation.subscribe(() => setTab('canvas')), [adapters.navigation])
   const root = useRef<HTMLDivElement>(null)
   const width = useContainerWidth(root)
   const isMobile = width < config.breakpoint

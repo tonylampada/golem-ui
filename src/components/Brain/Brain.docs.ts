@@ -76,6 +76,7 @@ import 'golem-ui/styles.css'
 - **A block spans the range's edge.** The file is rendered in three runs, so a list or table cut by
   the range renders as two. Cite whole blocks and it does not happen.
 - **Markdown is the kit's subset.** Headings, fenced code, pipe tables, lists, bold, italic, inline
-  code and \`http(s)\` links. Wiki links and images render as the characters they are.
+  code and links. A relative link opens that file in the reader; \`http(s)\` opens a new tab; wiki
+  links and images render as the characters they are.
 - **A new adapter object on every render** re-subscribes and re-lists the tree. Build it once.`,
 }

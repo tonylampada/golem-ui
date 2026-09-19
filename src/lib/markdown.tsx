@@ -13,7 +13,10 @@ import { Fragment, type ReactNode } from 'react'
 
 const INLINE = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*\n]+\*|\[[^\]\n]+\]\([^)\s]+\))/g
 
-function inline(text: string, keyPrefix: string): ReactNode[] {
+/** Turns a non-http href into one worth linking, or `undefined` to leave it as text. */
+export type LinkResolver = (href: string) => string | undefined
+
+function inlineNodes(text: string, keyPrefix: string, resolve?: LinkResolver): ReactNode[] {
   return text.split(INLINE).map((piece, index) => {
     const key = `${keyPrefix}-${index}`
     if (piece.startsWith('`') && piece.endsWith('`') && piece.length > 1) {
@@ -29,18 +32,25 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
     // Bold and italic recurse, so `**a `b`**` is bold text with code inside rather than backticks
     // on the screen. The inner text can hold no further `*`, so the recursion is one level deep.
     if (piece.startsWith('**') && piece.endsWith('**') && piece.length > 3) {
-      return <strong key={key}>{inline(piece.slice(2, -2), key)}</strong>
+      return <strong key={key}>{inlineNodes(piece.slice(2, -2), key, resolve)}</strong>
     }
     if (piece.startsWith('*') && piece.endsWith('*') && piece.length > 2) {
-      return <em key={key}>{inline(piece.slice(1, -1), key)}</em>
+      return <em key={key}>{inlineNodes(piece.slice(1, -1), key, resolve)}</em>
     }
     const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(piece)
     if (link) {
-      // Agent-authored URLs are untrusted; only http(s) becomes a link, anything else stays text.
-      const href = link[2]!
-      if (!/^https?:\/\//i.test(href)) return <Fragment key={key}>{piece}</Fragment>
+      // Agent-authored URLs are untrusted; only http(s) becomes a link, anything else stays text
+      // unless the reader's resolver claims it (a brain resolving a relative path).
+      const external = /^https?:\/\//i.test(link[2]!)
+      const href = external ? link[2]! : resolve?.(link[2]!)
+      if (!href) return <Fragment key={key}>{piece}</Fragment>
       return (
-        <a key={key} href={href} target="_blank" rel="noreferrer noopener" className="underline">
+        <a
+          key={key}
+          href={href}
+          {...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
+          className="underline"
+        >
           {link[1]}
         </a>
       )
@@ -170,7 +180,16 @@ const HEADING_SIZES = [
  * `hardWraps` is the difference between the readers. A chat bubble keeps a single newline the
  * person typed; a docs paragraph wrapped at the source's column width must not show those wraps.
  */
-export function Markdown({ text, hardWraps = true }: { text: string; hardWraps?: boolean }) {
+export function Markdown({
+  text,
+  hardWraps = true,
+  resolveLink,
+}: {
+  text: string
+  hardWraps?: boolean
+  resolveLink?: LinkResolver
+}) {
+  const inline = (piece: string, key: string) => inlineNodes(piece, key, resolveLink)
   return (
     <>
       {blocksOf(text).map((block, index) => {

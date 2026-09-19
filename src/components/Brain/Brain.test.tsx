@@ -75,3 +75,17 @@ describe('Chat sources', () => {
     expect(openSource).toHaveBeenCalledWith('workshop/turnaround.md#L6-L8')
   })
 })
+
+describe('Brain links', () => {
+  it('opens a relative link inside the bundle in the reader', async () => {
+    const brain = fakeBrain({
+      'index.md': '# Root\n\n* [Forks](workshop/forks.md)',
+      'workshop/forks.md': '# Forks\n\nSee [suppliers](../suppliers.md).',
+      'suppliers.md': '# Suppliers',
+    })
+    render(<Brain config={{}} adapters={{ brain }} />)
+    await userEvent.click(await screen.findByRole('link', { name: 'Forks' }))
+    await userEvent.click(await screen.findByRole('link', { name: 'suppliers' }))
+    expect(await screen.findByRole('heading', { name: 'Suppliers' })).toBeInTheDocument()
+  })
+})

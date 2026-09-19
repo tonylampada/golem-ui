@@ -122,8 +122,10 @@
 /* Chat's palette, after the Bridge Commander chat pane: a dark navy panel with thin lines, agent
    bubbles on the panel and the reader's on a deeper blue. The light set keeps the same
    relationships (panel lifts off the ground, user bubble is the tinted one) rather than inverting
-   the dark values, so it reads as designed in both. Chat reads these through `bg-(--chat-*)`. */
-.golem-chat {
+   the dark values, so it reads as designed in both. Chat reads these through `bg-(--chat-*)`, and
+   Auth shares the set so its cards, popover and forms invert with the same theme. */
+.golem-chat,
+.golem-auth {
   --chat-bg: #f4f6f9;
   --chat-panel: #ffffff;
   --chat-panel2: #eaeff5;
@@ -140,7 +142,8 @@
   --chat-ok: #1f9d68;
 }
 
-.golem-chat:where([data-golem-theme='dark'], [data-golem-theme='dark'] *) {
+.golem-chat:where([data-golem-theme='dark'], [data-golem-theme='dark'] *),
+.golem-auth:where([data-golem-theme='dark'], [data-golem-theme='dark'] *) {
   --chat-bg: #0e131a;
   --chat-panel: #131a24;
   --chat-panel2: #1a2330;

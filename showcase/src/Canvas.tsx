@@ -91,7 +91,7 @@ export function Canvas({ route, adapters }: { route: Route; adapters: CanvasAdap
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* The strip scrolls sideways inside itself on a narrow phone, so the page never does. */}
-      <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-neutral-200 bg-white px-3 py-2">
+      <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-neutral-200 bg-white px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900">
         {screens.map((screen) => {
           const active = route.path.startsWith(screen.path)
           return (
@@ -101,7 +101,7 @@ export function Canvas({ route, adapters }: { route: Route; adapters: CanvasAdap
               onClick={() => adapters.navigation.go(screen.path)}
               aria-current={active ? 'page' : undefined}
               className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-medium ${
-                active ? 'bg-neutral-900 text-white' : 'text-neutral-600'
+                active ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900' : 'text-neutral-600 dark:text-neutral-400'
               }`}
             >
               {screen.label}
@@ -109,7 +109,7 @@ export function Canvas({ route, adapters }: { route: Route; adapters: CanvasAdap
           )
         })}
       </nav>
-      <div className="min-h-0 flex-1 overflow-auto bg-neutral-50">{screenFor(route, adapters)}</div>
+      <div className="min-h-0 flex-1 overflow-auto bg-neutral-50 dark:bg-neutral-950">{screenFor(route, adapters)}</div>
     </div>
   )
 }

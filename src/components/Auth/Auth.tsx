@@ -72,15 +72,16 @@ function messageOf(error: unknown): string {
 }
 
 const fieldClass =
-  'mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base text-neutral-900'
+  'mt-1 w-full rounded-lg border border-(--chat-line2) bg-(--chat-panel) px-3 py-2.5 text-base text-(--chat-text)'
 const primaryClass =
-  'w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50'
-const quietClass = 'rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium'
+  'w-full rounded-lg bg-(--chat-text) px-4 py-2.5 text-sm font-medium text-(--chat-bg) disabled:opacity-50'
+const quietClass =
+  'rounded-lg border border-(--chat-line2) bg-(--chat-panel) px-3 py-2 text-sm font-medium text-(--chat-text)'
 
 function Field({ label, ...input }: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-neutral-700">{label}</span>
+      <span className="text-sm font-medium text-(--chat-dim)">{label}</span>
       <input {...input} className={fieldClass} />
     </label>
   )
@@ -88,8 +89,8 @@ function Field({ label, ...input }: { label: string } & InputHTMLAttributes<HTML
 
 function Card({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-neutral-50 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-5 sm:p-6">
+    <div className="golem-auth flex h-full w-full items-center justify-center bg-(--chat-bg) p-4 text-(--chat-text)">
+      <div className="w-full max-w-sm rounded-xl border border-(--chat-line) bg-(--chat-panel) p-5 sm:p-6">
         {children}
       </div>
     </div>
@@ -164,14 +165,14 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
       >
         {title}
       </h1>
-      <p className="mt-1 text-sm text-neutral-500">
+      <p className="mt-1 text-sm text-(--chat-dim)">
         {invite && creatingNow
           ? `You have been invited to ${config.workspaceName}.`
           : config.workspaceName}
       </p>
       {/* The hint is about getting back in, so it stays off the sign-up form. */}
       {config.copy.hint && !creatingNow && (
-        <p className="mt-3 text-xs text-neutral-500">{config.copy.hint}</p>
+        <p className="mt-3 text-xs text-(--chat-dim)">{config.copy.hint}</p>
       )}
 
       <form className="mt-4 space-y-3" onSubmit={submit}>
@@ -202,9 +203,9 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
           />
         )}
 
-        {codeStage && <p className="text-xs text-neutral-500">We sent a code to {email}.</p>}
+        {codeStage && <p className="text-xs text-(--chat-dim)">We sent a code to {email}.</p>}
         {error && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="rounded-lg border border-(--chat-danger) px-3 py-2 text-sm text-(--chat-danger)">
             {error}
           </p>
         )}
@@ -223,13 +224,13 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
             setChose(!creating)
             setError(null)
           }}
-          className="mt-3 w-full text-sm text-neutral-600 underline"
+          className="mt-3 w-full text-sm text-(--chat-dim) underline"
         >
           {creating ? 'I already have an account' : 'Create an account'}
         </button>
       )}
       {config.inviteOnly && !invite && (
-        <p className="mt-3 text-xs text-neutral-500">
+        <p className="mt-3 text-xs text-(--chat-dim)">
           {config.workspaceName} is invite only. Ask someone inside for a link.
         </p>
       )}
@@ -280,14 +281,14 @@ function MembersScreen({
   return (
     <div
       data-golem-component="Auth"
-      className="golem-auth mx-auto w-full max-w-3xl px-4 py-5 sm:px-6 sm:py-7"
+      className="golem-auth mx-auto w-full max-w-3xl px-4 py-5 text-(--chat-text) sm:px-6 sm:py-7"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
             {config.copy.membersTitle}
           </h1>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-(--chat-dim)">
             Everyone who can open {config.workspaceName}.
           </p>
         </div>
@@ -297,7 +298,7 @@ function MembersScreen({
               aria-label="Role for the invite"
               value={inviteRole}
               onChange={(event) => setInviteRole(event.target.value)}
-              className="rounded-lg border border-neutral-300 px-2 py-2 text-sm"
+              className="rounded-lg border border-(--chat-line2) bg-(--chat-panel) px-2 py-2 text-sm text-(--chat-text)"
             >
               {config.roles.map((role) => (
                 <option key={role.id} value={role.id}>
@@ -313,7 +314,7 @@ function MembersScreen({
       </div>
 
       {inviteUrl && (
-        <div className="mt-4 rounded-xl border border-neutral-200 bg-white p-4">
+        <div className="mt-4 rounded-xl border border-(--chat-line) bg-(--chat-panel) p-4">
           <p className="text-sm font-medium">
             Send this link. {copied ? 'It is on your clipboard.' : 'Copy it from here.'}
           </p>
@@ -332,11 +333,11 @@ function MembersScreen({
           <li
             key={member.id}
             data-golem-auth-member={member.id}
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 bg-white p-4"
+            className="flex flex-wrap items-center gap-3 rounded-xl border border-(--chat-line) bg-(--chat-panel) p-4"
           >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{member.name}</p>
-              <p className="truncate text-xs text-neutral-500">{member.email}</p>
+              <p className="truncate text-xs text-(--chat-dim)">{member.email}</p>
             </div>
             {manages ? (
               <select
@@ -345,7 +346,7 @@ function MembersScreen({
                 onChange={(event) => {
                   void adapters.identity.setRole(member.id, event.target.value).then(reload)
                 }}
-                className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+                className="rounded-lg border border-(--chat-line2) bg-(--chat-panel) px-2 py-1.5 text-sm text-(--chat-text)"
               >
                 {config.roles.map((role) => (
                   <option key={role.id} value={role.id}>
@@ -354,7 +355,7 @@ function MembersScreen({
                 ))}
               </select>
             ) : (
-              <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
+              <span className="shrink-0 rounded-full border border-(--chat-line2) bg-(--chat-panel2) px-2 py-0.5 text-xs font-medium text-(--chat-text)">
                 {labelForRole(config, member)}
               </span>
             )}
@@ -366,7 +367,7 @@ function MembersScreen({
                 onClick={() => {
                   void adapters.identity.removeMember(member.id).then(reload)
                 }}
-                className="shrink-0 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-red-700"
+                className="shrink-0 rounded-lg border border-(--chat-line2) px-3 py-1.5 text-sm text-(--chat-danger)"
               >
                 Remove
               </button>
@@ -385,23 +386,23 @@ function AccountMenuPanel({ config, adapters }: GolemProps<AuthConfig, AuthAdapt
   if (!user) return null
 
   return (
-    <div data-golem-component="Auth.AccountMenu" className="relative shrink-0">
+    <div data-golem-component="Auth.AccountMenu" className="golem-auth relative shrink-0 text-(--chat-text)">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-full border border-neutral-200 py-1 pr-3 pl-1 text-sm"
+        className="flex items-center gap-2 rounded-full border border-(--chat-line2) py-1 pr-3 pl-1 text-sm"
       >
-        <span className="flex size-7 items-center justify-center rounded-full bg-neutral-900 text-[11px] font-semibold text-white">
+        <span className="flex size-7 items-center justify-center rounded-full bg-(--chat-text) text-[11px] font-semibold text-(--chat-bg)">
           {initialsOf(user.name)}
         </span>
         <span className="max-w-28 truncate">{user.name}</span>
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-neutral-200 bg-white p-3 shadow-lg">
+        <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-(--chat-line2) bg-(--chat-panel) p-3 shadow-lg">
           <p className="truncate text-sm font-medium">{user.name}</p>
-          <p className="truncate text-xs text-neutral-500">{user.email}</p>
-          <p className="mt-1 text-xs text-neutral-500">{labelForRole(config, user)}</p>
+          <p className="truncate text-xs text-(--chat-dim)">{user.email}</p>
+          <p className="mt-1 text-xs text-(--chat-dim)">{labelForRole(config, user)}</p>
           <button
             type="button"
             onClick={() => {
@@ -445,7 +446,7 @@ function DeniedCard({
     <Card>
       <div role="alert" data-golem-auth-denied="true">
         <h1 className="text-lg font-semibold">{config.copy.denied}</h1>
-        <p className="mt-2 text-sm text-neutral-600">
+        <p className="mt-2 text-sm text-(--chat-dim)">
           You are signed in as {user.name} ({labelForRole(config, user)}). This screen is for:{' '}
           {allowed}.
         </p>

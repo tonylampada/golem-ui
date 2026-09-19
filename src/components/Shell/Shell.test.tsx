@@ -56,6 +56,17 @@ describe('Shell', () => {
     expect(screen.queryByText(/What do you want to build/)).not.toBeInTheDocument()
   })
 
+  it('renders only the canvas when chat is null, on both layouts', () => {
+    setViewportWidth(1200)
+    const { rerender } = render(<Shell {...examples.mobile.props} chat={null} />)
+    expect(screen.queryByRole('separator', { name: 'Resize chat' })).not.toBeInTheDocument()
+    expect(screen.getByText(/Daily report/)).toBeInTheDocument()
+    setViewportWidth(420)
+    rerender(<Shell {...examples.mobile.props} chat={null} />)
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+    expect(screen.getByText(/Daily report/)).toBeInTheDocument()
+  })
+
   it('drags the chat edge to a new width, keeps it, and resets on double-click', () => {
     setViewportWidth(1200)
     localStorage.removeItem('golem-shell-chat-width')

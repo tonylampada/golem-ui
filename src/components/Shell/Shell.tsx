@@ -10,8 +10,8 @@ export interface ShellAdapters {
 }
 
 export interface ShellSlots {
-  /** The agent conversation. Left empty it renders a placeholder, so the frame is never blank. */
-  chat?: ReactNode
+  /** The agent conversation. Left empty it renders a placeholder, so the frame is never blank; `null` means no chat column at all. */
+  chat?: ReactNode | null
   /** The screen the agent built. */
   canvas?: ReactNode
   /**
@@ -146,7 +146,10 @@ function ShellFrame({
         </header>
       )}
 
-      {isMobile ? (
+      {chat === null ? (
+        // No chat column at all: the app defined none for this mode (null, not undefined, says so).
+        <div className="flex min-h-0 flex-1">{canvasPane}</div>
+      ) : isMobile ? (
         <>
           <div
             role="tablist"

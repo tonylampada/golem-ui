@@ -33,7 +33,7 @@ the \`canvas\` slot). If you want a two-pane layout *inside* the canvas, that is
   slots: [
     {
       slot: 'chat',
-      what: 'The conversation. `Chat` is what belongs here; empty renders a labelled placeholder.',
+      what: 'The conversation. `Chat` is what belongs here; empty renders a labelled placeholder, `null` removes the column (and its tab) altogether.',
     },
     {
       slot: 'canvas',
@@ -60,7 +60,8 @@ import 'golem-ui/styles.css'
   every field that failed and the rule it broke. An unknown field is a failure too — \`chatside\` does
   not quietly become \`chatSide\`.
 - **No slot.** A missing \`chat\` or \`canvas\` renders a labelled placeholder, so a half-wired app looks
-  half-wired rather than broken.
+  half-wired rather than broken. \`chat={null}\` is different: the app has no chat in this mode, so there
+  is no column and no tab, only the canvas.
 - **Identity resolves to \`null\`.** The top bar renders without a name. Signing out is not an error.
 - **The breakpoint is measured on the frame, not the window.** A Shell inside a narrow column gets
   the mobile layout, which is usually what you want and is occasionally a surprise.`,

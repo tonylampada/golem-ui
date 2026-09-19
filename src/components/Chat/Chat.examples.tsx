@@ -128,6 +128,31 @@ function deliveryChat(): ChatAdapter {
 
 const deliveryAdapters: ChatAdapters = { chat: deliveryChat() }
 
+/** Every bubble state at once, frozen: agent, user, pending, failed, and the typing row. */
+const statesAdapters: ChatAdapters = {
+  chat: frozenChat(
+    [
+      ...conversation.slice(0, 2),
+      {
+        id: 's-1',
+        role: 'user',
+        text: 'tell her Friday then',
+        at: '2026-09-10T09:15:00Z',
+        delivery: 'pending',
+      },
+      {
+        id: 's-2',
+        role: 'user',
+        text: 'and add the quote to the ticket',
+        at: '2026-09-10T09:15:00Z',
+        delivery: 'failed',
+      },
+      { id: 's-3', role: 'user', text: 'are you there?', at: '2026-09-10T09:16:00Z' },
+    ],
+    async () => {},
+  ),
+}
+
 /** The one adapter that really runs: it echoes, then streams its reply word by word. */
 const liveAdapters: ChatAdapters = {
   chat: fakeChat(conversation.slice(0, 2), {
@@ -171,6 +196,16 @@ export const delivery: ChatExample = {
   props: { config: { agentName: 'Golem', userName: 'Nadia' }, adapters: deliveryAdapters },
 }
 
+export const states: ChatExample = {
+  name: 'Every state',
+  summary: 'Agent and user bubbles, a pending send, a failed one with Retry, and the typing row.',
+  viewportWidth: 380,
+  props: {
+    config: { agentName: 'Golem', userName: 'Nadia', showTimestamps: true },
+    adapters: statesAdapters,
+  },
+}
+
 export const withTimestamps: ChatExample = {
   name: 'With timestamps',
   summary: 'Every bubble labelled with who said it and when, in UTC.',
@@ -206,6 +241,7 @@ export const chatExamples = [
   empty,
   streaming,
   delivery,
+  states,
   withTimestamps,
   live,
   invalidConfig,

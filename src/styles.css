@@ -118,3 +118,65 @@
   background-color: #e0f2fe;
   box-shadow: inset 3px 0 0 0 #0284c7;
 }
+
+/* Chat's palette, after the Bridge Commander chat pane: a dark navy panel with thin lines, agent
+   bubbles on the panel and the reader's on a deeper blue. The light set keeps the same
+   relationships (panel lifts off the ground, user bubble is the tinted one) rather than inverting
+   the dark values, so it reads as designed in both. Chat reads these through `bg-(--chat-*)`. */
+.golem-chat {
+  --chat-bg: #f4f6f9;
+  --chat-panel: #ffffff;
+  --chat-panel2: #eaeff5;
+  --chat-line: #dce3eb;
+  --chat-line2: #c3cedb;
+  --chat-text: #1b2633;
+  --chat-dim: #5f7186;
+  --chat-faint: #8c9bac;
+  --chat-accent: #2f83c2;
+  --chat-accent-soft: rgba(47, 131, 194, 0.2);
+  --chat-user: #dbeafb;
+  --chat-user-line: #b4d3f0;
+  --chat-danger: #d1403d;
+  --chat-ok: #1f9d68;
+}
+
+.golem-chat:where([data-golem-theme='dark'], [data-golem-theme='dark'] *) {
+  --chat-bg: #0e131a;
+  --chat-panel: #131a24;
+  --chat-panel2: #1a2330;
+  --chat-line: #1e2938;
+  --chat-line2: #2b3a4e;
+  --chat-text: #dbe4ee;
+  --chat-dim: #8496a8;
+  --chat-faint: #5a6b7d;
+  --chat-accent: #58b6ff;
+  --chat-accent-soft: rgba(88, 182, 255, 0.18);
+  --chat-user: #1d3a52;
+  --chat-user-line: #2b5578;
+  --chat-danger: #ef6461;
+  --chat-ok: #3ecf8e;
+}
+
+/* A bubble arrives with a short lift rather than appearing in place. */
+@keyframes golem-chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The typing indicator: three dots that brighten in turn. */
+@keyframes golem-chat-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}

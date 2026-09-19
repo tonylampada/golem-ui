@@ -104,7 +104,7 @@ function AttachmentChips({
         <span
           key={file.id}
           data-golem-chat-attachment={file.name}
-          className="inline-flex max-w-full items-center gap-1 rounded-full border border-current/20 bg-black/5 dark:bg-white/10 px-2 py-0.5 text-xs"
+          className="inline-flex max-w-full items-center gap-1 rounded-full border border-(--chat-line2) bg-(--chat-panel2) px-2 py-0.5 text-xs text-(--chat-dim)"
         >
           <span aria-hidden="true">📄</span>
           <span className="truncate">{file.name}</span>
@@ -137,17 +137,24 @@ function Bubble({
   const mine = message.role === 'user'
   const pending = message.delivery === 'pending'
   const failed = message.delivery === 'failed'
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    void navigator.clipboard?.writeText(message.text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1200)
+    })
+  }
   return (
     <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
       <div
         data-golem-chat-message={message.role}
         data-streaming={message.streaming ? 'true' : undefined}
         data-delivery={message.delivery}
-        className={`max-w-[85%] min-w-0 rounded-2xl px-3 py-2 text-sm leading-relaxed break-words ${
+        className={`group relative max-w-[88%] min-w-0 rounded-xl border px-[13px] py-[9px] text-[15px] leading-normal break-words animate-[golem-chat-in_180ms_ease-out] ${
           mine
-            ? 'bg-neutral-900 dark:bg-neutral-200 text-white dark:text-neutral-900'
-            : 'border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
-        } ${pending ? 'opacity-60' : ''} ${failed ? 'ring-1 ring-rose-500 dark:ring-rose-400' : ''}`}
+            ? 'rounded-br-[4px] border-(--chat-user-line) bg-(--chat-user)'
+            : 'rounded-bl-[4px] border-(--chat-line) bg-(--chat-panel)'
+        } ${pending ? 'opacity-55' : ''} ${failed ? 'border-(--chat-danger)' : ''}`}
       >
         {/* The reader's own text is never markdown: they typed characters, not a document. */}
         {config.markdown && !mine ? (
@@ -159,25 +166,41 @@ function Bubble({
           <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-current align-baseline" />
         )}
         {message.attachments?.length ? <AttachmentChips attachments={message.attachments} /> : null}
+        {config.showTimestamps && (
+          <span className="mt-1 block font-mono text-[11px] text-(--chat-faint)">
+            {mine ? config.userName : config.agentName} · {hhmm(message.at)}
+          </span>
+        )}
+        {/* The copy chip shows on hover (always, faintly, on touch), and confirms with a tick. */}
+        {message.text && (
+          <button
+            type="button"
+            onClick={copy}
+            title="Copy message text"
+            aria-label="Copy message text"
+            className={`absolute right-1 bottom-[3px] rounded-md border px-[5px] py-px text-xs leading-none transition-opacity focus-visible:opacity-85 group-hover:opacity-85 hover:opacity-100 [@media(hover:none)]:opacity-60 ${
+              copied
+                ? 'border-(--chat-ok) text-(--chat-ok) opacity-100'
+                : 'border-(--chat-line) bg-(--chat-panel2) text-(--chat-dim) opacity-0'
+            }`}
+          >
+            {copied ? '✓' : '⧉'}
+          </button>
+        )}
       </div>
       {mine && pending && (
-        <span role="status" className="mt-0.5 px-1 text-xs text-neutral-500 dark:text-neutral-400">
+        <span role="status" className="mt-0.5 px-1 font-mono text-[11px] text-(--chat-faint)">
           Sending
         </span>
       )}
       {mine && failed && (
-        <span className="mt-0.5 flex items-center gap-2 px-1 text-xs text-rose-700 dark:text-rose-300">
+        <span className="mt-0.5 flex items-center gap-2 px-1 text-xs text-(--chat-danger)">
           <span role="status">Not sent</span>
           {onRetry && (
-            <button type="button" onClick={() => onRetry(message.id)}>
+            <button type="button" className="underline" onClick={() => onRetry(message.id)}>
               Retry
             </button>
           )}
-        </span>
-      )}
-      {config.showTimestamps && (
-        <span className="mt-0.5 px-1 text-[11px] text-neutral-400">
-          {mine ? config.userName : config.agentName} · {hhmm(message.at)}
         </span>
       )}
     </div>
@@ -186,17 +209,20 @@ function Bubble({
 
 function Thinking({ name }: { name: string }) {
   return (
-    <div data-golem-chat-thinking="true" role="status" className="flex items-center gap-2 px-1">
-      <span className="flex gap-1" aria-hidden="true">
-        {[0, 150, 300].map((delay) => (
-          <span
-            key={delay}
-            style={{ animationDelay: `${delay}ms` }}
-            className="size-1.5 animate-bounce rounded-full bg-neutral-400"
-          />
-        ))}
-      </span>
-      <span className="text-xs text-neutral-500 dark:text-neutral-400">{name} is thinking…</span>
+    <div
+      data-golem-chat-thinking="true"
+      role="status"
+      className="flex w-fit items-center gap-1 rounded-xl rounded-bl-[4px] border border-(--chat-line) bg-(--chat-panel) px-[13px] py-[9px] animate-[golem-chat-in_180ms_ease-out]"
+    >
+      {[0, 200, 400].map((delay) => (
+        <span
+          key={delay}
+          aria-hidden="true"
+          style={{ animationDelay: `${delay}ms` }}
+          className="size-1.5 rounded-full bg-(--chat-dim) animate-[golem-chat-blink_1.2s_infinite]"
+        />
+      ))}
+      <span className="ml-1 text-[11px] text-(--chat-faint)">{name} is thinking…</span>
     </div>
   )
 }
@@ -258,7 +284,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
   return (
     <div
       data-golem-component="Chat"
-      className="golem-chat flex h-full min-h-0 w-full flex-col bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100"
+      className="golem-chat flex h-full min-h-0 w-full flex-col bg-(--chat-bg) text-(--chat-text)"
     >
       <div
         ref={feed}
@@ -266,10 +292,10 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
         role="log"
         aria-label="Conversation"
         aria-live="polite"
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3"
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-3.5 [scrollbar-color:var(--chat-line2)_transparent] [scrollbar-width:thin]"
       >
         {visible.length === 0 && !thinking ? (
-          <p className="flex h-full items-center justify-center p-6 text-center text-sm text-neutral-400">
+          <p className="flex h-full items-center justify-center p-6 text-center text-sm text-(--chat-faint)">
             {config.emptyState}
           </p>
         ) : (
@@ -283,7 +309,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       {(loadError || sendError) && (
         <p
           role="alert"
-          className="shrink-0 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+          className="shrink-0 border-t border-(--chat-line) px-3 py-2 text-sm text-(--chat-danger)"
         >
           {loadError || sendError}
         </p>
@@ -292,13 +318,13 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       {attach ? (
         <div
           key={sent}
-          className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 pt-2"
+          className="shrink-0 border-t border-(--chat-line) px-3 pt-2"
         >
           {attach(setStaged)}
         </div>
       ) : (
         staged.length > 0 && (
-          <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 pt-2">
+          <div className="shrink-0 border-t border-(--chat-line) px-3 pt-2">
             <AttachmentChips
               attachments={staged}
               onRemove={(id) => setStaged((files) => files.filter((file) => file.id !== id))}
@@ -308,7 +334,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       )}
 
       <form
-        className="flex shrink-0 items-end gap-2 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3"
+        className="flex shrink-0 items-end gap-2 border-t border-(--chat-line) px-3 py-2.5"
         onSubmit={(event) => {
           event.preventDefault()
           send()
@@ -337,7 +363,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
               onClick={() => fileInput.current?.click()}
               title="Attach a file"
               aria-label="Attach a file"
-              className="shrink-0 rounded-full border border-neutral-300 dark:border-neutral-700 px-3 py-2.5 text-sm"
+              className="flex size-[34px] shrink-0 items-center justify-center rounded-full border border-(--chat-line) bg-(--chat-panel2) text-[15px] text-(--chat-dim) transition-colors hover:border-(--chat-accent) hover:text-(--chat-text)"
             >
               📎
             </button>
@@ -358,13 +384,14 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
           }}
           placeholder={config.placeholder}
           aria-label={config.placeholder}
-          className="min-w-0 flex-1 resize-none rounded-2xl border border-neutral-300 dark:border-neutral-700 px-4 py-2.5 text-base leading-6"
+          className="min-w-0 flex-1 resize-none rounded-[10px] border border-(--chat-line) bg-(--chat-panel) px-3 py-2 text-[15px] leading-6 text-(--chat-text) outline-none transition-[border-color,box-shadow] placeholder:text-(--chat-faint) focus:border-(--chat-accent) focus:shadow-[0_0_0_3px_var(--chat-accent-soft)]"
         />
         <button
           type="submit"
-          className="shrink-0 rounded-full bg-neutral-900 dark:bg-neutral-200 px-4 py-2.5 text-sm font-medium text-white dark:text-neutral-900"
+          className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-(--chat-accent) text-sm font-medium text-white transition-opacity hover:opacity-85"
         >
-          Send
+          <span aria-hidden="true">➤</span>
+          <span className="sr-only">Send</span>
         </button>
       </form>
     </div>

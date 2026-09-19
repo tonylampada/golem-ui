@@ -15,13 +15,14 @@ type Story = StoryObj<typeof meta>
  * Every story is one example from `Chat.examples.tsx` — the same file the tests import — framed at
  * the width of a chat column rather than a page, which is the only width Chat is ever seen at.
  */
-const story = (example: examples.ChatExample): Story => ({
-  name: example.name,
+const story = (example: examples.ChatExample, theme: 'light' | 'dark' = 'light'): Story => ({
+  name: theme === 'dark' ? `${example.name} (dark)` : example.name,
   args: example.props,
   parameters: { docs: { description: { story: example.summary } } },
   decorators: [
     (Story) => (
       <div
+        data-golem-theme={theme}
         style={{
           width: example.viewportWidth,
           maxWidth: '100%',
@@ -41,6 +42,9 @@ export const Conversation = story(examples.conversationExample)
 export const Empty = story(examples.empty)
 export const Streaming = story(examples.streaming)
 export const Delivery = story(examples.delivery)
+export const EveryState = story(examples.states)
+export const EveryStateDark = story(examples.states, 'dark')
+export const ConversationDark = story(examples.conversationExample, 'dark')
 export const WithTimestamps = story(examples.withTimestamps)
 export const Live = story(examples.live)
 export const InvalidConfig = story(examples.invalidConfig)

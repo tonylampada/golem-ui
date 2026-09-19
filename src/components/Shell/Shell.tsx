@@ -234,6 +234,11 @@ function ShellFrame({
     setOpen(next)
     if (!isMobile) save(CHAT_OPEN_KEY, next ? '1' : '0')
   }
+  // Crossing into the phone layout puts the sheet away: an open column is a desk arrangement, not a
+  // wish to see nothing but the chat.
+  useEffect(() => {
+    if (isMobile) setOpen(false)
+  }, [isMobile])
   // `chatOpen` flipping after the first paint is the app raising (or lowering) the chat.
   const wanted = useRef(config.chatOpen)
   useEffect(() => {

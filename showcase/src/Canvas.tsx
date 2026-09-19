@@ -17,7 +17,8 @@ import { Report } from './screens/Report'
 import { Today } from './screens/Today'
 import { authConfig, DNA_ROLE } from './auth-config'
 
-export const screens = [
+/** The menu row. `manages` marks a screen only a managing role gets. */
+export const screens: { path: string; label: string; manages?: boolean }[] = [
   { path: '/today', label: 'Today' },
   { path: '/jobs', label: 'Jobs' },
   { path: '/report', label: 'Report' },
@@ -25,8 +26,8 @@ export const screens = [
   { path: '/files', label: 'Files' },
   { path: '/dna', label: 'DNA' },
   { path: '/brain', label: 'Brain' },
-  { path: '/team', label: 'Team' },
-] as const
+  { path: '/admin', label: 'Admin', manages: true },
+]
 
 export interface CanvasAdapters {
   records: RecordsAdapter
@@ -59,7 +60,7 @@ function screenFor(route: Route, a: CanvasAdapters) {
           <Dna records={a.records} clock={a.clock} />
         </Auth.Guard>
       )
-    case '/team':
+    case '/admin':
       return <Auth config={authConfig} adapters={auth} />
     case '/brain':
       // `?at=<location>` is what a source chip in the chat puts in the hash.
@@ -88,28 +89,5 @@ function screenFor(route: Route, a: CanvasAdapters) {
 }
 
 export function Canvas({ route, adapters }: { route: Route; adapters: CanvasAdapters }) {
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* The strip scrolls sideways inside itself on a narrow phone, so the page never does. */}
-      <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-neutral-200 bg-white px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900">
-        {screens.map((screen) => {
-          const active = route.path.startsWith(screen.path)
-          return (
-            <button
-              key={screen.path}
-              type="button"
-              onClick={() => adapters.navigation.go(screen.path)}
-              aria-current={active ? 'page' : undefined}
-              className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-medium ${
-                active ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900' : 'text-neutral-600 dark:text-neutral-400'
-              }`}
-            >
-              {screen.label}
-            </button>
-          )
-        })}
-      </nav>
-      <div className="min-h-0 flex-1 overflow-auto bg-neutral-50 dark:bg-neutral-950">{screenFor(route, adapters)}</div>
-    </div>
-  )
+  return <div className="h-full bg-neutral-50 dark:bg-neutral-950">{screenFor(route, adapters)}</div>
 }

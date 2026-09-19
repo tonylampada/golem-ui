@@ -2,7 +2,7 @@ import type { AuthConfigInput } from 'golem-ui'
 import { SHOP_PASSWORD } from './seed'
 
 /**
- * One config for all three Auth surfaces: the front door, the Team screen, the account menu in the
+ * One config for all three Auth surfaces: the front door, the Admin screen, the account menu in the
  * top bar, and the owner-only guard on the DNA screen.
  */
 export const authConfig: AuthConfigInput = {

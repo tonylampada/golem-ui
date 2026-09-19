@@ -37,7 +37,7 @@ replaced.
 
 | File                       | Route        | Component            | What the screen is                                |
 | -------------------------- | ------------ | -------------------- | ------------------------------------------------- |
-| `src/App.tsx`              | —            | **Shell**            | The frame: chat column, canvas, top bar, tabs     |
+| `src/App.tsx`              | —            | **Shell**            | The frame: top bar, menu row, canvas, chat toggle |
 | `src/ChatColumn.tsx`       | —            | **Chat**             | The conversation with the agent                   |
 | `src/screens/Jobs.tsx`     | `/jobs`      | **RecordList**       | Repair tickets, newest first                      |
 | `src/screens/JobForm.tsx`  | `/jobs/new`  | **RecordForm**       | A blank ticket, written into the collection       |
@@ -47,7 +47,7 @@ replaced.
 | `src/screens/Files.tsx`    | `/files`     | **Upload**           | Photos and invoices, with a gallery               |
 | `src/screens/Dna.tsx`      | `/dna`       | **Editor**           | The workspace DNA, written by both writers        |
 | `src/Canvas.tsx`           | `/brain`     | **Brain**            | The shop's knowledge folder, opened at a citation |
-| —                          | `/team`      | **Auth**             | Members, roles, invite by link                    |
+| —                          | `/admin`     | **Auth**             | Members, roles, invite by link — owners only      |
 | `src/screens/Today.tsx`    | `/today`     | _a composition_      | Report + RecordList + Timeline on one screen      |
 | `src/screens/Api.tsx`      | `/api`       | _the kit's own spec_ | Every component's page, signed out, on a phone    |
 | `src/screens/Adapters.tsx` | `/adapters`  | _the kit's own spec_ | Every adapter's contract, signed out, on a phone  |
@@ -114,7 +114,7 @@ from.
 
 The app opens signed out. `fakeIdentity` is seeded with the shop's five accounts and one password
 for all of them, and the sign-in screen says which — a demo nobody can get into is a broken demo.
-`showcase/src/auth-config.ts` holds the one `Auth` config the front door, the Team screen, the
+`showcase/src/auth-config.ts` holds the one `Auth` config the front door, the Admin screen, the
 account menu and the DNA guard all share. Sign in as anyone but Nadia and `/dna` shows the guard
 turning you away; sign in as Nadia and it opens.
 
@@ -127,7 +127,7 @@ a reload puts the demo back at the sign-in screen.
 
 The captain opens this on a phone. Every change is checked at **390px wide** before it lands:
 
-- The `Shell` breakpoint is 768, so below it chat and canvas are thumb-sized tabs.
+- The `Shell` breakpoint is 768, so below it the chat is a sheet behind the bar's chat toggle.
 - `Upload`'s gallery is two columns on a phone and four on a desktop, and its drop zone carries a
   camera button below 768 because `capture: 'environment'` opens the rear camera on a phone and is
   ignored on a laptop.

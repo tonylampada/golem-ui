@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Auth, Shell, type Route } from 'golem-ui'
-import { Canvas } from './Canvas'
+import { Auth, Shell, type Route, type User } from 'golem-ui'
+import { Canvas, screens } from './Canvas'
 import { ChatColumn } from './ChatColumn'
 import { AdapterDetail, AdaptersIndex } from './screens/Adapters'
 import { ApiIndex, ApiPage } from './screens/Api'
@@ -14,8 +14,13 @@ const authAdapters = { identity, navigation }
 
 export function App() {
   const [route, setRoute] = useState(navigation.current())
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => navigation.subscribe(setRoute), [])
+  useEffect(() => {
+    void identity.currentUser().then(setUser)
+    return identity.subscribe(setUser)
+  }, [])
 
   return (
     <div className="flex h-dvh flex-col">
@@ -38,12 +43,12 @@ export function App() {
         </span>
       </div>
 
-      <div className="min-h-0 flex-1">{screenFor(route)}</div>
+      <div className="min-h-0 flex-1">{screenFor(route, user)}</div>
     </div>
   )
 }
 
-function screenFor(route: Route) {
+function screenFor(route: Route, user: User | null) {
   const path = route.path
 
   // The API and adapter pages are the kit's spec, so they sit outside the guard: signed out is how
@@ -66,7 +71,14 @@ function screenFor(route: Route) {
     <div className="h-full">
       <Auth.Guard config={authConfig} adapters={authAdapters}>
         <Shell
-          config={{ title: 'Northgate Cycles', chatSide: 'left', breakpoint: 768 }}
+          config={{
+            title: 'Northgate Cycles',
+            chatSide: 'left',
+            breakpoint: 768,
+            menu: screens
+              .filter((screen) => !screen.manages || manages(user))
+              .map((screen) => ({ id: screen.path, label: screen.label, href: screen.path })),
+          }}
           adapters={{ identity, navigation }}
           chat={<ChatColumn adapter={chat} files={files} />}
           canvas={<Canvas route={route} adapters={canvasAdapters} />}
@@ -75,4 +87,8 @@ function screenFor(route: Route) {
       </Auth.Guard>
     </div>
   )
+}
+
+function manages(user: User | null): boolean {
+  return (authConfig.roles ?? []).some((role) => role.manages && user?.roles.includes(role.id))
 }

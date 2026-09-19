@@ -1,5 +1,5 @@
 export { Shell } from './Shell'
-export type { ShellAdapters, ShellSlots } from './Shell'
+export type { ShellAdapters, ShellIconName, ShellSlots } from './Shell'
 export { shellConfigSchema } from './Shell.config'
-export type { ShellConfig, ShellConfigInput } from './Shell.config'
+export type { ShellConfig, ShellConfigInput, ShellMenuItem } from './Shell.config'
 export { shellDocs } from './Shell.docs'

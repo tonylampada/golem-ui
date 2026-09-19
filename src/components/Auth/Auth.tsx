@@ -387,16 +387,16 @@ function AccountMenuPanel({ config, adapters }: GolemProps<AuthConfig, AuthAdapt
 
   return (
     <div data-golem-component="Auth.AccountMenu" className="golem-auth relative shrink-0 text-(--chat-text)">
+      {/* Avatar only: the bar carries icons, and the name is in the popover. */}
       <button
         type="button"
         aria-expanded={open}
+        aria-label={user.name}
+        title={user.name}
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-full border border-(--chat-line2) py-1 pr-3 pl-1 text-sm"
+        className="flex size-8 items-center justify-center rounded-full bg-(--chat-text) text-[11px] font-semibold text-(--chat-bg)"
       >
-        <span className="flex size-7 items-center justify-center rounded-full bg-(--chat-text) text-[11px] font-semibold text-(--chat-bg)">
-          {initialsOf(user.name)}
-        </span>
-        <span className="max-w-28 truncate">{user.name}</span>
+        {initialsOf(user.name)}
       </button>
       {open && (
         <div className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-(--chat-line2) bg-(--chat-panel) p-3 shadow-lg">

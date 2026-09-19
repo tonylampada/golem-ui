@@ -37,11 +37,16 @@ import * as ShellStories from './Shell.stories'
 
 <Canvas of={ShellStories.Desktop} />
 
-The same frame, mirrored, without the top bar, and below its breakpoint:
+The chat toggled off, the settings dropdown open, and the frame in dark mode:
 
-<Canvas of={ShellStories.ChatOnRight} />
-<Canvas of={ShellStories.WithoutTopBar} />
-<Canvas of={ShellStories.Mobile} />
+<Canvas of={ShellStories.DesktopChatClosed} />
+<Canvas of={ShellStories.SettingsOpen} />
+<Canvas of={ShellStories.DesktopDark} />
+
+Below the breakpoint, closed and with the chat sheet open:
+
+<Canvas of={ShellStories.Phone} />
+<Canvas of={ShellStories.PhoneChatOpen} />
 
 ## Failure modes
 

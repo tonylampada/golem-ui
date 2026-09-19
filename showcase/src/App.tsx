@@ -5,11 +5,11 @@ import { ChatColumn } from './ChatColumn'
 import { AdapterDetail, AdaptersIndex } from './screens/Adapters'
 import { ApiIndex, ApiPage } from './screens/Api'
 import { authConfig } from './auth-config'
-import { chat, clock, files, identity, navigation, records } from './adapters'
+import { brain, chat, clock, files, identity, navigation, records } from './adapters'
 
 const SITE_URL = 'https://tonylampada.github.io/golem-ui/'
 
-const canvasAdapters = { records, clock, files, identity, navigation }
+const canvasAdapters = { records, clock, files, identity, navigation, brain }
 const authAdapters = { identity, navigation }
 
 export function App() {

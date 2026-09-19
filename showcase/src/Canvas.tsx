@@ -1,5 +1,6 @@
-import { Auth } from 'golem-ui'
+import { Auth, Brain } from 'golem-ui'
 import type {
+  BrainAdapter,
   ClockAdapter,
   FilesAdapter,
   IdentityAdapter,
@@ -23,6 +24,7 @@ export const screens = [
   { path: '/log', label: 'Log' },
   { path: '/files', label: 'Files' },
   { path: '/dna', label: 'DNA' },
+  { path: '/brain', label: 'Brain' },
   { path: '/team', label: 'Team' },
 ] as const
 
@@ -32,9 +34,11 @@ export interface CanvasAdapters {
   files: FilesAdapter
   identity: IdentityAdapter
   navigation: NavigationAdapter
+  brain: BrainAdapter
 }
 
-function screenFor(path: string, a: CanvasAdapters) {
+function screenFor(route: Route, a: CanvasAdapters) {
+  const path = route.path
   const auth = { identity: a.identity, navigation: a.navigation }
 
   switch (path) {
@@ -57,6 +61,16 @@ function screenFor(path: string, a: CanvasAdapters) {
       )
     case '/team':
       return <Auth config={authConfig} adapters={auth} />
+    case '/brain':
+      // `?at=<location>` is what a source chip in the chat puts in the hash.
+      return (
+        <div className="h-full">
+          <Brain
+            config={{ title: 'Shop knowledge', openLocation: route.params.at }}
+            adapters={{ brain: a.brain }}
+          />
+        </div>
+      )
     default:
       // One ticket, opened from a row of the job list. The same form, in edit mode.
       if (path.startsWith('/jobs/')) {
@@ -95,9 +109,7 @@ export function Canvas({ route, adapters }: { route: Route; adapters: CanvasAdap
           )
         })}
       </nav>
-      <div className="min-h-0 flex-1 overflow-auto bg-neutral-50">
-        {screenFor(route.path, adapters)}
-      </div>
+      <div className="min-h-0 flex-1 overflow-auto bg-neutral-50">{screenFor(route, adapters)}</div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { ZodType } from 'zod'
 import {
+  Brain,
   Chat,
   Editor,
   RecordForm,
@@ -12,6 +13,7 @@ import {
   componentDocs,
   type ComponentDocs,
 } from 'golem-ui'
+import { brainConfigSchema } from '../../src/components/Brain/Brain.config'
 import { authConfigSchema } from '../../src/components/Auth/Auth.config'
 import { chatConfigSchema } from '../../src/components/Chat/Chat.config'
 import { editorConfigSchema } from '../../src/components/Editor/Editor.config'
@@ -21,6 +23,7 @@ import { reportConfigSchema } from '../../src/components/Report/Report.config'
 import { shellConfigSchema } from '../../src/components/Shell/Shell.config'
 import { timelineConfigSchema } from '../../src/components/Timeline/Timeline.config'
 import { uploadConfigSchema } from '../../src/components/Upload/Upload.config'
+import * as brainExamples from '../../src/components/Brain/Brain.examples'
 import * as authExamples from '../../src/components/Auth/Auth.examples'
 import * as chatExamples from '../../src/components/Chat/Chat.examples'
 import * as editorExamples from '../../src/components/Editor/Editor.examples'
@@ -103,6 +106,12 @@ const byName: Record<string, Omit<ApiComponent, 'docs'>> = {
     schema: uploadConfigSchema,
     example: <Upload {...uploadExamples.photoGallery.props} />,
     invalid: <Upload {...uploadExamples.invalidConfig.props} />,
+    exampleHeight: 620,
+  },
+  Brain: {
+    schema: brainConfigSchema,
+    example: <Brain {...brainExamples.openLocation.props} />,
+    invalid: <Brain {...brainExamples.invalidConfig.props} />,
     exampleHeight: 620,
   },
 }

@@ -41,6 +41,11 @@ route. For a list of past conversations to pick from, that is a different compon
       calls: '`interrupt?()`',
       why: 'The Stop pill on the thinking row, shown only when the adapter supports it.',
     },
+    {
+      adapter: 'Chat',
+      calls: '`openSource?(location)`',
+      why: 'A click on a source chip under an agent bubble, with the cited `path#L3-L5`.',
+    },
   ],
 
   adapterNotes: `Chat takes no other adapter. It never fetches, never stores, and never reads a clock — a bubble's

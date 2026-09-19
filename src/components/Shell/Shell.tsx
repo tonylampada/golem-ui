@@ -135,13 +135,20 @@ function ShellFrame({
             {config.title}
           </button>
           {account ??
-            (user && <span className="shrink-0 text-sm text-neutral-500 dark:text-neutral-400">{user.name}</span>)}
+            (user && (
+              <span className="shrink-0 text-sm text-neutral-500 dark:text-neutral-400">
+                {user.name}
+              </span>
+            ))}
         </header>
       )}
 
       {isMobile ? (
         <>
-          <div role="tablist" className="flex shrink-0 border-b border-neutral-200 dark:border-neutral-800">
+          <div
+            role="tablist"
+            className="flex shrink-0 border-b border-neutral-200 dark:border-neutral-800"
+          >
             {(['chat', 'canvas'] as const).map((name) => (
               <button
                 key={name}
@@ -150,7 +157,9 @@ function ShellFrame({
                 aria-selected={tab === name}
                 onClick={() => setTab(name)}
                 className={`flex-1 px-4 py-2 text-sm capitalize ${
-                  tab === name ? 'border-b-2 border-neutral-900 dark:border-neutral-100 font-medium' : 'text-neutral-500 dark:text-neutral-400'
+                  tab === name
+                    ? 'border-b-2 border-neutral-900 dark:border-neutral-100 font-medium'
+                    : 'text-neutral-500 dark:text-neutral-400'
                 }`}
               >
                 {name}

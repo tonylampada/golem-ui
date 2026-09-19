@@ -125,14 +125,22 @@ function AttachmentChips({
   )
 }
 
+/** `notes/tyres.md#L3-L5` → `tyres.md L3-5`: the chip's label. */
+function sourceLabel(location: string): string {
+  const [path = '', range = ''] = location.split('#')
+  return `${path.split('/').pop()}${range ? ` ${range.replace('-L', '-')}` : ''}`
+}
+
 function Bubble({
   message,
   config,
   onRetry,
+  onOpenSource,
 }: {
   message: ChatMessage
   config: ChatConfig
   onRetry?: (messageId: string) => void
+  onOpenSource?: (location: string) => void
 }) {
   const mine = message.role === 'user'
   const pending = message.delivery === 'pending'
@@ -166,6 +174,23 @@ function Bubble({
           <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-current align-baseline" />
         )}
         {message.attachments?.length ? <AttachmentChips attachments={message.attachments} /> : null}
+        {message.sources?.length ? (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {message.sources.map((location) => (
+              <button
+                key={location}
+                type="button"
+                data-golem-chat-source={location}
+                title={location}
+                onClick={() => onOpenSource?.(location)}
+                className="inline-flex max-w-full items-center gap-1 rounded-full border border-(--chat-line2) bg-(--chat-panel2) px-2 py-0.5 font-mono text-[11px] text-(--chat-dim) hover:border-(--chat-accent) hover:text-(--chat-text)"
+              >
+                <span aria-hidden="true">§</span>
+                <span className="truncate">{sourceLabel(location)}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
         {config.showTimestamps && (
           <span className="mt-1 block font-mono text-[11px] text-(--chat-faint)">
             {mine ? config.userName : config.agentName} · {hhmm(message.at)}
@@ -324,7 +349,13 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
           </p>
         ) : (
           visible.map((message) => (
-            <Bubble key={message.id} message={message} config={config} onRetry={retry} />
+            <Bubble
+              key={message.id}
+              message={message}
+              config={config}
+              onRetry={retry}
+              onOpenSource={adapters.chat.openSource?.bind(adapters.chat)}
+            />
           ))
         )}
         {thinking && <Thinking name={config.agentName} onStop={interrupt} />}
@@ -340,10 +371,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       )}
 
       {attach ? (
-        <div
-          key={sent}
-          className="shrink-0 border-t border-(--chat-line) px-3 pt-2"
-        >
+        <div key={sent} className="shrink-0 border-t border-(--chat-line) px-3 pt-2">
           {attach(setStaged)}
         </div>
       ) : (

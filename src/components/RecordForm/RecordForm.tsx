@@ -511,15 +511,21 @@ function RecordFormBody({
             Someone else saved this record after you opened it. Your changes are not saved yet.
           </p>
           {conflict.changed.length === 0 ? (
-            <p className="w-full text-sm text-neutral-700 dark:text-neutral-300">None of the fields here changed.</p>
+            <p className="w-full text-sm text-neutral-700 dark:text-neutral-300">
+              None of the fields here changed.
+            </p>
           ) : (
             <dl className="mb-1 grid w-full grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 text-sm">
               <dt className="sr-only">Field</dt>
-              <dd className="col-start-2 text-xs text-neutral-500 dark:text-neutral-400">Saved now</dd>
+              <dd className="col-start-2 text-xs text-neutral-500 dark:text-neutral-400">
+                Saved now
+              </dd>
               <dd className="text-xs text-neutral-500 dark:text-neutral-400">Yours</dd>
               {conflict.changed.map((field) => (
                 <div key={field.key} className="contents">
-                  <dt className="font-medium text-neutral-700 dark:text-neutral-300">{field.label}</dt>
+                  <dt className="font-medium text-neutral-700 dark:text-neutral-300">
+                    {field.label}
+                  </dt>
                   <dd className="min-w-0 break-words">
                     <ReadOnlyValue field={field} value={conflict.row[field.key]} />
                   </dd>
@@ -565,7 +571,9 @@ function RecordFormBody({
     if (asking === 'delete') {
       return (
         <div role="alertdialog" aria-label="Confirm delete" className="flex flex-wrap gap-2">
-          <p className="w-full text-sm text-neutral-700 dark:text-neutral-300">Deleting this record cannot be undone.</p>
+          <p className="w-full text-sm text-neutral-700 dark:text-neutral-300">
+            Deleting this record cannot be undone.
+          </p>
           <button
             type="button"
             onClick={remove}
@@ -629,7 +637,10 @@ function RecordFormBody({
             const wide = columns === 2 && field.multiline ? 'col-span-2' : ''
             return (
               <div key={field.key} className={wide}>
-                <label htmlFor={id} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <label
+                  htmlFor={id}
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                >
                   {field.label}
                   {field.required && (
                     <span aria-hidden="true" className="text-red-600 dark:text-red-400">
@@ -649,7 +660,10 @@ function RecordFormBody({
                   control(field)
                 )}
                 {field.help && (
-                  <p id={`${id}-help`} className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                  <p
+                    id={`${id}-help`}
+                    className="mt-1 text-xs text-neutral-500 dark:text-neutral-400"
+                  >
                     {field.help}
                   </p>
                 )}
@@ -675,12 +689,17 @@ function RecordFormBody({
             </p>
           )}
           {saved && (
-            <p role="status" className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+            <p
+              role="status"
+              className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-300"
+            >
               {config.successMessage}
             </p>
           )}
           {config.mode === 'edit' && dirty && !saved && (
-            <p className="mb-2 text-xs font-medium text-amber-700 dark:text-amber-300">Unsaved changes</p>
+            <p className="mb-2 text-xs font-medium text-amber-700 dark:text-amber-300">
+              Unsaved changes
+            </p>
           )}
           {actions}
         </div>

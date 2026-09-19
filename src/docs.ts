@@ -1,10 +1,12 @@
 import type { AdapterDocs, ComponentDocs } from './abi'
+import { brainAdapterDocs } from './adapters/brain.docs'
 import { chatAdapterDocs } from './adapters/chat.docs'
 import { clockAdapterDocs } from './adapters/clock.docs'
 import { filesAdapterDocs } from './adapters/files.docs'
 import { identityAdapterDocs } from './adapters/identity.docs'
 import { navigationAdapterDocs } from './adapters/navigation.docs'
 import { recordsAdapterDocs } from './adapters/records.docs'
+import { brainDocs } from './components/Brain/Brain.docs'
 import { authDocs } from './components/Auth/Auth.docs'
 import { chatDocs } from './components/Chat/Chat.docs'
 import { editorDocs } from './components/Editor/Editor.docs'
@@ -30,6 +32,7 @@ export const componentDocs: ComponentDocs[] = [
   editorDocs,
   timelineDocs,
   uploadDocs,
+  brainDocs,
 ]
 
 /**
@@ -44,6 +47,7 @@ export const adapterDocs: AdapterDocs[] = [
   chatAdapterDocs,
   clockAdapterDocs,
   navigationAdapterDocs,
+  brainAdapterDocs,
 ]
 
 export function adapterDocsFor(slug: string): AdapterDocs | undefined {

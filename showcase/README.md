@@ -35,21 +35,22 @@ markup that stood in for `Editor` on `/dna` was the last of it. What is left of 
 demo's own page furniture — a screen heading, a panel, a status chip — not a component waiting to be
 replaced.
 
-| File                       | Route        | Component            | What the screen is                               |
-| -------------------------- | ------------ | -------------------- | ------------------------------------------------ |
-| `src/App.tsx`              | —            | **Shell**            | The frame: chat column, canvas, top bar, tabs    |
-| `src/ChatColumn.tsx`       | —            | **Chat**             | The conversation with the agent                  |
-| `src/screens/Jobs.tsx`     | `/jobs`      | **RecordList**       | Repair tickets, newest first                     |
-| `src/screens/JobForm.tsx`  | `/jobs/new`  | **RecordForm**       | A blank ticket, written into the collection      |
-| `src/screens/JobForm.tsx`  | `/jobs/<id>` | **RecordForm**       | The same form in edit mode, on one ticket        |
-| `src/screens/Report.tsx`   | `/report`    | **Report**           | The daily document, dated and printable          |
-| `src/screens/Log.tsx`      | `/log`       | **Timeline**         | Dated shop entries, filterable                   |
-| `src/screens/Files.tsx`    | `/files`     | **Upload**           | Photos and invoices, with a gallery              |
-| `src/screens/Dna.tsx`      | `/dna`       | **Editor**           | The workspace DNA, written by both writers       |
-| —                          | `/team`      | **Auth**             | Members, roles, invite by link                   |
-| `src/screens/Today.tsx`    | `/today`     | _a composition_      | Report + RecordList + Timeline on one screen     |
-| `src/screens/Api.tsx`      | `/api`       | _the kit's own spec_ | Every component's page, signed out, on a phone   |
-| `src/screens/Adapters.tsx` | `/adapters`  | _the kit's own spec_ | Every adapter's contract, signed out, on a phone |
+| File                       | Route        | Component            | What the screen is                                |
+| -------------------------- | ------------ | -------------------- | ------------------------------------------------- |
+| `src/App.tsx`              | —            | **Shell**            | The frame: chat column, canvas, top bar, tabs     |
+| `src/ChatColumn.tsx`       | —            | **Chat**             | The conversation with the agent                   |
+| `src/screens/Jobs.tsx`     | `/jobs`      | **RecordList**       | Repair tickets, newest first                      |
+| `src/screens/JobForm.tsx`  | `/jobs/new`  | **RecordForm**       | A blank ticket, written into the collection       |
+| `src/screens/JobForm.tsx`  | `/jobs/<id>` | **RecordForm**       | The same form in edit mode, on one ticket         |
+| `src/screens/Report.tsx`   | `/report`    | **Report**           | The daily document, dated and printable           |
+| `src/screens/Log.tsx`      | `/log`       | **Timeline**         | Dated shop entries, filterable                    |
+| `src/screens/Files.tsx`    | `/files`     | **Upload**           | Photos and invoices, with a gallery               |
+| `src/screens/Dna.tsx`      | `/dna`       | **Editor**           | The workspace DNA, written by both writers        |
+| `src/Canvas.tsx`           | `/brain`     | **Brain**            | The shop's knowledge folder, opened at a citation |
+| —                          | `/team`      | **Auth**             | Members, roles, invite by link                    |
+| `src/screens/Today.tsx`    | `/today`     | _a composition_      | Report + RecordList + Timeline on one screen      |
+| `src/screens/Api.tsx`      | `/api`       | _the kit's own spec_ | Every component's page, signed out, on a phone    |
+| `src/screens/Adapters.tsx` | `/adapters`  | _the kit's own spec_ | Every adapter's contract, signed out, on a phone  |
 
 `/jobs` and Today's "on the bench" block are the same `RecordList` on the same `jobs` collection,
 told apart by config alone: Today adds `scope: { status: ['waiting', 'in progress'] }` and
@@ -82,6 +83,12 @@ lines wear a coloured gutter for four seconds; an edit on the turnaround rule it
 and asks which version stays. The document is seeded at `version: 4` and every save sends the version
 it read, so neither writer can flatten the other.
 
+`/brain` is `Brain` on the shop's OKF bundle, the same fixture the kit's Brain stories run on. The
+last agent message in the seeded chat carries two `sources`; click a chip and `openSource` sends the
+browser to `/brain?at=<location>`, which the screen reads out of `Route.params` into `openLocation`.
+The reader opens the file with those lines highlighted. Nothing in the bundle is a real shop, person
+or address.
+
 `/jobs/new` and `/jobs/<id>` are the same `RecordForm` in the same way: one field list in
 `src/screens/JobForm.tsx`, `mode: 'create'` on one route and `mode: 'edit'` on the other. The ticket
 number is required on create and `readOnly` on edit, because the shop writes it once when the bike
@@ -93,7 +100,7 @@ Saving returns to `/jobs`, where the list shows the change through `subscribe` w
 
 `src/adapters.ts` wires every one of them, and it is the only file that knows an adapter exists.
 
-`Identity`, `Records`, `Files`, `Clock` and `Chat` are the kit's fakes, seeded from `src/seed.ts` —
+`Identity`, `Records`, `Files`, `Clock`, `Chat` and `Brain` are the kit's fakes, seeded from `src/seed.ts` —
 `fakeChat` gets the seed conversation plus `cannedReplies`, which it streams back word by word, and
 `fakeRecords` gets the shop's tickets, reports, log and the one DNA document, and `fakeFiles` gets the shop's folder of
 photos and paperwork. Writing goes through the `Records` adapter's

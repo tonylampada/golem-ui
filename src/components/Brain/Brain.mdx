@@ -1,0 +1,52 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks'
+import { ConfigTable } from '../../../docs/ConfigTable'
+import { AdapterTable, CodeBlock, Prose, DocBlocks, SlotTable } from '../../../docs/Prose'
+import { brainConfigSchema } from './Brain.config'
+import { brainDocs } from './Brain.docs'
+import * as BrainStories from './Brain.stories'
+
+<Meta of={BrainStories} name="Docs" />
+
+# Brain
+
+<a href="https://tonylampada.github.io/golem-ui/app/#/api/brain" target="_top">
+  The same page on a phone →
+</a>
+
+## What it is for
+
+<Prose text={brainDocs.purpose} />
+
+## The configuration object
+
+<ConfigTable schema={brainConfigSchema} />
+
+<DocBlocks blocks={brainDocs.configNotes} />
+
+## The adapters it needs
+
+<AdapterTable rows={brainDocs.adapters} />
+
+<Prose text={brainDocs.adapterNotes} />
+
+<SlotTable rows={brainDocs.slots} />
+
+## One complete example
+
+<CodeBlock code={brainDocs.example} />
+
+<Canvas of={BrainStories.CitedPassage} />
+
+The root index, with nothing cited yet:
+
+<Canvas of={BrainStories.RootIndex} />
+
+Beside `Chat`: click the chip under the agent's reply and the reader opens on the lines it cited.
+
+<Canvas of={BrainStories.AnswerWithASource} />
+
+## Failure modes
+
+<Prose text={brainDocs.failureModes} />
+
+<Canvas of={BrainStories.InvalidConfig} />

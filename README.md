@@ -30,7 +30,7 @@ everything below it:
   mount; unknown fields are rejected.
 - Invalid config renders a **loud error card** naming the field and the rule, in dev and in prod.
 - `adapters` are how the component _talks to the world_: `Records`, `Files`, `Identity`, `Chat`,
-  `Clock`, `Navigation`. A component never imports a data layer, a router or a fetch.
+  `Clock`, `Navigation`, `Brain`. A component never imports a data layer, a router or a fetch.
 - `golem-ui` ships an in-memory fake of every adapter (`fakeIdentity()`, `fakeRecords()`, …). Stories
   and tests run on the fakes; no backend, no network.
 - Config is **generated** by the agent, adapters are **wired** by the app. Two failure modes, kept
@@ -40,7 +40,7 @@ everything below it:
 ## Adapters
 
 The adapters are the interface between a Golem app and the world, and that interface is the
-architecture. There are six, each documented as a thing in itself — every method, what an
+architecture. There are seven, each documented as a thing in itself — every method, what an
 implementation has to guarantee, what it rejects with, and the in-memory fake — at
 [`#/adapters`](https://tonylampada.github.io/golem-ui/app/#/adapters) and under `Adapters/` in
 Storybook.
@@ -53,6 +53,7 @@ Storybook.
 | `Chat`       | The conversation: history, send, and a stream that arrives token by token                     |
 | `Clock`      | Now and the zone to read it in, so nothing in the kit calls `new Date()`                      |
 | `Navigation` | The current route, `go(path)`, and a listener — no router imported anywhere                   |
+| `Brain`      | A folder of markdown the agent reads and cites; `path#L3-L5` is a location `Brain` can open   |
 
 **One instance serves every component that takes it.** `Records` handed to a `RecordList` and to a
 `RecordForm` is what makes a ticket saved on one screen appear on the other; `subscribe` carries it,

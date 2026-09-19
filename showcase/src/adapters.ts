@@ -1,4 +1,5 @@
 import {
+  fakeBrain,
   fakeChat,
   fakeClock,
   fakeFiles,
@@ -22,6 +23,7 @@ import {
   TIME_ZONE,
   TODAY,
 } from './seed'
+import { northgateBrain } from '../../src/components/Brain/Brain.examples'
 
 /**
  * Every adapter the showcase wires. The kit's fakes cover identity, records, files, the clock and
@@ -144,4 +146,11 @@ export const navigation = hashNavigation()
  * The kit's own fake, which streams its reply word by word — so the composer on a phone answers
  * instead of swallowing what you type, and the showcase shows the streaming path working.
  */
-export const chat = fakeChat(conversation, { replies: cannedReplies, tokenDelayMs: 45 })
+export const chat = {
+  ...fakeChat(conversation, { replies: cannedReplies, tokenDelayMs: 45 }),
+  // A source chip opens the Brain screen on the cited lines; the location rides in the hash query.
+  openSource: (location: string) => navigation.go(`/brain?at=${encodeURIComponent(location)}`),
+}
+
+/** The shop's brain, the same OKF bundle the kit's Brain stories run on. */
+export const brain = fakeBrain(northgateBrain)

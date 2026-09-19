@@ -22,6 +22,11 @@ export interface ChatMessage {
    * An empty `text` with the flag set is the agent thinking before its first token.
    */
   streaming?: boolean
+  /**
+   * Source locations the agent drew on, `path#L<start>-L<end>` inside a brain. Chat draws each as a
+   * chip under the bubble; clicking one calls `openSource`.
+   */
+  sources?: string[]
 }
 
 export interface ChatAdapter {
@@ -31,6 +36,8 @@ export interface ChatAdapter {
   retry?(messageId: string): Promise<void>
   /** Stops the reply being written. Chat shows a Stop pill on the thinking row only when this exists. */
   interrupt?(): Promise<void>
+  /** Opens a cited source location. The app wires it to `Brain`'s `openLocation`. */
+  openSource?(location: string): void
   /** Called with the whole conversation on every change, including each token of a stream. */
   subscribe(listener: (messages: ChatMessage[]) => void): Unsubscribe
 }

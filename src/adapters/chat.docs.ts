@@ -42,6 +42,11 @@ bytes. Getting the bytes somewhere is the \`Files\` adapter's job, done before \
       throws: 'An `Error` whose `message` is shown in the error strip as written.',
     },
     {
+      signature: 'openSource?(location: string): void',
+      guarantees:
+        "Optional. Called with a source location (`path#L3-L5`) when the reader clicks a source chip under an agent bubble. The app hands the location to `Brain`'s `openLocation`. Chips render whether or not this exists; without it a click does nothing.",
+    },
+    {
       signature: 'subscribe(listener: (messages: ChatMessage[]) => void): Unsubscribe',
       guarantees: `Calls the listener with the **entire** conversation on every change: a message sent, a reply starting,
 and every token of that reply. Returns the function that detaches it.`,
@@ -64,6 +69,9 @@ failed messages.
 
 **A \`ChatMessage\` is \`id\`, \`role\` (\`'user'\` or \`'agent'\`), \`text\`, and \`at\` as an ISO datetime.**
 \`text\` is markdown, and the component renders it as such.
+
+**\`sources\` on an agent message are source locations**, \`path#L<start>-L<end>\` inside a brain, one chip
+each under the bubble. The chip shows the file name and the line range.
 
 **A \`ChatAttachment\` is a name and an optional size, no bytes and no URL.** \`size\` shows on the chip
 as \`12 KB\`; leave it off and the chip carries the name alone. Pair this adapter with \`Files\` when the

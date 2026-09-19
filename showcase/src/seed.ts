@@ -553,6 +553,20 @@ export const conversation: ChatMessage[] = [
     text: 'Both are on ticket #4185 now.',
     at: '2026-09-10T09:41:00Z',
   },
+  {
+    id: 'm-7',
+    role: 'user',
+    text: 'how long can the Rockhopper sit before I have to call her?',
+    at: '2026-09-10T09:50:00Z',
+  },
+  {
+    id: 'm-8',
+    role: 'agent',
+    text: 'Three working days from when it came in, parts permitting. It is waiting on a seal kit, so she gets the supplier’s date the day we learn it.',
+    at: '2026-09-10T09:50:08Z',
+    // Source locations inside the shop's brain; the chip opens the Brain screen on those lines.
+    sources: ['workshop/turnaround.md#L6-L8', 'workshop/fork-service.md#L15-L17'],
+  },
 ]
 
 /** What the agent answers in the showcase, in order, so the composer is never a dead end. */

@@ -332,5 +332,4 @@ describe('Chat', () => {
     chat.push({ id: 'a-1', role: 'agent', text: 'Here.', at: '2026-09-10T09:16:05Z' })
     expect(stop()).toBeNull()
   })
-
 })

@@ -18,7 +18,10 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
     const key = `${keyPrefix}-${index}`
     if (piece.startsWith('`') && piece.endsWith('`') && piece.length > 1) {
       return (
-        <code key={key} className="rounded bg-black/5 dark:bg-white/10 px-1 py-0.5 font-mono text-[0.9em]">
+        <code
+          key={key}
+          className="rounded bg-black/5 dark:bg-white/10 px-1 py-0.5 font-mono text-[0.9em]"
+        >
           {piece.slice(1, -1)}
         </code>
       )

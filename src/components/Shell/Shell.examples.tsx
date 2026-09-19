@@ -25,9 +25,9 @@ const adapters: ShellAdapters = {
 }
 
 const menu = [
-  { id: 'today', label: 'Today', href: '/today' },
-  { id: 'jobs', label: 'Jobs', href: '/jobs' },
-  { id: 'report', label: 'Report', href: '/report' },
+  { id: 'today', label: 'Today', icon: '🏠', href: '/today' },
+  { id: 'jobs', label: 'Jobs', icon: '🔧', href: '/jobs' },
+  { id: 'report', label: 'Report', icon: '📈', href: '/report' },
   { id: 'brain', label: 'Brain', icon: '🧠', href: '/brain' },
 ]
 
@@ -52,7 +52,7 @@ const canvas = (
 export const desktop: ShellExample = {
   name: 'Desktop, chat open',
   summary:
-    'The bar: title, chat toggle, gear, avatar. The menu row under it. Chat column on the left, canvas on the right.',
+    'The bar: title, chat toggle, gear, avatar. Chat column on the left, canvas on the right, the menu bar along the bottom.',
   viewportWidth: 1200,
   props: {
     config: { title: 'Northgate Cycles', menu },
@@ -101,7 +101,7 @@ export const settingsOpen: ShellExample = {
 
 export const phone: ShellExample = {
   name: 'Phone',
-  summary: 'Below the breakpoint: bar, menu row, canvas. The chat is behind the toggle.',
+  summary: 'Below the breakpoint: bar, canvas, bottom menu. The chat is behind the toggle.',
   viewportWidth: 390,
   props: {
     config: { title: 'Northgate Cycles', menu, breakpoint: 768 },
@@ -113,7 +113,7 @@ export const phone: ShellExample = {
 
 export const phoneChatOpen: ShellExample = {
   name: 'Phone, chat open',
-  summary: 'The toggle pressed: the chat is a sheet over the app. Esc or the toggle closes it.',
+  summary: 'The toggle pressed: the chat is a sheet over the app, bottom menu included. Esc or the toggle closes it.',
   viewportWidth: 390,
   press: 'Chat',
   props: {
@@ -126,7 +126,7 @@ export const phoneChatOpen: ShellExample = {
 
 export const withoutTopBar: ShellExample = {
   name: 'Without the top bar',
-  summary: 'For hosts that already draw their own header. The menu row stays.',
+  summary: 'For hosts that already draw their own header. The bottom menu stays.',
   viewportWidth: 1200,
   props: {
     config: { title: 'Northgate Cycles', menu, showTopBar: false },

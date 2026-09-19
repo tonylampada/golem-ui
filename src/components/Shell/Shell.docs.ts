@@ -5,21 +5,22 @@ export const shellDocs: ComponentDocs = {
   slug: 'shell',
   storybookPath: 'components-shell',
   tagline:
-    'The app frame: a thin top bar, the app’s menu row, the canvas, and the chat behind a toggle.',
+    'The app frame: a thin top bar, the canvas, the app’s bottom menu bar, and the chat behind a toggle.',
 
   purpose: `\`Shell\` is the app frame, pinned to the viewport. A thin **top bar** carries the app title and, on the
 right, icon-only buttons: the **chat toggle**, the **settings** gear (a dropdown with the theme toggle
-and whatever rows the app adds), and the **account** avatar. Under the bar, a **menu row** lists the
-app's own screens from \`config.menu\`. The rest is the canvas.
+and whatever rows the app adds), and the **account** avatar. Along the bottom, a **menu bar** lists the
+app's own screens from \`config.menu\`, phone-app style: an icon over a short label, at every width.
+Between the two is the canvas.
 
 The chat is what the toggle shows and hides. Above the breakpoint it is a side column on \`chatSide\`,
-drag-resizable, and its width and open state are kept in this browser. Below the breakpoint it is a
-sheet over the app: the menu row and the canvas stay mounted underneath, so closing it lands you
+drag-resizable, above the menu bar, and its width and open state are kept in this browser. Below
+the breakpoint it is a sheet over the app, menu bar included: the canvas stays mounted underneath, so closing it lands you
 exactly where you were, scroll included. A route change closes the sheet, because a route change is
 a screen the reader asked for. Chat hidden means the canvas has the whole width.
 
-The frame never scrolls as a whole: the bar and the menu row stay put, and only the chat, the canvas
-and the menu row (sideways) scroll inside themselves. Shell also owns the kit's theme — the
+The frame never scrolls as a whole: the top bar and the menu bar stay put, and only the chat and
+the canvas scroll inside themselves. Shell also owns the kit's theme — the
 \`data-golem-theme\` attribute on the document — from the saved choice or the OS preference.
 
 Use it once, at the root of an app. It does not render the conversation (hand that in as \`chat\`),
@@ -71,9 +72,9 @@ import 'golem-ui/styles.css'
   config={{
     title: 'Northgate Cycles',
     menu: [
-      { id: 'today', label: 'Today', href: '/today' },
-      { id: 'jobs', label: 'Jobs', href: '/jobs' },
-      { id: 'admin', label: 'Admin' },
+      { id: 'today', label: 'Today', icon: '🏠', href: '/today' },
+      { id: 'jobs', label: 'Jobs', icon: '🔧', href: '/jobs' },
+      { id: 'admin', label: 'Admin', icon: '🛠️' },
     ],
     activeId: showingAdmin ? 'admin' : undefined,
     chatSide: 'left',
@@ -96,7 +97,7 @@ import 'golem-ui/styles.css'
 - **No slot.** A missing \`chat\` or \`canvas\` renders a labelled placeholder, so a half-wired app looks
   half-wired rather than broken. \`chat={null}\` is different: the app has no chat in this mode, so there
   is no column, no sheet and no toggle, only the canvas.
-- **An empty menu.** No menu row is drawn; the bar sits directly on the canvas.
+- **An empty menu.** No bottom bar is drawn; the canvas runs to the bottom edge.
 - **A menu item with neither \`href\` nor an \`onSelect\` handler.** Tapping it does nothing. Give it one
   or the other.
 - **Identity resolves to \`null\`.** The top bar renders without a name. Signing out is not an error.

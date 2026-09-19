@@ -77,7 +77,7 @@ function screenFor(route: Route, user: User | null) {
             breakpoint: 768,
             menu: screens
               .filter((screen) => !screen.manages || manages(user))
-              .map((screen) => ({ id: screen.path, label: screen.label, href: screen.path })),
+              .map((screen) => ({ id: screen.path, label: screen.label, icon: screen.icon, href: screen.path })),
           }}
           adapters={{ identity, navigation }}
           chat={<ChatColumn adapter={chat} files={files} />}

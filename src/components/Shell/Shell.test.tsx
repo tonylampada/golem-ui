@@ -45,7 +45,7 @@ describe('Shell', () => {
     await waitFor(() => expect(screen.queryByText('Robin Vale')).not.toBeInTheDocument())
   })
 
-  it('draws the menu row, marks the current route, and navigates or calls onSelect per item', async () => {
+  it('draws the bottom menu, marks the current route, and navigates or calls onSelect per item', async () => {
     setViewportWidth(1200)
     const onSelect = vi.fn()
     const go = vi.spyOn(examples.desktop.props.adapters.navigation, 'go')
@@ -53,6 +53,8 @@ describe('Shell', () => {
     render(<Shell {...examples.desktop.props} config={{ title: 'x', menu }} onSelect={onSelect} />)
 
     const nav = screen.getByRole('navigation', { name: 'Menu' })
+    // The bar is the frame's last row, so the sheet (a sibling after it) can cover it.
+    expect(nav.previousElementSibling).not.toBeNull()
     expect(nav.querySelector('[aria-current="page"]')).toHaveTextContent('Today')
     await userEvent.click(screen.getByRole('button', { name: 'Jobs' }))
     expect(go).toHaveBeenCalledWith('/jobs')

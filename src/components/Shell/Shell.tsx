@@ -331,7 +331,9 @@ function ShellFrame({
       data-golem-component="Shell"
       data-layout={isMobile ? 'mobile' : 'desktop'}
       data-chat={chat === null ? 'none' : open ? 'open' : 'closed'}
-      className="golem-shell flex h-dvh max-h-full min-h-0 w-full flex-col overflow-hidden bg-(--chat-bg) pb-[env(safe-area-inset-bottom)] text-(--chat-text)"
+      className={`golem-shell flex h-dvh max-h-full min-h-0 w-full flex-col overflow-hidden bg-(--chat-bg) text-(--chat-text) ${
+        config.menu.length > 0 ? '' : 'pb-[env(safe-area-inset-bottom)]'
+      }`}
     >
       {config.showTopBar && (
         <header className="flex min-h-11 shrink-0 items-center gap-2 border-b border-(--chat-line) bg-(--chat-panel) px-3 pt-[env(safe-area-inset-top)]">
@@ -375,39 +377,6 @@ function ShellFrame({
       )}
 
       <div className="relative flex min-h-0 flex-1 flex-col">
-        {config.menu.length > 0 && (
-          <nav
-            aria-label="Menu"
-            className="flex shrink-0 gap-1 overflow-x-auto border-b border-(--chat-line) px-2 py-1.5"
-          >
-            {config.menu.map((item) => {
-              const active = item.id === activeId
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-current={active ? 'page' : undefined}
-                  onClick={() =>
-                    item.href !== undefined ? adapters.navigation.go(item.href) : onSelect?.(item.id)
-                  }
-                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium ${
-                    active
-                      ? 'bg-(--chat-accent-soft) text-(--chat-accent)'
-                      : 'text-(--chat-dim) hover:text-(--chat-text)'
-                  }`}
-                >
-                  {item.icon && (
-                    <span aria-hidden="true" className="mr-1.5">
-                      {item.icon}
-                    </span>
-                  )}
-                  {item.label}
-                </button>
-              )
-            })}
-          </nav>
-        )}
-
         {isMobile || chat === null ? (
           <div className="flex min-h-0 flex-1">{canvasPane}</div>
         ) : (
@@ -441,7 +410,39 @@ function ShellFrame({
           </div>
         )}
 
-        {/* The sheet covers the menu row and the canvas, which stay mounted and keep their scroll. */}
+        {/* The bottom menu bar: phone-app style at every width, icon over a short label. */}
+        {config.menu.length > 0 && (
+          <nav
+            aria-label="Menu"
+            className="flex shrink-0 justify-center border-t border-(--chat-line) bg-(--chat-panel) px-1 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))]"
+          >
+            {config.menu.map((item) => {
+              const active = item.id === activeId
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-current={active ? 'page' : undefined}
+                  onClick={() =>
+                    item.href !== undefined ? adapters.navigation.go(item.href) : onSelect?.(item.id)
+                  }
+                  className={`flex min-w-0 max-w-24 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-[11px] font-medium ${
+                    active
+                      ? 'text-(--chat-accent)'
+                      : 'text-(--chat-dim) hover:text-(--chat-text)'
+                  }`}
+                >
+                  <span aria-hidden="true" className="text-lg leading-none">
+                    {item.icon ?? item.label[0]}
+                  </span>
+                  <span className="max-w-full truncate">{item.label}</span>
+                </button>
+              )
+            })}
+          </nav>
+        )}
+
+        {/* The sheet covers the canvas and the bottom menu, which stay mounted and keep their scroll. */}
         {isMobile && chat !== null && (
           <div
             role="dialog"

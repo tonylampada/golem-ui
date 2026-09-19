@@ -3,8 +3,8 @@ import { z } from 'zod'
 const menuItemSchema = z
   .object({
     id: z.string().min(1).describe('Names the item to `activeId` and to `onSelect`.'),
-    label: z.string().min(1).describe('The word on the row.'),
-    icon: z.string().optional().describe('A short glyph drawn before the label — an emoji does.'),
+    label: z.string().min(1).describe('The short word under the icon.'),
+    icon: z.string().optional().describe('The glyph over the label — an emoji does. Left out, the label\'s first letter stands in.'),
     href: z
       .string()
       .optional()
@@ -21,7 +21,7 @@ export const shellConfigSchema = z
       .array(menuItemSchema)
       .default([])
       .describe(
-        "The app's own screens, one item each, in the menu row under the top bar. Empty means no menu row.",
+        "The app's own screens, one item each, in the bottom menu bar. Empty means no bar.",
       ),
     activeId: z
       .string()

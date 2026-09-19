@@ -17,16 +17,16 @@ import { Report } from './screens/Report'
 import { Today } from './screens/Today'
 import { authConfig, DNA_ROLE } from './auth-config'
 
-/** The menu row. `manages` marks a screen only a managing role gets. */
-export const screens: { path: string; label: string; manages?: boolean }[] = [
-  { path: '/today', label: 'Today' },
-  { path: '/jobs', label: 'Jobs' },
-  { path: '/report', label: 'Report' },
-  { path: '/log', label: 'Log' },
-  { path: '/files', label: 'Files' },
-  { path: '/dna', label: 'DNA' },
-  { path: '/brain', label: 'Brain' },
-  { path: '/admin', label: 'Admin', manages: true },
+/** The bottom menu bar. `manages` marks a screen only a managing role gets. */
+export const screens: { path: string; label: string; icon: string; manages?: boolean }[] = [
+  { path: '/today', label: 'Today', icon: '🏠' },
+  { path: '/jobs', label: 'Jobs', icon: '🔧' },
+  { path: '/report', label: 'Report', icon: '📈' },
+  { path: '/log', label: 'Log', icon: '📝' },
+  { path: '/files', label: 'Files', icon: '📁' },
+  { path: '/dna', label: 'DNA', icon: '🧬' },
+  { path: '/brain', label: 'Brain', icon: '🧠' },
+  { path: '/admin', label: 'Admin', icon: '🛠️', manages: true },
 ]
 
 export interface CanvasAdapters {

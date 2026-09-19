@@ -37,7 +37,7 @@ replaced.
 
 | File                       | Route        | Component            | What the screen is                                |
 | -------------------------- | ------------ | -------------------- | ------------------------------------------------- |
-| `src/App.tsx`              | —            | **Shell**            | The frame: top bar, menu row, canvas, chat toggle |
+| `src/App.tsx`              | —            | **Shell**            | The frame: top bar, canvas, bottom menu, chat toggle |
 | `src/ChatColumn.tsx`       | —            | **Chat**             | The conversation with the agent                   |
 | `src/screens/Jobs.tsx`     | `/jobs`      | **RecordList**       | Repair tickets, newest first                      |
 | `src/screens/JobForm.tsx`  | `/jobs/new`  | **RecordForm**       | A blank ticket, written into the collection       |

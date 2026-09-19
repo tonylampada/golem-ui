@@ -332,4 +332,109 @@ describe('Chat', () => {
     chat.push({ id: 'a-1', role: 'agent', text: 'Here.', at: '2026-09-10T09:16:05Z' })
     expect(stop()).toBeNull()
   })
+
+  describe('slash commands', () => {
+    const commands = [
+      { name: '/reset', description: 'Start a new conversation' },
+      {
+        name: '/model',
+        description: 'Switch model',
+        args: [
+          { value: 'opus', description: 'slow' },
+          { value: 'sonnet', description: 'balanced' },
+        ],
+      },
+    ]
+    const picker = () => screen.queryByRole('listbox', { name: 'Slash commands' })
+    const selectedName = () =>
+      screen.getByRole('option', { selected: true }).querySelector('span')!.textContent
+
+    function slashChat() {
+      const script = scriptedChat()
+      const runCommand = vi.fn(async (line: string) =>
+        line === '/reset' ? 'Conversation cleared.' : `Ran ${line}.`,
+      )
+      script.adapter.commands = async () => commands
+      script.adapter.runCommand = runCommand
+      return { ...script, runCommand }
+    }
+
+    it('opens on a leading slash, moves with the arrows, closes on Escape', async () => {
+      render(<Chat config={{}} adapters={{ chat: slashChat().adapter }} />)
+      const composer = screen.getByRole('textbox')
+      expect(picker()).toBeNull()
+
+      await userEvent.type(composer, '/')
+      await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2))
+      expect(selectedName()).toBe('/reset')
+      await userEvent.keyboard('{ArrowDown}')
+      expect(selectedName()).toBe('/model')
+      await userEvent.keyboard('{ArrowDown}')
+      expect(selectedName()).toBe('/reset')
+      await userEvent.keyboard('{ArrowUp}')
+      expect(selectedName()).toBe('/model')
+
+      await userEvent.keyboard('{Escape}')
+      expect(picker()).toBeNull()
+      await userEvent.type(composer, 'r')
+      await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(1))
+      expect(selectedName()).toBe('/reset')
+    })
+
+    it('completes a command with Tab and keeps completing its argument', async () => {
+      render(<Chat config={{}} adapters={{ chat: slashChat().adapter }} />)
+      const composer = screen.getByRole('textbox')
+
+      await userEvent.type(composer, '/mo')
+      await waitFor(() => expect(selectedName()).toBe('/model'))
+      await userEvent.keyboard('{Tab}')
+      // The command wants an argument, so the pick leaves a trailing space and the values open.
+      expect(composer).toHaveValue('/model ')
+      await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2))
+      expect(selectedName()).toBe('opus')
+      await userEvent.type(composer, 'so')
+      expect(screen.getAllByRole('option')).toHaveLength(1)
+      await userEvent.keyboard('{Enter}')
+      expect(composer).toHaveValue('/model sonnet')
+      expect(picker()).toBeNull()
+    })
+
+    it('routes a sent slash line to runCommand and renders it and the reply as system rows', async () => {
+      const chat = slashChat()
+      render(<Chat config={{}} adapters={{ chat: chat.adapter }} />)
+      const composer = screen.getByRole('textbox')
+
+      await userEvent.type(composer, '/reset')
+      await waitFor(() => expect(picker()).not.toBeNull())
+      await userEvent.keyboard('{Enter}') // picks /reset, which closes the picker
+      expect(composer).toHaveValue('/reset')
+      await userEvent.keyboard('{Enter}') // sends
+      expect(chat.runCommand).toHaveBeenCalledWith('/reset')
+      expect(chat.sent).toEqual([])
+      expect(composer).toHaveValue('')
+
+      await waitFor(() => expect(screen.getByText('Conversation cleared.')).toBeInTheDocument())
+      const rows = document.querySelectorAll('[data-golem-chat-message="system"]')
+      expect([...rows].map((row) => row.textContent)).toEqual(['/reset', 'Conversation cleared.'])
+      expect(document.querySelector('[data-golem-chat-message="user"]')).toBeNull()
+      expect(screen.queryByRole('status')).toBeNull()
+    })
+
+    it('shows a rejected command in the error strip', async () => {
+      const chat = slashChat()
+      chat.runCommand.mockRejectedValueOnce(new Error('Unknown command: /nope'))
+      render(<Chat config={{}} adapters={{ chat: chat.adapter }} />)
+
+      await userEvent.type(screen.getByRole('textbox'), '/nope{Enter}')
+      await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Unknown command'))
+    })
+
+    it('treats a slash line as text without commands on the adapter', async () => {
+      const script = scriptedChat()
+      render(<Chat config={{}} adapters={{ chat: script.adapter }} />)
+      await userEvent.type(screen.getByRole('textbox'), '/reset{Enter}')
+      expect(picker()).toBeNull()
+      expect(script.sent).toEqual([{ text: '/reset', attachments: undefined }])
+    })
+  })
 })

@@ -17,7 +17,7 @@ export type {
 export { fileId } from './files'
 export type { FileHandle, FileRef, FilesAdapter, UploadOptions } from './files'
 export type { IdentityAdapter, SignUpInput, User } from './identity'
-export type { ChatAdapter, ChatAttachment, ChatMessage } from './chat'
+export type { ChatAdapter, ChatAttachment, ChatCommand, ChatMessage } from './chat'
 export type { ClockAdapter } from './clock'
 export type { NavigationAdapter, Route } from './navigation'
 export { parseLocation } from './brain'

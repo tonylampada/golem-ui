@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { defineComponent, type GolemProps } from '../../abi'
-import type { ChatAdapter, ChatAttachment, ChatMessage } from '../../adapters'
+import type { ChatAdapter, ChatAttachment, ChatCommand, ChatMessage } from '../../adapters'
 import { chatConfigSchema, type ChatConfig } from './Chat.config'
 import { Markdown } from '../../lib/markdown'
 
@@ -19,6 +19,43 @@ export interface ChatSlots {
 
 /** How close to the bottom still counts as "reading the newest message". */
 const PIN_SLACK = 48
+
+/** A composer line that is a slash command: one line, leading `/`. */
+const SLASH_LINE = /^\/[^\n]*$/
+/** The command stage: one `/` token, no space yet. */
+const CMD_RE = /^\/\S*$/
+/** The argument stage: a complete name, whitespace, then the argument. A newline ends the picker. */
+const ARG_RE = /^(\/\S+)[^\S\n]+([^\n]*)$/
+
+interface SlashMatch {
+  name: string
+  description: string
+  /** The whole composer value a pick produces. Ends in a space when the command still wants its argument. */
+  insert: string
+}
+
+/**
+ * What the picker shows for a composer value, after Bridge Commander's `slash.js`. Two stages: the
+ * command name, then, for a command with `args`, its values. Everything after the name is one
+ * argument matched whole, so a value with spaces stays reachable.
+ */
+function slashMatches(value: string, commands: ChatCommand[]): SlashMatch[] {
+  if (CMD_RE.test(value))
+    return commands
+      .filter((c) => c.name.startsWith(value))
+      .map((c) => ({
+        name: c.name,
+        description: c.description,
+        insert: c.name + (c.args?.length ? ' ' : ''),
+      }))
+  const m = ARG_RE.exec(value)
+  const args = m && commands.find((c) => c.name === m[1])?.args
+  if (!m || !args?.length) return []
+  const q = m[2]!.toLowerCase()
+  return args
+    .filter((a) => a.value.toLowerCase().startsWith(q))
+    .map((a) => ({ name: a.value, description: a.description, insert: `${m[1]} ${a.value}` }))
+}
 
 function useConversation(adapter: ChatAdapter): { messages: ChatMessage[]; loadError: string } {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -143,9 +180,18 @@ function Bubble({
   onOpenSource?: (location: string) => void
 }) {
   const mine = message.role === 'user'
+  const [copied, setCopied] = useState(false)
+  if (message.role === 'system')
+    return (
+      <div
+        data-golem-chat-message="system"
+        className="rounded-lg border border-dashed border-(--chat-line2) px-3 py-1.5 text-center font-mono text-xs whitespace-pre-wrap text-(--chat-dim) break-words"
+      >
+        {message.text}
+      </div>
+    )
   const pending = message.delivery === 'pending'
   const failed = message.delivery === 'failed'
-  const [copied, setCopied] = useState(false)
   const copy = () => {
     void navigator.clipboard?.writeText(message.text).then(() => {
       setCopied(true)
@@ -277,10 +323,44 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
   const [sendError, setSendError] = useState('')
   const composer = useRef<HTMLTextAreaElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
+  // Slash commands and their replies live here, not in the adapter's conversation: `runCommand`
+  // answers with text, and the rows follow whatever the adapter emits.
+  const [commandRows, setCommandRows] = useState<ChatMessage[]>([])
+  const [commands, setCommands] = useState<ChatCommand[]>([])
+  const [selected, setSelected] = useState(0)
+  // Escape, or a pick that completes the line, closes the picker until the draft changes again.
+  const [pickerClosed, setPickerClosed] = useState(false)
+  const pickerWanted = Boolean(adapters.chat.commands) && !pickerClosed && SLASH_LINE.test(draft)
+  const matches = pickerWanted ? slashMatches(draft, commands) : []
+  const pickerOpen = matches.length > 0
+
+  useEffect(() => {
+    if (!pickerWanted) return
+    let live = true
+    void adapters.chat.commands!().then(
+      (next) => live && setCommands(next),
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+    // Fetched each time a `/` line opens the picker, as the set changes when the agent changes.
+  }, [pickerWanted, adapters.chat])
+
+  const pick = (insert: string) => {
+    setDraft(insert)
+    setSelected(0)
+    // A pick ending in a space is a command still waiting for its argument: the picker stays open.
+    if (!insert.endsWith(' ')) setPickerClosed(true)
+    composer.current?.focus()
+  }
 
   // A message with no text yet is the agent taking its turn, and the thinking row says so better
   // than an empty bubble would.
-  const visible = messages.filter((message) => message.text || message.attachments?.length)
+  const visible = [
+    ...messages.filter((message) => message.text || message.attachments?.length),
+    ...commandRows,
+  ]
   const last = messages[messages.length - 1]
   const thinking = Boolean(
     last && ((last.role === 'user' && !last.delivery) || (last.streaming && !last.text)),
@@ -307,6 +387,22 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
     setStaged([])
     setSent((count) => count + 1)
     setSendError('')
+    if (text.startsWith('/') && adapters.chat.runCommand) {
+      const row = (id: string, body: string): ChatMessage => ({
+        id: `cmd-${id}`,
+        role: 'system',
+        text: body,
+        at: new Date().toISOString(),
+      })
+      const stamp = Date.now()
+      setCommandRows((rows) => [...rows, row(`${stamp}-line`, text)])
+      void adapters.chat.runCommand(text).then(
+        (reply) => setCommandRows((rows) => [...rows, row(`${stamp}-reply`, reply)]),
+        (error: unknown) =>
+          setSendError(error instanceof Error ? error.message : 'Command failed.'),
+      )
+      return
+    }
     void adapters.chat.send(text, staged.length ? staged : undefined).catch((error: unknown) => {
       setSendError(error instanceof Error ? error.message : 'Message could not be sent.')
     })
@@ -386,12 +482,39 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       )}
 
       <form
-        className="flex shrink-0 items-end gap-2 border-t border-(--chat-line) px-3 py-2.5"
+        className="relative flex shrink-0 items-end gap-2 border-t border-(--chat-line) px-3 py-2.5"
         onSubmit={(event) => {
           event.preventDefault()
           send()
         }}
       >
+        {pickerOpen && (
+          <div
+            role="listbox"
+            aria-label="Slash commands"
+            // Picking must not blur the composer.
+            onMouseDown={(event) => event.preventDefault()}
+            className="absolute right-3 bottom-full left-3 z-10 mb-1 max-h-56 overflow-y-auto rounded-[10px] border border-(--chat-line2) bg-(--chat-panel) py-1 shadow-lg"
+          >
+            {matches.map((match, index) => (
+              <button
+                key={match.insert}
+                type="button"
+                role="option"
+                aria-selected={index === Math.min(selected, matches.length - 1)}
+                onClick={() => pick(match.insert)}
+                className={`flex w-full items-baseline gap-3 px-3 py-1.5 text-left text-sm ${
+                  index === Math.min(selected, matches.length - 1)
+                    ? 'bg-(--chat-panel2) text-(--chat-text)'
+                    : 'text-(--chat-dim)'
+                }`}
+              >
+                <span className="shrink-0 font-mono text-(--chat-text)">{match.name}</span>
+                <span className="min-w-0 truncate text-xs">{match.description}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {!attach && (
           <>
             <input
@@ -425,8 +548,32 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
           ref={composer}
           rows={1}
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            setDraft(event.target.value)
+            setPickerClosed(false)
+            setSelected(0)
+          }}
           onKeyDown={(event) => {
+            // With the picker open, arrows move, Tab and Enter pick, Escape closes.
+            if (pickerOpen) {
+              const current = Math.min(selected, matches.length - 1)
+              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault()
+                const step = event.key === 'ArrowDown' ? 1 : matches.length - 1
+                setSelected((current + step) % matches.length)
+                return
+              }
+              if (event.key === 'Tab' || event.key === 'Enter') {
+                event.preventDefault()
+                pick(matches[current]!.insert)
+                return
+              }
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                setPickerClosed(true)
+                return
+              }
+            }
             // Enter sends because the composer is a chat line, not a document; Shift+Enter is the
             // deliberate line break. `isComposing` guards an IME candidate being accepted.
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {

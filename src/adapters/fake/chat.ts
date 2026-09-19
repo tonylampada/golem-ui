@@ -1,4 +1,4 @@
-import type { ChatAdapter, ChatAttachment, ChatMessage } from '../chat'
+import type { ChatAdapter, ChatAttachment, ChatCommand, ChatMessage } from '../chat'
 import { createEmitter } from './emitter'
 
 export interface FakeChatOptions {
@@ -6,6 +6,8 @@ export interface FakeChatOptions {
   replies?: string[]
   /** Milliseconds between tokens. Stories want it slow enough to watch, tests want it near zero. */
   tokenDelayMs?: number
+  /** Slash commands the composer completes. `/reset` clears the conversation; any other replies with the line it ran. */
+  commands?: ChatCommand[]
 }
 
 const DEFAULT_REPLIES = [
@@ -71,5 +73,28 @@ export function fakeChat(initial: ChatMessage[] = [], options: FakeChatOptions =
       if (replies.length) stream(replies[sent++ % replies.length]!)
     },
     subscribe: emitter.subscribe,
+    ...(options.commands
+      ? {
+          async commands() {
+            return options.commands!
+          },
+          async runCommand(line: string) {
+            const [name = '', ...rest] = line.trim().split(/\s+/)
+            const command = options.commands!.find((c) => c.name === name)
+            if (!command) throw new Error(`Unknown command: ${name}`)
+            const arg = rest.join(' ')
+            if (command.args?.length && !command.args.some((a) => a.value === arg))
+              throw new Error(
+                `${name} needs one of: ${command.args.map((a) => a.value).join(', ')}`,
+              )
+            if (name === '/reset') {
+              messages.length = 0
+              emit()
+              return 'Conversation cleared.'
+            }
+            return `Ran ${line.trim()}.`
+          },
+        }
+      : {}),
   }
 }

@@ -230,6 +230,41 @@ export const live: ChatExample = {
   },
 }
 
+/** Slash commands on the fake adapter: `/reset` takes nothing, `/model` completes its one argument. */
+const slashAdapters: ChatAdapters = {
+  chat: fakeChat(conversation.slice(0, 2), {
+    replies: ['On it.'],
+    tokenDelayMs: 40,
+    commands: [
+      { name: '/reset', description: 'Start a new conversation' },
+      {
+        name: '/model',
+        description: 'Switch the model the agent answers with',
+        args: [
+          { value: 'opus', description: 'Slower, most capable' },
+          { value: 'sonnet', description: 'The everyday balance' },
+          { value: 'haiku', description: 'Fastest, for short answers' },
+        ],
+      },
+    ],
+  }),
+}
+
+export const slashCommands: ChatExample = {
+  name: 'Answer with a slash command',
+  summary:
+    'Type `/` and the picker lists what the adapter honours: `/reset` runs as is, `/model` keeps completing its argument. Both the line and its reply land as system rows.',
+  viewportWidth: 380,
+  props: {
+    config: {
+      agentName: 'Golem',
+      userName: 'Nadia',
+      placeholder: 'Message Golem, or / for a command',
+    },
+    adapters: slashAdapters,
+  },
+}
+
 export const invalidConfig: ChatExample = {
   name: 'Invalid config',
   summary: 'An empty placeholder and a composer taller than the maximum: both fields are named.',
@@ -248,5 +283,6 @@ export const chatExamples = [
   states,
   withTimestamps,
   live,
+  slashCommands,
   invalidConfig,
 ]

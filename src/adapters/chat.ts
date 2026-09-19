@@ -8,9 +8,19 @@ export interface ChatAttachment {
   size?: number
 }
 
+/** One slash command the adapter honours, as the composer's picker lists it. */
+export interface ChatCommand {
+  /** With its leading slash: `/reset`. */
+  name: string
+  description: string
+  /** The values the command accepts as its single argument, when it takes one. */
+  args?: Array<{ value: string; description: string }>
+}
+
 export interface ChatMessage {
   id: string
-  role: 'user' | 'agent'
+  /** `'system'` is a slash command or its reply: rendered as a dim centred row, never a bubble. */
+  role: 'user' | 'agent' | 'system'
   text: string
   at: string
   attachments?: ChatAttachment[]
@@ -36,6 +46,10 @@ export interface ChatAdapter {
   retry?(messageId: string): Promise<void>
   /** Stops the reply being written. Chat shows a Stop pill on the thinking row only when this exists. */
   interrupt?(): Promise<void>
+  /** The slash commands the composer completes. With this, a `/` line at the start of the composer opens the picker. */
+  commands?(): Promise<ChatCommand[]>
+  /** Runs one `/...` line and resolves its reply. Chat renders both as system rows. Unknown names throw. */
+  runCommand?(line: string): Promise<string>
   /** Opens a cited source location. The app wires it to `Brain`'s `openLocation`. */
   openSource?(location: string): void
   /** Called with the whole conversation on every change, including each token of a stream. */

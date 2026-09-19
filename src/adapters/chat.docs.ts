@@ -42,6 +42,18 @@ bytes. Getting the bytes somewhere is the \`Files\` adapter's job, done before \
       throws: 'An `Error` whose `message` is shown in the error strip as written.',
     },
     {
+      signature: 'commands(): Promise<ChatCommand[]>',
+      guarantees:
+        'Optional. The slash commands this adapter honours, each `{ name, description, args? }` with the name carrying its leading slash. Chat calls it each time a composer line starting with `/` opens the picker. `args` lists the values a command accepts as its single argument; omit it and the picker closes on the space after the name.',
+    },
+    {
+      signature: 'runCommand(line: string): Promise<string>',
+      guarantees:
+        'Optional, paired with `commands`. Runs one `/...` line exactly as typed and resolves the reply text. Everything after the name is one argument, never tokenized. Chat renders the line and the reply as system rows.',
+      throws:
+        'An `Error` for an unknown name or a missing argument, before anything runs; its `message` is shown in the error strip as written.',
+    },
+    {
       signature: 'openSource?(location: string): void',
       guarantees:
         "Optional. Called with a source location (`path#L3-L5`) when the reader clicks a source chip under an agent bubble. The app hands the location to `Brain`'s `openLocation`. Chips render whether or not this exists; without it a click does nothing.",
@@ -67,8 +79,12 @@ sending and \`'failed'\` remains visible until a retry reconciles it. The compon
 second optimistic list, so every emission must be the complete conversation, including pending and
 failed messages.
 
-**A \`ChatMessage\` is \`id\`, \`role\` (\`'user'\` or \`'agent'\`), \`text\`, and \`at\` as an ISO datetime.**
-\`text\` is markdown, and the component renders it as such.
+**A \`ChatMessage\` is \`id\`, \`role\` (\`'user'\`, \`'agent'\` or \`'system'\`), \`text\`, and \`at\` as an ISO datetime.**
+\`text\` is markdown, and the component renders it as such. A \`'system'\` message is a slash command or its
+reply; emit one from history when the conversation keeps them, and Chat draws it as the same dim row.
+
+**Slash commands are two optional methods.** \`commands\` lists what the picker completes; \`runCommand\`
+runs a \`/\` line and answers in text. "New conversation" is a \`/reset\` command, not a button.
 
 **\`sources\` on an agent message are source locations**, \`path#L<start>-L<end>\` inside a brain, one chip
 each under the bubble. The chip shows the file name and the line range.
@@ -83,7 +99,8 @@ attachment has to be openable later.`,
 next canned reply **word by word under one message id**, thinking bubble first — so a component's
 streaming path is exercised with no backend. \`replies\` are answered in order and loop when they run
 out; an empty list leaves the agent mute. \`tokenDelayMs\` is the whole difference between a story
-worth watching and a test that finishes: stories want ~45 ms, tests want 0.`,
+worth watching and a test that finishes: stories want ~45 ms, tests want 0. \`commands\` turns on the
+slash picker: \`/reset\` clears the conversation and any other listed command replies with the line it ran.`,
     example: `import { Chat, fakeChat } from 'golem-ui'
 
 const chat = fakeChat(
@@ -91,7 +108,11 @@ const chat = fakeChat(
     { id: 'm-1', role: 'user', text: 'What is on the bench today?', at: '2026-01-01T08:40:00Z' },
     { id: 'm-2', role: 'agent', text: 'Two tickets waiting.', at: '2026-01-01T08:40:06Z' },
   ],
-  { replies: ['Noted — writing that down now.'], tokenDelayMs: 45 },
+  {
+    replies: ['Noted — writing that down now.'],
+    tokenDelayMs: 45,
+    commands: [{ name: '/reset', description: 'Start a new conversation' }],
+  },
 )
 
 ;<Chat config={chatConfig} adapters={{ chat }} />`,

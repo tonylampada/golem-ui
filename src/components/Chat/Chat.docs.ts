@@ -43,6 +43,16 @@ route. For a list of past conversations to pick from, that is a different compon
     },
     {
       adapter: 'Chat',
+      calls: '`commands?()`',
+      why: 'The slash picker, opened by a `/` at the start of the composer. Without it, `/` is text.',
+    },
+    {
+      adapter: 'Chat',
+      calls: '`runCommand?(line)`',
+      why: 'A sent `/` line. Its reply comes back as text, and both render as system rows.',
+    },
+    {
+      adapter: 'Chat',
       calls: '`openSource?(location)`',
       why: 'A click on a source chip under an agent bubble, with the cited `path#L3-L5`.',
     },
@@ -55,7 +65,13 @@ time comes from the message's own \`at\`.
 \`id\` and a longer \`text\`, \`streaming: true\` throughout; the emission that drops the flag is \`done\`.
 Chat renders that as one bubble that grows with a caret on the end. A \`streaming\` message with no
 text yet is the agent thinking, and renders as the thinking row rather than an empty bubble. When the
-adapter provides \`interrupt\`, that row carries a Stop pill; without it, the row is just the dots.`,
+adapter provides \`interrupt\`, that row carries a Stop pill; without it, the row is just the dots.
+
+**Slash commands come from the adapter, not the config.** With \`commands\`, a composer line starting
+with \`/\` opens a picker over the composer: arrows move, Tab or Enter pick, Escape closes, and a
+command with \`args\` keeps completing its one argument after the space. A sent \`/\` line goes to
+\`runCommand\`, never to \`send\`, and the line and its reply render as dim centred system rows.
+"New conversation" is the adapter's \`/reset\`, not a button.`,
 
   slots: [
     {
@@ -90,6 +106,8 @@ import 'golem-ui/styles.css'
   \`delivery: 'pending'\` or \`'failed'\`. Chat dims a pending bubble and labels it Sending; a failed bubble
   says Not sent and offers Retry only when the adapter provides \`retry\`. Neither state shows the agent
   thinking row.
+- **A command rejects.** \`runCommand\` throws for an unknown name or a bad argument. The typed line
+  stays as a system row and the error shows in the strip under the feed, as written.
 - **Sending rejects.** Chat keeps the cleared composer clear, so it never overwrites a newer draft, and
   shows the error from the adapter. The adapter still owns the failed message and its retry.
 - **History rejects.** Chat shows the adapter error and keeps any conversation delivered through

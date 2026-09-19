@@ -31,6 +31,11 @@ route. For a list of past conversations to pick from, that is a different compon
       calls: '`send(text, attachments?)`',
       why: 'What the reader typed, with whatever the composer has staged.',
     },
+    {
+      adapter: 'Chat',
+      calls: '`retry?(messageId)`',
+      why: 'Retries a visible failed message when the adapter supports it.',
+    },
   ],
 
   adapterNotes: `Chat takes no other adapter. It never fetches, never stores, and never reads a clock — a bubble's
@@ -70,6 +75,14 @@ import 'golem-ui/styles.css'
 - **The last message is the reader's.** Chat reads that as a reply the agent owes and shows the
   thinking row until an agent message arrives. A history that *ends* on a user message therefore
   looks like it is still waiting, which is usually true and occasionally a surprise.
+- **A message is sending or failed.** The adapter keeps it in the complete conversation with
+  \`delivery: 'pending'\` or \`'failed'\`. Chat dims a pending bubble and labels it Sending; a failed bubble
+  says Not sent and offers Retry only when the adapter provides \`retry\`. Neither state shows the agent
+  thinking row.
+- **Sending rejects.** Chat keeps the cleared composer clear, so it never overwrites a newer draft, and
+  shows the error from the adapter. The adapter still owns the failed message and its retry.
+- **History rejects.** Chat shows the adapter error and keeps any conversation delivered through
+  \`subscribe\`; a live update never disappears behind a late history failure.
 - **The reader has scrolled up.** New messages stop moving the list; it follows the newest message
   only while it is already within 48px of the bottom. A stream cannot yank the page out from under
   someone reading.

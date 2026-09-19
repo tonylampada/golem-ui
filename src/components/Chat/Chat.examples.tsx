@@ -20,12 +20,16 @@ export interface ChatExample {
  */
 
 /** A conversation frozen at one instant: history and nothing after it. Stories need a still frame. */
-function frozenChat(messages: ChatMessage[]): ChatAdapter {
+function frozenChat(
+  messages: ChatMessage[],
+  retry?: (messageId: string) => Promise<void>,
+): ChatAdapter {
   return {
     async history() {
       return messages
     },
     async send() {},
+    ...(retry ? { retry } : {}),
     subscribe: () => () => {},
   }
 }
@@ -82,6 +86,48 @@ const streamingAdapters: ChatAdapters = {
   ]),
 }
 
+/** A neutral send that visibly moves through pending, failed, and retry-confirmed states. */
+function deliveryChat(): ChatAdapter {
+  const messages: ChatMessage[] = []
+  const listeners = new Set<(messages: ChatMessage[]) => void>()
+  let nextId = 1
+  const emit = () => listeners.forEach((listener) => listener([...messages]))
+
+  return {
+    async history() {
+      return [...messages]
+    },
+    async send(text, attachments) {
+      const id = `delivery-${nextId++}`
+      messages.push({
+        id,
+        role: 'user',
+        text,
+        at: new Date().toISOString(),
+        attachments,
+        delivery: 'pending',
+      })
+      emit()
+      setTimeout(() => {
+        const index = messages.findIndex((message) => message.id === id)
+        if (index >= 0) messages[index] = { ...messages[index]!, delivery: 'failed' }
+        emit()
+      }, 500)
+    },
+    async retry(messageId) {
+      const index = messages.findIndex((message) => message.id === messageId)
+      if (index >= 0) messages[index] = { ...messages[index]!, delivery: undefined }
+      emit()
+    },
+    subscribe(listener) {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+  }
+}
+
+const deliveryAdapters: ChatAdapters = { chat: deliveryChat() }
+
 /** The one adapter that really runs: it echoes, then streams its reply word by word. */
 const liveAdapters: ChatAdapters = {
   chat: fakeChat(conversation.slice(0, 2), {
@@ -115,6 +161,14 @@ export const streaming: ChatExample = {
   summary: 'A reply half written: one bubble whose text is still growing, with a caret.',
   viewportWidth: 380,
   props: { config: { agentName: 'Golem', userName: 'Nadia' }, adapters: streamingAdapters },
+}
+
+export const delivery: ChatExample = {
+  name: 'Delivery states',
+  summary:
+    'Send a neutral message to watch Sending become Not sent, then Retry confirm the same bubble.',
+  viewportWidth: 380,
+  props: { config: { agentName: 'Golem', userName: 'Nadia' }, adapters: deliveryAdapters },
 }
 
 export const withTimestamps: ChatExample = {
@@ -151,6 +205,7 @@ export const chatExamples = [
   conversationExample,
   empty,
   streaming,
+  delivery,
   withTimestamps,
   live,
   invalidConfig,

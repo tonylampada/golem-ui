@@ -29,6 +29,26 @@ export interface EditorSlots {
    * thing that arrives from the agent is merged rather than dropped on top of it.
    */
   draft?: string
+  /**
+   * A passage to show: 1-based source lines, `endLine` inclusive, clamped to the document. The source
+   * pane scrolls to it and marks it until the person clicks or edits; keyboard focus, caret and draft
+   * are left alone. Send a new `key` to show the same range again.
+   *
+   * With `version`, the request waits until the editor holds that version or a later one. With
+   * `text`, the passage is found by its lines in the draft on screen, and nothing is marked when
+   * those lines are not there exactly once.
+   */
+  focus?: EditorFocus
+}
+
+export interface EditorFocus {
+  line: number
+  endLine?: number
+  key?: string
+  /** The record version `line` counts in. The request waits until the editor has loaded it. */
+  version?: number
+  /** The passage's exact lines, joined by `\n`. Found in the draft rather than trusted to `line`. */
+  text?: string
 }
 
 /** Below this the source and the preview cannot both fit, so `split` falls back to `toggle`. */
@@ -54,6 +74,8 @@ interface Doc {
   /** Set while the two disagree; the source pane is replaced by the choice until it is empty. */
   conflict: Merge3Chunk[] | null
   choices: ('mine' | 'theirs' | null)[]
+  /** The record's line break. `draft` and `base` always hold `\n`, as a textarea does. */
+  eol: '\n' | '\r\n'
 }
 
 const EMPTY: Doc = {
@@ -66,6 +88,49 @@ const EMPTY: Doc = {
   marks: [],
   conflict: null,
   choices: [],
+  eol: '\n',
+}
+
+/**
+ * A body whose every line break is CRLF is held with bare LF — a textarea turns CRLF into LF on the
+ * first keystroke anyway — and written back with CRLF. Any other body, mixed ones too, is held as is.
+ */
+function decode(body: string): { text: string; eol: Doc['eol'] } {
+  return body.includes('\r\n') && !/\r(?!\n)|(?<!\r)\n/.test(body)
+    ? { text: body.replaceAll('\r\n', '\n'), eol: '\r\n' }
+    : { text: body, eol: '\n' }
+}
+
+/**
+ * The 0-based `[start, end)` rows a focus request marks in `lines`, or `null` for none. A request
+ * without `text` counts lines, clamped. With `text`, the offered range is trusted only on the exact
+ * version it was counted in, untouched; anywhere else the lines must appear exactly once.
+ */
+function passageOf(
+  lines: string[],
+  focus: EditorFocus,
+  atVersion: boolean,
+  eol: Doc['eol'],
+): [number, number] | null {
+  const first = Math.trunc(focus.line) - 1
+  const last = Number.isFinite(focus.endLine) ? Math.trunc(focus.endLine!) : first + 1
+  if (focus.text === undefined) {
+    const clamp = (row: number) => Math.min(Math.max(row, 0), lines.length - 1)
+    const start = clamp(first)
+    return [start, Math.max(start, clamp(last - 1)) + 1]
+  }
+  // The offered lines of a CRLF record keep their CRs, the last one's too; the draft has none.
+  const text = eol === '\n' ? focus.text : focus.text.replaceAll('\r\n', '\n').replace(/\r$/, '')
+  const want = text.split('\n')
+  const holds = (at: number) => want.every((line, index) => lines[at + index] === line)
+  if (atVersion && last - first === want.length && holds(first)) return [first, last]
+  let found: number | null = null
+  for (let at = 0; at + want.length <= lines.length; at++) {
+    if (!holds(at)) continue
+    if (found !== null) return null
+    found = at
+  }
+  return found === null ? null : [found, found + want.length]
 }
 
 const message = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause))
@@ -116,12 +181,14 @@ function EditorBody({
   config,
   adapters,
   draft: openWith,
+  focus,
 }: GolemProps<EditorConfig, EditorAdapters, EditorSlots>) {
   const { records, clock } = adapters
   const root = useRef<HTMLDivElement>(null)
   const textarea = useRef<HTMLTextAreaElement>(null)
   const overlay = useRef<HTMLDivElement>(null)
   const preview = useRef<HTMLDivElement>(null)
+  const sourcePane = useRef<HTMLDivElement>(null)
 
   const [doc, setDocState] = useState<Doc>(EMPTY)
   const docRef = useRef(doc)
@@ -136,6 +203,20 @@ function EditorBody({
   const selection = useRef<[number, number] | null>(null)
   /** An incoming version that arrived while a conflict was open, applied once it is settled. */
   const pending = useRef<DocRecord | null>(null)
+  /**
+   * The record the doc belongs to, read through which fields and which store. Moving to another one
+   * parks this doc — draft, versions, an open conflict — untouched, and nothing is written on the way
+   * out. Coming back restores it, and the load that follows merges it against the latest version.
+   */
+  const record = `${config.collection}/${config.id}/${config.bodyField}/${config.versionField}`
+  const opened = useRef({ record, records, first: { record, records } })
+  const parked = useRef(
+    new WeakMap<RecordsAdapter, Map<string, { doc: Doc; pending: DocRecord | null }>>(),
+  )
+
+  /** The record whose latest version has been read since it was opened, so a draft is up to date. */
+  const loaded = useRef<{ record: string; records: RecordsAdapter } | null>(null)
+  const [reads, setReads] = useState(0)
 
   const wide = useContainerWidth(root) >= SPLIT_ABOVE
   const split = config.preview === 'split' && wide
@@ -150,7 +231,7 @@ function EditorBody({
   const applyIncoming = useCallback(
     (record: DocRecord) => {
       const current = docRef.current
-      const theirs = String(record[config.bodyField] ?? '')
+      const { text: theirs, eol } = decode(String(record[config.bodyField] ?? ''))
       const version = Number(record[config.versionField] ?? current.version)
 
       if (current.conflict !== null) {
@@ -164,6 +245,7 @@ function EditorBody({
         setDoc({
           base: theirs,
           version,
+          eol,
           status: 'conflict',
           error: null,
           conflict: merged.chunks,
@@ -178,6 +260,7 @@ function EditorBody({
         draft: text,
         base: theirs,
         version,
+        eol,
         status: text === theirs ? 'saved' : 'dirty',
         error: null,
         marks: config.highlightMs > 0 ? theirLines : [],
@@ -192,9 +275,18 @@ function EditorBody({
     if (config.readOnly || current.status === 'conflict' || current.status === 'loading') return
     if (current.draft === current.base) return
 
-    const body = current.draft
+    const text = current.draft
+    const body = current.eol === '\n' ? text : text.replaceAll('\n', current.eol)
     const expected = current.version
     setDoc({ status: 'saving' })
+
+    // The answer belongs to the record that asked, which may be parked by the time it comes back.
+    const here = () => opened.current.record === record && opened.current.records === records
+    const settle = (patch: (doc: Doc) => Partial<Doc>) => {
+      if (here()) return setDoc(patch(docRef.current))
+      const away = parked.current.get(records)?.get(record)
+      if (away) away.doc = { ...away.doc, ...patch(away.doc) }
+    }
 
     try {
       const saved = await records.update<DocRecord>(
@@ -203,29 +295,50 @@ function EditorBody({
         { [config.bodyField]: body, [config.versionField]: expected + 1 },
         { expectedVersion: expected, versionField: config.versionField },
       )
-      setDoc({
-        base: body,
+      settle((doc) => ({
+        base: text,
         version: Number(saved[config.versionField] ?? expected + 1),
         // The person kept typing while the write was in flight, so there is already more to send.
-        status: docRef.current.draft === body ? 'saved' : 'dirty',
+        status: doc.draft === text ? 'saved' : 'dirty',
         error: null,
         savedAt: clock.now(),
-      })
+      }))
     } catch (cause) {
       const theirs = conflictingRecord(cause)
-      if (theirs) {
+      if (theirs && here()) {
         setDoc({ status: 'dirty' })
         applyIncoming(theirs as DocRecord)
         return
       }
-      setDoc({ status: 'error', error: message(cause) })
+      // A parked refusal stays dirty; coming back loads the latest version and merges against it.
+      settle(() => (theirs ? { status: 'dirty' } : { status: 'error', error: message(cause) }))
     }
-  }, [applyIncoming, clock, config, records, setDoc])
+  }, [applyIncoming, clock, config, record, records, setDoc])
 
   // The document, and the subscription that brings every later version of it. Nothing polls.
   useEffect(() => {
     let live = true
+    if (opened.current.record !== record || opened.current.records !== records) {
+      const left = opened.current
+      const shelf = parked.current.get(left.records) ?? new Map()
+      parked.current.set(
+        left.records,
+        shelf.set(left.record, { doc: docRef.current, pending: pending.current }),
+      )
+      const back = parked.current.get(records)?.get(record)
+      parked.current.get(records)?.delete(record)
+      opened.current = { ...left, record, records }
+      pending.current = back?.pending ?? null
+      history.reset(back?.doc.draft ?? '')
+      setDoc(back?.doc ?? EMPTY)
+      loaded.current = null
+    }
 
+    const read = () => {
+      if (loaded.current?.record === record && loaded.current.records === records) return
+      loaded.current = { record, records }
+      setReads((count) => count + 1)
+    }
     const load = () =>
       records.get<DocRecord>(config.collection, config.id).then(
         (record) => {
@@ -238,19 +351,30 @@ function EditorBody({
             return
           }
           if (docRef.current.status === 'loading') {
-            const body = String(record[config.bodyField] ?? '')
-            const opening = openWith ?? body
+            const { text: body, eol } = decode(String(record[config.bodyField] ?? ''))
+            // The draft slot is the first record's unsaved work, never another record's.
+            const opening =
+              openWith !== undefined &&
+              opened.current.record === opened.current.first.record &&
+              opened.current.records === opened.current.first.records
+                ? eol === '\n'
+                  ? openWith
+                  : openWith.replaceAll('\r\n', '\n')
+                : body
             history.reset(opening)
             setDoc({
               draft: opening,
               base: body,
+              eol,
               version: Number(record[config.versionField] ?? 0),
               status: opening === body ? 'saved' : 'dirty',
               error: null,
             })
+            read()
             return
           }
           applyIncoming(record)
+          read()
         },
         (cause: unknown) => {
           if (live) setDoc({ status: 'error', error: message(cause) })
@@ -267,6 +391,7 @@ function EditorBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     records,
+    record,
     config.collection,
     config.id,
     config.bodyField,
@@ -308,6 +433,64 @@ function EditorBody({
     textarea.current.setSelectionRange(wanted[0], wanted[1])
   }, [doc.draft])
 
+  /**
+   * A focus request belongs to the record open when it arrived, and is applied once, when that record
+   * has been read since it was opened, no conflict is open, and the version it names has arrived. A
+   * parked draft brought back is matched only after the latest version has been merged into it. The mark it leaves is tied to the draft it was drawn on, so any
+   * edit — the person's or the agent's — takes it down rather than leaving it on shifted lines.
+   */
+  const ask = focus
+    ? JSON.stringify([focus.line, focus.endLine, focus.key, focus.version, focus.text])
+    : ''
+  const asked = useRef({ ask: '', record, records, done: true })
+  const [spot, setSpot] = useState<{
+    start: number
+    end: number
+    draft: string
+    record: string
+    records: RecordsAdapter
+  } | null>(null)
+  const scrollToSpot = useRef(false)
+
+  useEffect(() => {
+    if (ask !== asked.current.ask) asked.current = { ask, record, records, done: ask === '' }
+  }, [ask, record, records])
+
+  useEffect(() => {
+    const request = asked.current
+    if (request.done || !focus) return
+    const current = docRef.current
+    if (request.record !== record || request.records !== records || !Number.isFinite(focus.line)) {
+      request.done = true
+      return
+    }
+    if (loaded.current?.record !== record || loaded.current.records !== records) return
+    if (current.status === 'loading' || current.conflict !== null) return
+    if (Number.isFinite(focus.version) && current.version < focus.version!) return
+    request.done = true
+    const atVersion = current.version === focus.version && current.draft === current.base
+    const passage = passageOf(current.draft.split('\n'), focus, atVersion, current.eol)
+    // A passage that cannot be placed leaves nothing marked, not even the last request's mark.
+    if (!passage) return setSpot(null)
+    scrollToSpot.current = true
+    setMode('source')
+    setSpot({ start: passage[0], end: passage[1], draft: current.draft, record, records })
+  }, [ask, record, records, focus, reads, doc.status, doc.conflict, doc.version])
+
+  // Centre the passage in the source pane, or put its top in view with two lines above it when it is
+  // taller than the pane. Only the pane scrolls: the caret and the page stay where they are.
+  useLayoutEffect(() => {
+    const pane = sourcePane.current
+    const rows = overlay.current?.children
+    if (!scrollToSpot.current || !spot || !pane || !rows) return
+    scrollToSpot.current = false
+    const origin = pane.getBoundingClientRect().top - pane.scrollTop
+    const top = rows[spot.start]!.getBoundingClientRect().top - origin
+    const bottom = rows[spot.end - 1]!.getBoundingClientRect().bottom - origin
+    pane.scrollTop =
+      bottom - top > pane.clientHeight ? top - 48 : (top + bottom - pane.clientHeight) / 2
+  }, [spot, showSource])
+
   const lines = useMemo(() => doc.draft.split('\n'), [doc.draft])
   const scanned = useMemo(() => scanSource(lines), [lines])
   const headings = useMemo(() => headingsOf(lines), [lines])
@@ -317,6 +500,10 @@ function EditorBody({
       for (let line = mark.start; line < mark.end; line++) rows.add(line)
     return rows
   }, [doc.marks])
+  const shown =
+    spot && spot.record === record && spot.records === records && spot.draft === doc.draft
+      ? spot
+      : null
 
   const write = (text: string, caret?: [number, number]) => {
     history.remember(text)
@@ -471,6 +658,7 @@ function EditorBody({
           <>
             {showSource && (
               <div
+                ref={sourcePane}
                 data-golem-pane="source"
                 className={`min-h-0 flex-1 overflow-auto ${split ? 'sm:border-r sm:border-neutral-200' : ''}`}
               >
@@ -483,17 +671,21 @@ function EditorBody({
                     style={{ '--golem-mark-ms': `${config.highlightMs}ms` } as CSSProperties}
                     className="pointer-events-none absolute inset-0 p-4 break-words whitespace-pre-wrap"
                   >
-                    {scanned.map((line, index) => (
-                      <div
-                        key={index}
-                        data-golem-marked={marked.has(index) ? 'true' : undefined}
-                        className={`-mx-2 px-2 ${LINE_CLASS[line.kind]} ${
-                          marked.has(index) ? 'golem-editor-mark' : ''
-                        }`}
-                      >
-                        {line.text === '' ? ' ' : <SourceRow line={line} index={index} />}
-                      </div>
-                    ))}
+                    {scanned.map((line, index) => {
+                      const focused = shown !== null && index >= shown.start && index < shown.end
+                      return (
+                        <div
+                          key={index}
+                          data-golem-marked={marked.has(index) ? 'true' : undefined}
+                          data-golem-focus={focused ? 'true' : undefined}
+                          className={`-mx-2 px-2 ${LINE_CLASS[line.kind]} ${
+                            marked.has(index) ? 'golem-editor-mark' : ''
+                          } ${focused ? 'golem-editor-focus' : ''}`}
+                        >
+                          {line.text === '' ? ' ' : <SourceRow line={line} index={index} />}
+                        </div>
+                      )
+                    })}
                   </div>
                   <textarea
                     ref={textarea}
@@ -504,6 +696,7 @@ function EditorBody({
                     spellCheck={false}
                     onChange={(event) => write(event.target.value)}
                     onKeyDown={onKeyDown}
+                    onPointerDown={() => setSpot(null)}
                     className="relative block w-full resize-none overflow-hidden bg-transparent p-4 font-mono text-[13px] leading-6 break-words whitespace-pre-wrap text-transparent caret-neutral-900 outline-none placeholder:text-neutral-400"
                   />
                 </div>

@@ -91,6 +91,10 @@ Build adapters once, outside render.`,
       slot: 'draft',
       what: 'Unsaved work from a previous session — a local draft store, say. The editor opens on it instead of the record’s body, dirty against the record’s version, so the next thing the agent writes is merged rather than dropped on top of it.',
     },
+    {
+      slot: 'focus',
+      what: '`{ line, endLine?, key?, version?, text? }` — a passage to show, in 1-based source lines with `endLine` inclusive. The source pane scrolls it into the middle and tints it until the person clicks or edits. Out-of-range lines are clamped to the document; a `line` that is not a number is ignored. The same request again needs a new `key`. Caret, selection, draft and keyboard focus are left where they are. `version` is the record version the lines were counted in: the request waits until the editor has read that version or a later one. `text` is the passage itself, its exact lines joined by `\\n`: the editor finds it in the draft on screen instead of trusting `line`, and marks nothing when those lines are missing or appear more than once.',
+    },
   ],
 
   example: `import { Editor, fakeClock, fakeRecords } from 'golem-ui'
@@ -139,6 +143,38 @@ import 'golem-ui/styles.css'
   for a line the agent wrote.
 - **\`readOnly\` blocks the writing, not the reading.** The source and the preview stay, the toolbar
   loses its actions, the autosave never runs, and nothing typed into the source reaches the record.
+- **\`focus\` counts lines of the text on screen.** That is the record's body, or the person's draft
+  when they have unsaved changes above the passage — the component cannot know which lines the
+  caller counted in. A request waits while the record loads or a conflict is open, and belongs to
+  the record and the \`records\` adapter open when it arrived: move to another \`id\` or store
+  before it lands and it is dropped, not applied to the wrong document.
+- **\`focus.text\` is matched whole line by whole line, exactly.** No trimming, no case folding. On a
+  CRLF record the offered lines may keep their CRs, as the server's lines do, or drop them: both
+  match. The offered \`line\`..\`endLine\` range picks among several copies only when the editor is
+  on exactly \`version\`, with no unsaved changes, and that range holds the text; anywhere else the
+  passage must appear once. A passage that cannot be placed opens the record with nothing tinted and
+  nothing scrolled — the last request's tint is taken down too — and the draft is never written.
+- **A \`focus\` waits for a fresh read.** A record opened, or a parked draft brought back,
+  is matched only after its latest version has been read and merged in, so the passage is looked
+  for in the text the person will see, not in the draft as it was left. A request sent in the same
+  render as a move to another record belongs to the record moved to.
+- **\`focus\` shows the source, not the preview.** A toggle editor showing the preview switches to
+  the source pane, and \`split\` leaves the preview where it was. Source lines have no reliable
+  position in the rendering, so the component does not pretend to scroll it.
+- **The focus tint lasts until the text changes.** Any edit — the person's or a merged agent version
+  — a click in the source, or a move to another record takes it down, so it never sits on lines that
+  moved under it or on a second record that happens to hold the same text.
+- **Moving to another record parks this one.** Changing \`collection\`, \`id\`, \`bodyField\`,
+  \`versionField\` or the \`records\` adapter opens that record fresh and keeps the one left behind —
+  draft, the version it read, an open conflict — for as long as the editor stays mounted. Nothing is
+  written on the way out. A save still in flight settles against the record that sent it. Coming
+  back restores the draft, and the load that follows merges it against the latest version, so a
+  write made meanwhile is a merge or a conflict, never a loss. Unmounting drops parked drafts.
+- **A CRLF record stays CRLF.** A body whose every line break is CRLF is edited with bare LFs, as a
+  textarea holds it, and every save writes CRLF back, so an edit changes only the lines it touched.
+  A body with mixed line endings is written back with LFs once the person edits it.
+- **The \`draft\` slot belongs to the first record opened, in the first store.** Any other record,
+  or the same record through another \`records\` adapter, opens on its own body.
 - **A new adapter object on every render** makes Editor re-subscribe and re-fetch on every render.
   Build adapters once, outside render.`,
 }

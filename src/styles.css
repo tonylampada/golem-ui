@@ -111,3 +111,10 @@
 .golem-editor-mark {
   animation: golem-editor-mark var(--golem-mark-ms, 4000ms) ease-out forwards;
 }
+
+/* Editor's focus mark: the passage a focus request asked for. It holds until the person clicks or
+   edits, so it is a steady tint rather than the arrival mark's fade. */
+.golem-editor-focus {
+  background-color: #e0f2fe;
+  box-shadow: inset 3px 0 0 0 #0284c7;
+}

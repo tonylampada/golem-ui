@@ -29,6 +29,8 @@ export interface ChatAdapter {
   send(text: string, attachments?: ChatAttachment[]): Promise<void>
   /** Retries a failed message when the adapter supports retries. */
   retry?(messageId: string): Promise<void>
+  /** Stops the reply being written. Chat shows a Stop pill on the thinking row only when this exists. */
+  interrupt?(): Promise<void>
   /** Called with the whole conversation on every change, including each token of a stream. */
   subscribe(listener: (messages: ChatMessage[]) => void): Unsubscribe
 }

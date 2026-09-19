@@ -23,6 +23,7 @@ export interface ChatExample {
 function frozenChat(
   messages: ChatMessage[],
   retry?: (messageId: string) => Promise<void>,
+  interrupt?: () => Promise<void>,
 ): ChatAdapter {
   return {
     async history() {
@@ -30,6 +31,7 @@ function frozenChat(
     },
     async send() {},
     ...(retry ? { retry } : {}),
+    ...(interrupt ? { interrupt } : {}),
     subscribe: () => () => {},
   }
 }
@@ -128,7 +130,7 @@ function deliveryChat(): ChatAdapter {
 
 const deliveryAdapters: ChatAdapters = { chat: deliveryChat() }
 
-/** Every bubble state at once, frozen: agent, user, pending, failed, and the typing row. */
+/** Every bubble state at once, frozen: agent, user, pending, failed, and the typing row with Stop. */
 const statesAdapters: ChatAdapters = {
   chat: frozenChat(
     [
@@ -149,6 +151,7 @@ const statesAdapters: ChatAdapters = {
       },
       { id: 's-3', role: 'user', text: 'are you there?', at: '2026-09-10T09:16:00Z' },
     ],
+    async () => {},
     async () => {},
   ),
 }
@@ -198,7 +201,8 @@ export const delivery: ChatExample = {
 
 export const states: ChatExample = {
   name: 'Every state',
-  summary: 'Agent and user bubbles, a pending send, a failed one with Retry, and the typing row.',
+  summary:
+    'Agent and user bubbles, a pending send, a failed one with Retry, and the typing row with its Stop pill.',
   viewportWidth: 380,
   props: {
     config: { agentName: 'Golem', userName: 'Nadia', showTimestamps: true },

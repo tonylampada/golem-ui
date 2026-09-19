@@ -36,6 +36,11 @@ route. For a list of past conversations to pick from, that is a different compon
       calls: '`retry?(messageId)`',
       why: 'Retries a visible failed message when the adapter supports it.',
     },
+    {
+      adapter: 'Chat',
+      calls: '`interrupt?()`',
+      why: 'The Stop pill on the thinking row, shown only when the adapter supports it.',
+    },
   ],
 
   adapterNotes: `Chat takes no other adapter. It never fetches, never stores, and never reads a clock — a bubble's
@@ -44,7 +49,8 @@ time comes from the message's own \`at\`.
 **Streaming is a rule about ids, not a second method.** The adapter re-emits a message with the same
 \`id\` and a longer \`text\`, \`streaming: true\` throughout; the emission that drops the flag is \`done\`.
 Chat renders that as one bubble that grows with a caret on the end. A \`streaming\` message with no
-text yet is the agent thinking, and renders as the thinking row rather than an empty bubble.`,
+text yet is the agent thinking, and renders as the thinking row rather than an empty bubble. When the
+adapter provides \`interrupt\`, that row carries a Stop pill; without it, the row is just the dots.`,
 
   slots: [
     {

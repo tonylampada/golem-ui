@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ChatAdapter, ChatMessage } from '../../adapters'
 import { fakeChat } from '../../adapters/fake'
 import { Chat } from './Chat'
@@ -301,4 +301,36 @@ describe('Chat', () => {
     render(<Chat {...examples.empty.props} config={{ showtimestamps: true } as never} />)
     expect(screen.getByRole('alert')).toHaveTextContent('showtimestamps')
   })
+  it('shows Stop on the thinking row only with interrupt, and calls it once', async () => {
+    const waiting: ChatMessage = {
+      id: 'u-1',
+      role: 'user',
+      text: 'are you there?',
+      at: '2026-09-10T09:16:00Z',
+    }
+    const stop = () => screen.queryByRole('button', { name: 'Stop the agent' })
+
+    const bare = scriptedChat([waiting])
+    const { unmount } = render(<Chat config={{}} adapters={{ chat: bare.adapter }} />)
+    await flush()
+    expect(screen.getByRole('status')).toHaveTextContent('is thinking')
+    expect(stop()).toBeNull()
+    unmount()
+
+    let settle!: () => void
+    const interrupt = vi.fn(() => new Promise<void>((resolve) => (settle = resolve)))
+    const chat = scriptedChat([waiting])
+    chat.adapter.interrupt = interrupt
+    render(<Chat config={{}} adapters={{ chat: chat.adapter }} />)
+    await flush()
+    await userEvent.click(stop()!)
+    expect(interrupt).toHaveBeenCalledTimes(1)
+    expect(stop()).toBeDisabled()
+    act(() => settle())
+    await waitFor(() => expect(stop()).toBeEnabled())
+
+    chat.push({ id: 'a-1', role: 'agent', text: 'Here.', at: '2026-09-10T09:16:05Z' })
+    expect(stop()).toBeNull()
+  })
+
 })

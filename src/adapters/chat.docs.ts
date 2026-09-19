@@ -36,6 +36,12 @@ bytes. Getting the bytes somewhere is the \`Files\` adapter's job, done before \
         'Optional. Retries the failed message with this stable id and emits the complete conversation as its delivery changes. Omit it when retries are not available.',
     },
     {
+      signature: 'interrupt?(): Promise<void>',
+      guarantees:
+        'Optional. Stops the agent mid-turn and emits the conversation as it settles: the streaming message drops its flag, or is removed. Chat shows a Stop pill on the thinking row only when this exists; the pill is disabled until the promise settles.',
+      throws: 'An `Error` whose `message` is shown in the error strip as written.',
+    },
+    {
       signature: 'subscribe(listener: (messages: ChatMessage[]) => void): Unsubscribe',
       guarantees: `Calls the listener with the **entire** conversation on every change: a message sent, a reply starting,
 and every token of that reply. Returns the function that detaches it.`,

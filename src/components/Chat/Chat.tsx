@@ -207,7 +207,8 @@ function Bubble({
   )
 }
 
-function Thinking({ name }: { name: string }) {
+function Thinking({ name, onStop }: { name: string; onStop?: () => Promise<void> }) {
+  const [stopping, setStopping] = useState(false)
   return (
     <div
       data-golem-chat-thinking="true"
@@ -223,6 +224,20 @@ function Thinking({ name }: { name: string }) {
         />
       ))}
       <span className="ml-1 text-[11px] text-(--chat-faint)">{name} is thinking…</span>
+      {onStop && (
+        <button
+          type="button"
+          disabled={stopping}
+          aria-label="Stop the agent"
+          onClick={() => {
+            setStopping(true)
+            void onStop().finally(() => setStopping(false))
+          }}
+          className="ml-2 rounded-full border border-(--chat-line) bg-(--chat-panel2) px-2 py-0.5 text-[11px] font-medium text-(--chat-danger) transition-colors hover:border-(--chat-danger) disabled:opacity-50"
+        >
+          Stop
+        </button>
+      )}
     </div>
   )
 }
@@ -281,6 +296,15 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
       }
     : undefined
 
+  const interrupt = adapters.chat.interrupt
+    ? () => {
+        setSendError('')
+        return adapters.chat.interrupt!().catch((error: unknown) => {
+          setSendError(error instanceof Error ? error.message : 'The agent could not be stopped.')
+        })
+      }
+    : undefined
+
   return (
     <div
       data-golem-component="Chat"
@@ -303,7 +327,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
             <Bubble key={message.id} message={message} config={config} onRetry={retry} />
           ))
         )}
-        {thinking && <Thinking name={config.agentName} />}
+        {thinking && <Thinking name={config.agentName} onStop={interrupt} />}
       </div>
 
       {(loadError || sendError) && (

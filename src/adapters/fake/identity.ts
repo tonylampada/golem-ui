@@ -23,6 +23,10 @@ export interface FakeIdentityOptions {
   inviteBase?: string
   /** Invites that already exist, token to role, so an example can open on a link nobody minted. */
   invites?: Record<string, string>
+  /** What `resetPassword()` prefixes the token with. The token is the last thing in the URL. */
+  resetBase?: string
+  /** Reset links that already exist, token to member id, so an example can open on one. */
+  resets?: Record<string, string>
 }
 
 /**
@@ -34,10 +38,12 @@ export function fakeIdentity(options: FakeIdentityOptions = {}): IdentityAdapter
   const code = options.code ?? '123456'
   const defaultRole = options.defaultRole ?? 'member'
   const inviteBase = options.inviteBase ?? 'https://app.example/#/join?invite='
+  const resetBase = options.resetBase ?? 'https://app.example/#/join?reset='
 
   const members = (options.members ?? [fakeUser]).map((member) => ({ ...member }))
   let user = options.user === undefined ? (members[0] ?? null) : options.user
   const invites = new Map<string, string>(Object.entries(options.invites ?? {}))
+  const resets = new Map<string, string>(Object.entries(options.resets ?? {}))
   const emitter = createEmitter<User | null>()
   let nextId = 1
 
@@ -115,6 +121,21 @@ export function fakeIdentity(options: FakeIdentityOptions = {}): IdentityAdapter
         user = null
         emitter.emit(user)
       }
+    },
+
+    async resetPassword(userId) {
+      if (!members.some((member) => member.id === userId))
+        throw new Error(`fakeIdentity: no member ${userId}`)
+      const token = `res-${nextId++}`
+      resets.set(token, userId)
+      return `${resetBase}${token}`
+    },
+
+    async setPassword(token) {
+      if (!resets.delete(token)) throw new Error('That reset link has expired or was already used.')
+      // One password for everyone is the fake's whole story, so the new one is not remembered.
+      user = null
+      emitter.emit(user)
     },
 
     async setRole(userId, role) {

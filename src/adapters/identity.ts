@@ -40,4 +40,8 @@ export interface IdentityAdapter {
   removeMember(userId: string): Promise<void>
   /** Replaces the member's roles with this one. */
   setRole(userId: string, role: string): Promise<void>
+  /** Mints a one-use link that lets this member choose a new password. Left out, no reset is offered. */
+  resetPassword?(userId: string): Promise<string>
+  /** The new password, from the token on a reset link. Left out, a reset link opens the sign-in card. */
+  setPassword?(token: string, password: string): Promise<void>
 }

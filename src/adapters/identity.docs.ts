@@ -78,6 +78,20 @@ decides the new role**; without one the store picks its own default. \`password\
         '**Replaces** the member’s roles with this one; it does not add to them. Changing the signed-in user’s role fires `subscribe` so a guard re-decides immediately.',
       throws: 'An `Error` whose `message` the reader is shown.',
     },
+    {
+      signature: 'resetPassword?(userId: string): Promise<string>',
+      guarantees: `Optional. Mints a one-use link that lets that member choose a new password and resolves **the URL
+to hand out**. The member keeps their id, email and roles. Left out, the member list offers no reset.`,
+      throws: 'An `Error` whose `message` the reader is shown.',
+    },
+    {
+      signature: 'setPassword?(token: string, password: string): Promise<void>',
+      guarantees: `Optional, and the other half of \`resetPassword\`: the token off the reset link's \`Route.params.reset\`
+and the password the reader chose. Resolving means the password is the new one and every session of
+that account has ended, so the reader signs in again. Left out, a reset link opens the sign-in card.`,
+      throws:
+        'An `Error` for a spent or expired link, shown to the reader as written — *"That reset link has expired or was already used."*',
+    },
   ],
 
   notes: `**Every rejection's \`message\` is shown to the reader exactly as written**, which is why this

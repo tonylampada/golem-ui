@@ -45,12 +45,12 @@ function useSession(identity: IdentityAdapter) {
 }
 
 /**
- * The invite token, read off the route rather than off `window`: the app's Navigation adapter is
- * what knows how its URLs are shaped, so a hash router and a path router both land here.
+ * A token off the route — `invite` or `reset` — rather than off `window`: the app's Navigation
+ * adapter is what knows how its URLs are shaped, so a hash router and a path router both land here.
  */
-function useInviteToken(navigation: NavigationAdapter): string | undefined {
-  const [token, setToken] = useState(() => navigation.current().params.invite)
-  useEffect(() => navigation.subscribe((route) => setToken(route.params.invite)), [navigation])
+function useRouteToken(navigation: NavigationAdapter, name: string): string | undefined {
+  const [token, setToken] = useState(() => navigation.current().params[name])
+  useEffect(() => navigation.subscribe((route) => setToken(route.params[name])), [navigation, name])
   return token
 }
 
@@ -102,7 +102,8 @@ function Card({ children }: { children: ReactNode }) {
  * adapter refused is what the reader reads.
  */
 function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: AuthAdapters }) {
-  const invite = useInviteToken(adapters.navigation)
+  const invite = useRouteToken(adapters.navigation, 'invite')
+  const reset = useRouteToken(adapters.navigation, 'reset')
   const signUpOffered = config.allowSignUp && !config.inviteOnly
   const signUpReachable = Boolean(invite) || signUpOffered
 
@@ -113,11 +114,14 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
   const [secret, setSecret] = useState('')
   const [codeSent, setCodeSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  // A reset link only means something when the adapter can set a password from it.
+  const resetting = Boolean(reset) && Boolean(adapters.identity.setPassword)
   const creating = chose ?? Boolean(invite)
-  const creatingNow = creating && signUpReachable
-  const codeStage = config.mode === 'code' && !creatingNow && codeSent
+  const creatingNow = !resetting && creating && signUpReachable
+  const codeStage = !resetting && config.mode === 'code' && !creatingNow && codeSent
 
   const run = async (event: FormEvent, action: () => Promise<unknown>) => {
     event.preventDefault()
@@ -134,6 +138,14 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
 
   const submit = (event: FormEvent) =>
     run(event, async () => {
+      if (resetting) {
+        await adapters.identity.setPassword!(reset!, secret)
+        setSecret('')
+        setNotice('Your password is set. Sign in with it.')
+        // The token is spent, so it leaves the route: a reload lands on the sign-in card.
+        adapters.navigation.go(adapters.navigation.current().path)
+        return
+      }
       if (creatingNow) {
         await adapters.identity.signUp({
           name,
@@ -155,12 +167,16 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
       await adapters.identity.verifyCode(email, secret)
     })
 
-  const title = creatingNow ? config.copy.signUpTitle : config.copy.signInTitle
+  const title = resetting
+    ? 'Choose a new password'
+    : creatingNow
+      ? config.copy.signUpTitle
+      : config.copy.signInTitle
 
   return (
     <Card>
       <h1
-        data-golem-auth-screen={creatingNow ? 'sign-up' : 'sign-in'}
+        data-golem-auth-screen={resetting ? 'reset-password' : creatingNow ? 'sign-up' : 'sign-in'}
         className="text-lg font-semibold"
       >
         {title}
@@ -171,53 +187,73 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
           : config.workspaceName}
       </p>
       {/* The hint is about getting back in, so it stays off the sign-up form. */}
-      {config.copy.hint && !creatingNow && (
+      {config.copy.hint && !creatingNow && !resetting && (
         <p className="mt-3 text-xs text-(--chat-dim)">{config.copy.hint}</p>
       )}
+      {notice && <p className="mt-3 text-sm text-(--chat-dim)">{notice}</p>}
 
       <form className="mt-4 space-y-3" onSubmit={submit}>
-        {creatingNow && (
+        {resetting ? (
           <Field
-            label="Your name"
-            value={name}
-            autoComplete="name"
-            onChange={(event) => setName(event.target.value)}
-          />
-        )}
-        <Field
-          label="Email"
-          type="email"
-          value={email}
-          autoComplete="email"
-          readOnly={codeStage}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-        {(creatingNow ? config.mode === 'password' : config.mode === 'password' || codeStage) && (
-          <Field
-            label={config.mode === 'password' ? 'Password' : 'Six-digit code'}
-            type={config.mode === 'password' ? 'password' : 'text'}
+            label="New password"
+            type="password"
             value={secret}
-            autoComplete={config.mode === 'password' ? 'current-password' : 'one-time-code'}
-            inputMode={config.mode === 'code' ? 'numeric' : undefined}
+            autoComplete="new-password"
             onChange={(event) => setSecret(event.target.value)}
           />
+        ) : (
+          <>
+            {creatingNow && (
+              <Field
+                label="Your name"
+                value={name}
+                autoComplete="name"
+                onChange={(event) => setName(event.target.value)}
+              />
+            )}
+            <Field
+              label="Email"
+              type="email"
+              value={email}
+              autoComplete="email"
+              readOnly={codeStage}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+            {(creatingNow
+              ? config.mode === 'password'
+              : config.mode === 'password' || codeStage) && (
+              <Field
+                label={config.mode === 'password' ? 'Password' : 'Six-digit code'}
+                type={config.mode === 'password' ? 'password' : 'text'}
+                value={secret}
+                autoComplete={config.mode === 'password' ? 'current-password' : 'one-time-code'}
+                inputMode={config.mode === 'code' ? 'numeric' : undefined}
+                onChange={(event) => setSecret(event.target.value)}
+              />
+            )}
+          </>
         )}
 
         {codeStage && <p className="text-xs text-(--chat-dim)">We sent a code to {email}.</p>}
         {error && (
-          <p role="alert" className="rounded-lg border border-(--chat-danger) px-3 py-2 text-sm text-(--chat-danger)">
+          <p
+            role="alert"
+            className="rounded-lg border border-(--chat-danger) px-3 py-2 text-sm text-(--chat-danger)"
+          >
             {error}
           </p>
         )}
 
         <button type="submit" disabled={busy} className={primaryClass}>
-          {config.mode === 'code' && !creatingNow && !codeSent
-            ? 'Email me a code'
-            : config.copy.submit}
+          {resetting
+            ? 'Set password'
+            : config.mode === 'code' && !creatingNow && !codeSent
+              ? 'Email me a code'
+              : config.copy.submit}
         </button>
       </form>
 
-      {signUpOffered && !invite && (
+      {signUpOffered && !invite && !resetting && (
         <button
           type="button"
           onClick={() => {
@@ -229,7 +265,7 @@ function SignInScreen({ config, adapters }: { config: AuthConfig; adapters: Auth
           {creating ? 'I already have an account' : 'Create an account'}
         </button>
       )}
-      {config.inviteOnly && !invite && (
+      {config.inviteOnly && !invite && !resetting && (
         <p className="mt-3 text-xs text-(--chat-dim)">
           {config.workspaceName} is invite only. Ask someone inside for a link.
         </p>
@@ -262,13 +298,12 @@ function MembersScreen({
   const { members, reload } = useMembers(adapters.identity, user)
   const manages = canManage(config, user)
   const [inviteRole, setInviteRole] = useState(config.roles[0]!.id)
-  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  const [link, setLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const mint = async () => {
-    const url = await adapters.identity.invite(inviteRole)
-    setInviteUrl(url)
-    setCopied(false)
+  const mint = async (minting: Promise<string>) => {
+    const url = await minting
+    setLink(url)
     // Clipboard access is a permission and a browser feature, so the URL is on screen either way.
     try {
       await navigator.clipboard?.writeText(url)
@@ -306,22 +341,26 @@ function MembersScreen({
                 </option>
               ))}
             </select>
-            <button type="button" onClick={() => void mint()} className={quietClass}>
+            <button
+              type="button"
+              onClick={() => void mint(adapters.identity.invite(inviteRole))}
+              className={quietClass}
+            >
               Invite by link
             </button>
           </div>
         )}
       </div>
 
-      {inviteUrl && (
+      {link && (
         <div className="mt-4 rounded-xl border border-(--chat-line) bg-(--chat-panel) p-4">
           <p className="text-sm font-medium">
             Send this link. {copied ? 'It is on your clipboard.' : 'Copy it from here.'}
           </p>
           <input
             readOnly
-            aria-label="Invite link"
-            value={inviteUrl}
+            aria-label="Link to send"
+            value={link}
             onFocus={(event) => event.target.select()}
             className={`${fieldClass} font-mono text-xs`}
           />
@@ -359,6 +398,18 @@ function MembersScreen({
                 {labelForRole(config, member)}
               </span>
             )}
+            {manages && adapters.identity.resetPassword && (
+              <button
+                type="button"
+                aria-label={`Reset password for ${member.name}`}
+                onClick={() => {
+                  void mint(adapters.identity.resetPassword!(member.id))
+                }}
+                className="shrink-0 rounded-lg border border-(--chat-line2) px-3 py-1.5 text-sm"
+              >
+                Reset password
+              </button>
+            )}
             {/* Removing yourself is how a person locks themselves out, so that button is not drawn. */}
             {manages && member.id !== user.id && (
               <button
@@ -386,7 +437,10 @@ function AccountMenuPanel({ config, adapters }: GolemProps<AuthConfig, AuthAdapt
   if (!user) return null
 
   return (
-    <div data-golem-component="Auth.AccountMenu" className="golem-auth relative shrink-0 text-(--chat-text)">
+    <div
+      data-golem-component="Auth.AccountMenu"
+      className="golem-auth relative shrink-0 text-(--chat-text)"
+    >
       {/* Avatar only: the bar carries icons, and the name is in the popover. */}
       <button
         type="button"

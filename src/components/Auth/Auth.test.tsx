@@ -157,6 +157,40 @@ describe('Auth', () => {
     await waitFor(() => expect(screen.queryByText('Omar Bright')).not.toBeInTheDocument())
   })
 
+  it('round-trips a reset link into a new password, without touching the member', async () => {
+    const { identity } = wire({ user: owner })
+    render(<Auth config={config} adapters={{ identity, navigation: fakeNavigation() }} />)
+    await waitFor(() => expect(screen.getByText('Omar Bright')).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reset password for Omar Bright' }))
+    const url = (await screen.findByLabelText<HTMLInputElement>('Link to send')).value
+    const token = url.slice(url.lastIndexOf('=') + 1)
+    // Omar is still a member, with his id and role: a reset removes nothing.
+    expect(await identity.listMembers()).toContainEqual(mechanic)
+
+    // The link is opened in a fresh session: signed out, on the route the URL encodes.
+    const resetting = fakeIdentity({
+      user: null,
+      members: [owner, mechanic],
+      resets: { [token]: mechanic.id },
+    })
+    const route = fakeNavigation({ path: '/join', params: { reset: token } })
+    render(<Auth config={config} adapters={{ identity: resetting, navigation: route }} />)
+    await flush()
+
+    expect(screen.getByText('Choose a new password')).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('New password'), 'new-stand')
+    await userEvent.click(screen.getByRole('button', { name: 'Set password' }))
+
+    // Password set, token spent: the card is the sign-in card again and the route carries no token.
+    expect(await screen.findByText('Your password is set. Sign in with it.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toBeInTheDocument()
+    expect(route.current().params.reset).toBeUndefined()
+    await expect(resetting.setPassword!(token, 'again')).rejects.toThrow(
+      /expired or was already used/,
+    )
+  })
+
   it('sends a code before it asks for one, in code mode', async () => {
     const { adapters } = wire({ user: null, code: '123456' })
     render(<Auth config={{ ...config, mode: 'code' }} adapters={adapters} />)

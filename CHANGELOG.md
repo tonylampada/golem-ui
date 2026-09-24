@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- `Auth` — a manager resets a member's password instead of removing and re-inviting them: **Reset
+  password** next to Remove in the member list mints a link, and a route carrying `reset=` opens the
+  sign-in card in choose-a-new-password mode. Two optional `Identity` methods back it,
+  `resetPassword(userId)` and `setPassword(token, password)`; an adapter without them is unchanged.
+
 ## 0.2.0
 
 - `Brain` — a new component and a new `Brain` adapter: a knowledge map read as passages, master-detail

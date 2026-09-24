@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.0
+
+- `Brain` — a new component and a new `Brain` adapter: a knowledge map read as passages, master-detail
+  on the desktop and a navigation stack on the phone. Relative links open in the reader, `open()`
+  reports what the reader opened, and a passage the agent cited can be opened by citation.
+- `Shell` — real app chrome: a thin top bar with icon buttons, the chat behind a toggle, a bottom
+  menu bar with icon over label at every width, and a fixed frame. The chat column is drag-resizable
+  at desktop width, `chat={null}` renders the canvas alone, and crossing into the phone layout puts
+  the chat sheet away.
+- `Chat` — slash commands from the adapter with a picker, a Stop pill on the thinking row via an
+  optional `interrupt` on the adapter, pending messages that stay visible, history load failures
+  shown and cleared on recovery, and a restyle.
+- `Editor` — a focus slot: open at a source passage, placed by version and passage text. A record's
+  draft is parked on a move instead of saved with the next config, and a CRLF record stays CRLF.
+- `RecordForm` — versioned saves: a record is saved against the version read and a stale save asks,
+  with the fields the reader did not change marked in the conflict list and the form checked again
+  before Keep mine.
+- Dark theme across `Shell`, `Chat`, `Auth` and `RecordForm` — shared tokens, so popovers, member
+  rows and cards invert.
+
 ## 0.1.1
 
 First public release.

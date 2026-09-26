@@ -75,6 +75,10 @@ command with \`args\` keeps completing its one argument after the space. A sent 
 
   slots: [
     {
+      slot: 'transcribe',
+      what: 'A `(audio: Blob) => Promise<string>` that turns a recording into text. Given it, the composer grows a microphone button: tap to record, tap again to stop, Escape discards. The recognized text is appended to whatever is already in the composer and nothing is sent — the person still presses Send. Empty, or a browser with no `navigator.mediaDevices.getUserMedia`, renders no button and changes nothing. Chat never learns which speech service is behind the function; a rejection\u2019s message is what the person reads.',
+    },
+    {
       slot: 'attach',
       what: 'Replaces the paperclip and the row of staged chips above the composer. It is called with `stage`, which is what the next message is sent with; `Upload.Picker` is what belongs here, so an attachment is a file that really went somewhere. Empty falls back to the built-in paperclip, which stages a name and a size and uploads nothing.',
     },
@@ -123,6 +127,12 @@ import 'golem-ui/styles.css'
 - **The built-in paperclip uploads nothing.** It stages a name and a size, which is enough to show
   the chip and enough for an adapter that only wants the metadata. For an attachment that is a real
   file in a real folder, host \`Upload.Picker\` in the \`attach\` slot.
+- **No transcriber, no microphone.** The mic button exists only when the app passes \`transcribe\`
+  *and* the browser exposes \`navigator.mediaDevices.getUserMedia\`. On http:// or an old browser the
+  composer is exactly what it was before.
+- **The microphone is refused, or the transcriber rejects.** One line in the strip under the feed,
+  carrying the Error's own message, cleared by the next keystroke in the composer. Nothing is sent
+  and the draft is untouched.
 - **Timestamps are UTC**, read straight off the ISO string, so a bubble reads the same everywhere.
   For local time, put local time in \`at\`.`,
 }

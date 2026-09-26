@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ChatAdapter, ChatMessage } from '../../adapters'
 import { fakeChat } from '../../adapters/fake'
 import { Chat } from './Chat'
@@ -435,6 +435,105 @@ describe('Chat', () => {
       await userEvent.type(screen.getByRole('textbox'), '/reset{Enter}')
       expect(picker()).toBeNull()
       expect(script.sent).toEqual([{ text: '/reset', attachments: undefined }])
+    })
+  })
+
+  describe('the microphone', () => {
+    const mic = () => screen.queryByRole('button', { name: 'Speak' })
+
+    /** Gives jsdom the two browser objects the button needs, and hands back the recorder it made. */
+    function stubMedia() {
+      const track = { stop: vi.fn() }
+      const getUserMedia = vi.fn().mockResolvedValue({ getTracks: () => [track] })
+      Object.defineProperty(navigator, 'mediaDevices', {
+        value: { getUserMedia },
+        configurable: true,
+      })
+      const made: { stop: () => void; start: () => void; onstop?: () => void }[] = []
+      class FakeRecorder {
+        mimeType = 'audio/webm'
+        ondataavailable: ((event: { data: Blob }) => void) | null = null
+        onstop: (() => void) | null = null
+        constructor() {
+          made.push(this as unknown as (typeof made)[number])
+        }
+        start() {}
+        stop() {
+          this.ondataavailable?.({ data: new Blob(['x']) })
+          this.onstop?.()
+        }
+        static isTypeSupported() {
+          return true
+        }
+      }
+      vi.stubGlobal('MediaRecorder', FakeRecorder)
+      return { made, getUserMedia }
+    }
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      Reflect.deleteProperty(navigator, 'mediaDevices')
+    })
+
+    it('renders no button without a transcribe prop', async () => {
+      stubMedia()
+      render(<Chat config={{}} adapters={{ chat: scriptedChat().adapter }} />)
+      await flush()
+      expect(mic()).toBeNull()
+    })
+
+    it('renders no button when the browser has no microphone', async () => {
+      render(
+        <Chat
+          config={{}}
+          adapters={{ chat: scriptedChat().adapter }}
+          transcribe={async () => 'never asked for'}
+        />,
+      )
+      await flush()
+      expect(mic()).toBeNull()
+    })
+
+    it('records, transcribes, and appends the text to the draft', async () => {
+      const { made } = stubMedia()
+      const transcribe = vi.fn().mockResolvedValue('trued and back on')
+      render(
+        <Chat config={{}} adapters={{ chat: scriptedChat().adapter }} transcribe={transcribe} />,
+      )
+      await flush()
+      const composer = screen.getByRole('textbox')
+      await userEvent.type(composer, 'the Kona wheel is')
+
+      await userEvent.click(mic()!)
+      await waitFor(() => expect(made).toHaveLength(1))
+      await act(async () => made[0]!.stop())
+
+      await waitFor(() => expect(composer).toHaveValue('the Kona wheel is trued and back on'))
+      expect(transcribe).toHaveBeenCalledOnce()
+      expect(transcribe.mock.calls[0]![0]).toBeInstanceOf(Blob)
+      // Nothing is sent by itself: the person still presses Send.
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('shows a rejected transcription in the error strip and clears it on the next keystroke', async () => {
+      const { made } = stubMedia()
+      render(
+        <Chat
+          config={{}}
+          adapters={{ chat: scriptedChat().adapter }}
+          transcribe={() => Promise.reject(new Error('Speech service is down.'))}
+        />,
+      )
+      await flush()
+      await userEvent.click(mic()!)
+      await waitFor(() => expect(made).toHaveLength(1))
+      await act(async () => made[0]!.stop())
+
+      await waitFor(() =>
+        expect(screen.getByRole('alert')).toHaveTextContent('Speech service is down.'),
+      )
+      await userEvent.type(screen.getByRole('textbox'), 'a')
+      expect(screen.queryByRole('alert')).toBeNull()
     })
   })
 })

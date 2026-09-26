@@ -50,6 +50,10 @@ Type `/` in this one: the picker completes the adapter's commands and their argu
 
 <Canvas of={ChatStories.SlashCommands} />
 
+Hand Chat a `transcribe` function and the composer grows a microphone; hand it none and there is no button at all. This one runs a fake transcriber that answers after 800ms:
+
+<Canvas of={ChatStories.Dictation} />
+
 Every state at once, with the Stop pill on the thinking row that an adapter earns by providing `interrupt`:
 
 <Canvas of={ChatStories.EveryState} />

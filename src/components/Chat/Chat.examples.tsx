@@ -1,10 +1,10 @@
 import type { GolemProps } from '../../abi'
 import { fakeChat } from '../../adapters/fake'
 import type { ChatAdapter, ChatMessage } from '../../adapters'
-import type { ChatAdapters } from './Chat'
+import type { ChatAdapters, ChatSlots } from './Chat'
 import type { ChatConfigInput } from './Chat.config'
 
-export type ChatProps = GolemProps<ChatConfigInput, ChatAdapters>
+export type ChatProps = GolemProps<ChatConfigInput, ChatAdapters, ChatSlots>
 
 export interface ChatExample {
   name: string
@@ -265,6 +265,24 @@ export const slashCommands: ChatExample = {
   },
 }
 
+/** A transcriber that recognizes nothing and takes 800ms about it, so the spinner is visible. */
+const fakeTranscribe = (_audio: Blob): Promise<string> =>
+  new Promise((resolve) =>
+    setTimeout(() => resolve('the Kona rear wheel is trued and back on'), 800),
+  )
+
+export const dictation: ChatExample = {
+  name: 'Dictation',
+  summary:
+    'With a `transcribe` function and a browser that has a microphone, the composer grows a mic: tap to record, tap to stop, Escape to discard, and the text is appended to the draft. Without the function there is no button.',
+  viewportWidth: 380,
+  props: {
+    config: { agentName: 'Golem', userName: 'Nadia', placeholder: 'Message Golem, or speak…' },
+    adapters: conversationAdapters,
+    transcribe: fakeTranscribe,
+  },
+}
+
 export const invalidConfig: ChatExample = {
   name: 'Invalid config',
   summary: 'An empty placeholder and a composer taller than the maximum: both fields are named.',
@@ -284,5 +302,6 @@ export const chatExamples = [
   withTimestamps,
   live,
   slashCommands,
+  dictation,
   invalidConfig,
 ]

@@ -32,6 +32,13 @@ export const chatConfigSchema = z
       .boolean()
       .default(false)
       .describe('Whether each bubble carries the time it was sent, as HH:MM in UTC.'),
+    micLabel: z
+      .string()
+      .min(1)
+      .default('Speak')
+      .describe(
+        'Names the microphone button, as its tooltip and its aria-label. Only ever seen when the app hands Chat a `transcribe` function.',
+      ),
     maxComposerLines: z
       .number()
       .int()

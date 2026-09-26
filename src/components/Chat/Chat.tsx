@@ -3,6 +3,7 @@ import { defineComponent, type GolemProps } from '../../abi'
 import type { ChatAdapter, ChatAttachment, ChatCommand, ChatMessage } from '../../adapters'
 import { chatConfigSchema, type ChatConfig } from './Chat.config'
 import { Markdown } from '../../lib/markdown'
+import { MicButton, canRecord, type Transcriber } from '../shared/MicButton'
 
 export interface ChatAdapters {
   chat: ChatAdapter
@@ -15,6 +16,12 @@ export interface ChatSlots {
    * belongs here, so an attachment comes from a real upload rather than a name and a size.
    */
   attach?: (stage: (attachments: ChatAttachment[]) => void) => ReactNode
+  /**
+   * Turns recorded audio into text. Given it, and a browser with a microphone, the composer grows a
+   * mic button that appends what was said to the draft; without it nothing is rendered. Chat never
+   * learns which speech service is behind the function.
+   */
+  transcribe?: Transcriber
 }
 
 /** How close to the bottom still counts as "reading the newest message". */
@@ -313,7 +320,12 @@ function Thinking({ name, onStop }: { name: string; onStop?: () => Promise<void>
   )
 }
 
-function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdapters, ChatSlots>) {
+function ChatPanel({
+  config,
+  adapters,
+  attach,
+  transcribe,
+}: GolemProps<ChatConfig, ChatAdapters, ChatSlots>) {
   const { messages, loadError } = useConversation(adapters.chat)
   const [draft, setDraft] = useState('')
   const [staged, setStaged] = useState<ChatAttachment[]>([])
@@ -321,6 +333,9 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
   // message, and its chips would otherwise say they are still waiting to be sent.
   const [sent, setSent] = useState(0)
   const [sendError, setSendError] = useState('')
+  const [micError, setMicError] = useState('')
+  // Bumped when a transcript lands, so the effect below puts the caret after the appended text.
+  const [caretToEnd, setCaretToEnd] = useState(0)
   const composer = useRef<HTMLTextAreaElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   // Slash commands and their replies live here, not in the adapter's conversation: `runCommand`
@@ -379,6 +394,19 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
     element.style.height = `${Math.min(element.scrollHeight, max)}px`
     element.style.overflowY = element.scrollHeight > max ? 'auto' : 'hidden'
   }, [draft, config.maxComposerLines])
+
+  useLayoutEffect(() => {
+    if (!caretToEnd) return
+    const element = composer.current
+    if (!element) return
+    element.focus()
+    element.setSelectionRange(element.value.length, element.value.length)
+  }, [caretToEnd])
+
+  const appendTranscript = (text: string) => {
+    setDraft((current) => (current.trim() ? `${current.trimEnd()} ${text}` : text))
+    setCaretToEnd((n) => n + 1)
+  }
 
   const send = () => {
     const text = draft.trim()
@@ -457,12 +485,12 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
         {thinking && <Thinking name={config.agentName} onStop={interrupt} />}
       </div>
 
-      {(loadError || sendError) && (
+      {(loadError || sendError || micError) && (
         <p
           role="alert"
           className="shrink-0 border-t border-(--chat-line) px-3 py-2 text-sm text-(--chat-danger)"
         >
-          {loadError || sendError}
+          {loadError || sendError || micError}
         </p>
       )}
 
@@ -552,6 +580,7 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
             setDraft(event.target.value)
             setPickerClosed(false)
             setSelected(0)
+            setMicError('')
           }}
           onKeyDown={(event) => {
             // With the picker open, arrows move, Tab and Enter pick, Escape closes.
@@ -585,6 +614,14 @@ function ChatPanel({ config, adapters, attach }: GolemProps<ChatConfig, ChatAdap
           aria-label={config.placeholder}
           className="min-w-0 flex-1 resize-none rounded-[10px] border border-(--chat-line) bg-(--chat-panel) px-3 py-2 text-[15px] leading-6 text-(--chat-text) outline-none transition-[border-color,box-shadow] placeholder:text-(--chat-faint) focus:border-(--chat-accent) focus:shadow-[0_0_0_3px_var(--chat-accent-soft)]"
         />
+        {transcribe && canRecord() && (
+          <MicButton
+            transcribe={transcribe}
+            onText={appendTranscript}
+            label={config.micLabel}
+            onError={setMicError}
+          />
+        )}
         <button
           type="submit"
           className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-(--chat-accent) text-sm font-medium text-white transition-opacity hover:opacity-85"

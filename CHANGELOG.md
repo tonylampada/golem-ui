@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2
+
+- `Chat` — an optional microphone on the composer. Hand it `transcribe?: (audio: Blob) =>
+  Promise<string>` and, where the browser has a microphone, the composer grows a mic button: tap to
+  record, tap again to stop, Escape discards. The recognized text is appended to the draft and
+  nothing is sent by itself. No prop, or no microphone, renders exactly the composer that was there
+  before. `micLabel` names the button. golem-ui stays agnostic of any speech service.
+
 ## 0.2.1
 
 - `Auth` — a manager resets a member's password instead of removing and re-inviting them: **Reset

@@ -137,31 +137,86 @@ describe('Auth', () => {
     expect((await joining.currentUser())?.roles).toEqual(['mechanic'])
   })
 
-  it('gives a member no way to remove anyone, and an admin one per other person', async () => {
+  it('gives a member read-only rows, and an admin a sheet per member that removes behind a confirm', async () => {
     const asMember = wire({ user: mechanic })
     const { unmount } = render(<Auth config={config} adapters={asMember.adapters} />)
     await waitFor(() => expect(screen.getByText('Nadia Kessler')).toBeInTheDocument())
-    expect(screen.queryAllByRole('button', { name: /^Remove/ })).toHaveLength(0)
-    expect(screen.queryByRole('button', { name: 'Invite by link' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Nadia Kessler/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Invite' })).not.toBeInTheDocument()
     unmount()
 
     const asAdmin = wire({ user: owner })
     render(<Auth config={config} adapters={asAdmin.adapters} />)
     await waitFor(() => expect(screen.getByText('Omar Bright')).toBeInTheDocument())
-    const removals = screen.getAllByRole('button', { name: /^Remove/ })
-    expect(removals.map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Remove Omar Bright',
-    ])
+    // The list itself carries no actions: they live in the sheet a row opens.
+    expect(screen.queryByRole('button', { name: /^Remove/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^Role for Omar/ })).not.toBeInTheDocument()
 
-    await userEvent.click(removals[0]!)
+    // Your own sheet has no way to remove you.
+    await userEvent.click(screen.getByRole('button', { name: /Nadia Kessler/ }))
+    const own = screen.getByRole('dialog', { name: 'Nadia Kessler' })
+    expect(within(own).queryByRole('button', { name: /^Remove/ })).not.toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Omar Bright/ }))
+    const sheet = screen.getByRole('dialog', { name: 'Omar Bright' })
+    await userEvent.click(
+      within(sheet).getByRole('button', { name: 'Remove from Northgate Cycles' }),
+    )
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByText('Omar Bright', { selector: 'h2' })).toBeInTheDocument()
+
+    await userEvent.click(
+      within(sheet).getByRole('button', { name: 'Remove from Northgate Cycles' }),
+    )
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Remove Omar Bright' }))
     await waitFor(() => expect(screen.queryByText('Omar Bright')).not.toBeInTheDocument())
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('changes a role from the member sheet, and the row follows', async () => {
+    const { identity, adapters } = wire({ user: owner })
+    render(<Auth config={config} adapters={adapters} />)
+    await userEvent.click(await screen.findByRole('button', { name: /Omar Bright/ }))
+
+    await userEvent.selectOptions(screen.getByLabelText('Role for Omar Bright'), 'owner')
+    await waitFor(async () =>
+      expect((await identity.listMembers()).find((m) => m.id === mechanic.id)?.roles).toEqual([
+        'owner',
+      ]),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+    const row = screen.getByRole('button', { name: /Omar Bright/ })
+    await waitFor(() => expect(row).toHaveTextContent('Owner'))
+  })
+
+  it('mints an invite at the top, with Copy and the expiry the config states', async () => {
+    // `setup()` stands a clipboard in, so Copy has somewhere to write.
+    const user = userEvent.setup()
+    const { adapters } = wire({ user: owner })
+    render(
+      <Auth
+        config={{ ...config, copy: { inviteExpiry: 'Expires in 7 days.' } }}
+        adapters={adapters}
+      />,
+    )
+    await user.selectOptions(await screen.findByLabelText('Role for the invite'), 'owner')
+    await user.click(screen.getByRole('button', { name: 'Invite' }))
+
+    const link = await screen.findByLabelText<HTMLInputElement>('Link to send')
+    expect(link.value).toMatch(/invite=/)
+    expect(screen.getByText('Expires in 7 days.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Copy' }))
+    expect(await navigator.clipboard.readText()).toBe(link.value)
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument()
   })
 
   it('round-trips a reset link into a new password, without touching the member', async () => {
     const { identity } = wire({ user: owner })
     render(<Auth config={config} adapters={{ identity, navigation: fakeNavigation() }} />)
-    await waitFor(() => expect(screen.getByText('Omar Bright')).toBeInTheDocument())
-
+    await userEvent.click(await screen.findByRole('button', { name: /Omar Bright/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Reset password for Omar Bright' }))
     const url = (await screen.findByLabelText<HTMLInputElement>('Link to send')).value
     const token = url.slice(url.lastIndexOf('=') + 1)

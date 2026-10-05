@@ -62,6 +62,56 @@ const members: User[] = [
 
 const base = { workspaceName: 'Northgate Cycles', roles }
 
+/** What the fake mints, said the way an app says it about its own links. */
+const linkCopy = {
+  inviteExpiry: 'One use. Expires in 7 days.',
+  resetExpiry: 'One use. Expires in 24 hours.',
+}
+
+/**
+ * A fuller roster, with the long names a phone has to wrap rather than cut: the case the member list
+ * is laid out for.
+ */
+const longRoster: User[] = [
+  owner,
+  {
+    id: 'u-mariana',
+    name: 'Mariana de Oliveira Costa',
+    email: 'mariana.oliveira.costa@northgatecycles.example',
+    roles: ['mechanic'],
+  },
+  {
+    id: 'u-gabriel',
+    name: 'Gabriel Antunes Ferreira da Silva',
+    email: 'gabriel.antunes@northgatecycles.example',
+    roles: ['mechanic'],
+  },
+  {
+    id: 'u-ligia',
+    name: 'Lígia Maria Albuquerque Sampaio',
+    email: 'ligia.sampaio@northgatecycles.example',
+    roles: ['front desk'],
+  },
+  {
+    id: 'u-samuel',
+    name: 'Samuel Okonkwo-Whitfield',
+    email: 'samuel.okonkwo-whitfield@northgatecycles.example',
+    roles: ['front desk'],
+  },
+  {
+    id: 'u-annelise',
+    name: 'Anneliese van der Berg-Lindqvist',
+    email: 'anneliese.vdb@northgatecycles.example',
+    roles: ['mechanic'],
+  },
+  {
+    id: 'u-theo',
+    name: 'Theo Lang',
+    email: 'theo@northgatecycles.example',
+    roles: ['front desk'],
+  },
+]
+
 const nowhere = fakeNavigation()
 
 const signedOutAdapters: AuthAdapters = {
@@ -87,6 +137,11 @@ const inviteAdapters: AuthAdapters = {
 
 const adminAdapters: AuthAdapters = {
   identity: fakeIdentity({ user: owner, members }),
+  navigation: nowhere,
+}
+
+const rosterAdapters: AuthAdapters = {
+  identity: fakeIdentity({ user: owner, members: longRoster }),
   navigation: nowhere,
 }
 
@@ -151,10 +206,20 @@ export const accountMenu: AuthExample = {
 
 export const membersAsAdmin: AuthExample = {
   name: 'Members as an admin',
-  summary: 'A role that manages: an invite link to mint, a role to change, a member to remove.',
+  summary:
+    'A role that manages: an invite link at the top, and a row that opens the member, where the role, the password reset and the removal live.',
   surface: 'screen',
   viewportWidth: 900,
-  props: { config: base, adapters: adminAdapters },
+  props: { config: { ...base, copy: linkCopy }, adapters: adminAdapters },
+}
+
+export const membersOnPhone: AuthExample = {
+  name: 'Members on a phone',
+  summary:
+    'Seven members with long names at 390px: every name wraps whole, and a tap opens the member as a bottom sheet.',
+  surface: 'screen',
+  viewportWidth: 390,
+  props: { config: { ...base, copy: linkCopy }, adapters: rosterAdapters },
 }
 
 export const membersAsMember: AuthExample = {
@@ -207,6 +272,7 @@ export const authExamples = [
   signUpViaInvite,
   accountMenu,
   membersAsAdmin,
+  membersOnPhone,
   membersAsMember,
   guardDenies,
   invalidConfig,

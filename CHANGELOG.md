@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- `Auth` — the member list reads on a phone. Each row is the whole name (wrapped, never cut), the
+  address under it and the role as a pill; nothing else. For a managing role a tap opens that member
+  — a bottom sheet on a phone, a dialog on a wide screen — holding the role, **Reset password** (the
+  link with Copy and, where the browser has it, Share) and **Remove**, behind a confirm and still not
+  drawn for yourself. The invite is a role and **Invite** at the top, and its link gets the same Copy
+  and Share. Two new optional `copy` fields, `inviteExpiry` and `resetExpiry`, put a line under each
+  link saying how long it lasts; left empty, no line is drawn. Adapters and the rest of the config
+  are unchanged, and links are no longer copied to the clipboard on their own: Copy does it.
+
 ## 0.2.2
 
 - `Chat` — an optional microphone on the composer. Hand it `transcribe?: (audio: Blob) =>

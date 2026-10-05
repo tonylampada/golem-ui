@@ -16,6 +16,8 @@ const copySchema = z
     submit: z.string().min(1).default('Continue'),
     membersTitle: z.string().min(1).default('Members'),
     denied: z.string().min(1).default('This screen is not open to your role.'),
+    inviteExpiry: z.string().default(''),
+    resetExpiry: z.string().default(''),
   })
   .strict()
 
@@ -58,7 +60,7 @@ export const authConfigSchema = z
     copy: copySchema
       .prefault({})
       .describe(
-        'Overrides for the labels the screens are built from: `signInTitle`, `signUpTitle`, `hint` (a line under the sign-in title, where a demo says which accounts work), `submit`, `membersTitle`, `denied`.',
+        'Overrides for the labels the screens are built from: `signInTitle`, `signUpTitle`, `hint` (a line under the sign-in title, where a demo says which accounts work), `submit`, `membersTitle`, `denied`, and `inviteExpiry` / `resetExpiry` (a line under a freshly minted invite or reset link saying how long it lasts, such as "Expires in 7 days."; empty shows nothing, because only the app knows what its adapter mints).',
       ),
   })
   .strict()

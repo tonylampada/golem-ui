@@ -40,9 +40,11 @@ A one-time code instead of a password, and the same screen opened on an invite l
 <Canvas of={AuthStories.SignedOutCode} />
 <Canvas of={AuthStories.SignUpViaInvite} />
 
-The member list, seen by a role that manages and by one that does not:
+The member list, seen by a role that manages and by one that does not, and on a phone with long
+names. A managing role taps a row to open that member:
 
 <Canvas of={AuthStories.MembersAsAdmin} />
+<Canvas of={AuthStories.MembersOnPhone} />
 <Canvas of={AuthStories.MembersAsMember} />
 
 The account menu, and a guard turning the wrong role away:

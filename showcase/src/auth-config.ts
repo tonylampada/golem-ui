@@ -17,6 +17,8 @@ export const authConfig: AuthConfigInput = {
     { id: 'owner', label: 'Owner', manages: true },
   ],
   copy: {
+    inviteExpiry: 'One use. Expires in 7 days.',
+    resetExpiry: 'One use. Expires in 24 hours.',
     hint: `Any of the shop's five accounts — nadia@, omar@, priya@, theo@ or hana@northgatecycles.example — with the password ${SHOP_PASSWORD}.`,
   },
 }

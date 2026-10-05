@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type FormEvent,
   type InputHTMLAttributes,
@@ -286,6 +287,305 @@ function useMembers(identity: IdentityAdapter, user: User | null) {
   return { members, reload }
 }
 
+/** The native share sheet, where the browser has one: on a phone it is how a link reaches a chat. */
+function canShare(): boolean {
+  return typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+}
+
+/**
+ * A minted link, ready to hand over: the URL in full, Copy, Share where the browser offers it, and
+ * how long it lasts when the config says. Clipboard access is a permission, so the URL stays on
+ * screen to select by hand either way.
+ */
+function LinkResult({
+  title,
+  link,
+  expiry,
+  workspaceName,
+}: {
+  title: string
+  link: string
+  expiry: string
+  workspaceName: string
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <div
+      data-golem-auth-link="true"
+      className="rounded-xl border border-(--chat-line) bg-(--chat-panel2) p-3"
+    >
+      <p className="text-sm font-medium">{title}</p>
+      <input
+        readOnly
+        aria-label="Link to send"
+        value={link}
+        onFocus={(event) => event.target.select()}
+        className={`${fieldClass} font-mono text-xs`}
+      />
+      <div className="mt-2 flex gap-2">
+        <button type="button" onClick={() => void copy()} className={`flex-1 ${quietClass}`}>
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+        {canShare() && (
+          <button
+            type="button"
+            // Dismissing the share sheet rejects; that is the reader changing their mind, not a failure.
+            onClick={() =>
+              void navigator.share({ title: workspaceName, url: link }).catch(() => {})
+            }
+            className={`flex-1 ${quietClass}`}
+          >
+            Share
+          </button>
+        )}
+      </div>
+      {expiry && <p className="mt-2 text-xs text-(--chat-dim)">{expiry}</p>}
+    </div>
+  )
+}
+
+function RolePill({ children }: { children: ReactNode }) {
+  return (
+    <span className="shrink-0 rounded-full border border-(--chat-line2) bg-(--chat-panel2) px-2 py-0.5 text-xs font-medium whitespace-nowrap text-(--chat-text)">
+      {children}
+    </span>
+  )
+}
+
+/** One member, for reading: the whole name, wrapped and never cut; the address under it; the role as a pill. */
+function MemberSummary({
+  config,
+  member,
+  self,
+}: {
+  config: AuthConfig
+  member: User
+  self: boolean
+}) {
+  return (
+    <>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium break-words">
+          {member.name}
+          {self && <span className="font-normal text-(--chat-dim)"> (you)</span>}
+        </span>
+        {member.email && (
+          <span className="block truncate text-xs text-(--chat-dim)">{member.email}</span>
+        )}
+      </span>
+      <RolePill>{labelForRole(config, member)}</RolePill>
+    </>
+  )
+}
+
+/**
+ * Everything a managing role does to one member. A bottom sheet on a phone, a centred dialog on a
+ * wide screen — one element, so the two cannot drift. Escape and the backdrop both close it.
+ */
+function MemberDetail({
+  config,
+  adapters,
+  member,
+  self,
+  onChanged,
+  onClose,
+}: {
+  config: AuthConfig
+  adapters: AuthAdapters
+  member: User
+  self: boolean
+  onChanged: () => void
+  onClose: () => void
+}) {
+  const [resetLink, setResetLink] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const panel = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Focus moves into the sheet, and back to the row that opened it when the sheet goes.
+    const opener = document.activeElement as HTMLElement | null
+    panel.current?.focus()
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      opener?.focus?.()
+    }
+  }, [onClose])
+
+  const run = async (action: () => Promise<unknown>) => {
+    setBusy(true)
+    setError(null)
+    try {
+      await action()
+    } catch (failure) {
+      setError(messageOf(failure))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const firstName = member.name.split(/\s+/)[0] || member.name
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-6"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={member.name}
+        tabIndex={-1}
+        data-golem-auth-detail={member.id}
+        className="max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border border-(--chat-line) bg-(--chat-panel) px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-(--chat-text) shadow-xl outline-none sm:max-w-md sm:rounded-2xl sm:pt-5"
+      >
+        <div
+          aria-hidden="true"
+          className="mx-auto mb-3 h-1 w-10 rounded-full bg-(--chat-line2) sm:hidden"
+        />
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold break-words">{member.name}</h2>
+            {member.email && (
+              <p className="text-sm [overflow-wrap:anywhere] text-(--chat-dim)">{member.email}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="-mr-2 shrink-0 rounded-lg px-2 py-1 text-xl leading-none text-(--chat-dim)"
+          >
+            ×
+          </button>
+        </div>
+
+        <label className="mt-5 block">
+          <span className="text-sm font-medium text-(--chat-dim)">Role</span>
+          <select
+            aria-label={`Role for ${member.name}`}
+            value={roleFor(config, member)?.id ?? config.roles[0]!.id}
+            disabled={busy}
+            onChange={(event) => {
+              const role = event.target.value
+              void run(async () => {
+                await adapters.identity.setRole(member.id, role)
+                onChanged()
+              })
+            }}
+            className={fieldClass}
+          >
+            {config.roles.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {adapters.identity.resetPassword && (
+          <div className="mt-5 space-y-3">
+            {resetLink ? (
+              <LinkResult
+                title={`Send this to ${firstName}. It lets them choose a new password.`}
+                link={resetLink}
+                expiry={config.copy.resetExpiry}
+                workspaceName={config.workspaceName}
+              />
+            ) : (
+              <button
+                type="button"
+                aria-label={`Reset password for ${member.name}`}
+                disabled={busy}
+                onClick={() =>
+                  void run(async () =>
+                    setResetLink(await adapters.identity.resetPassword!(member.id)),
+                  )
+                }
+                className={`w-full ${quietClass}`}
+              >
+                Reset password
+              </button>
+            )}
+          </div>
+        )}
+
+        {error && (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg border border-(--chat-danger) px-3 py-2 text-sm text-(--chat-danger)"
+          >
+            {error}
+          </p>
+        )}
+
+        {/* Removing yourself is how a person locks themselves out, so that control is not drawn. */}
+        {!self && (
+          <div className="mt-6 border-t border-(--chat-line) pt-4">
+            {confirming ? (
+              <div role="alertdialog" aria-label={`Remove ${member.name}?`}>
+                <p className="text-sm">
+                  Remove {member.name}? They lose access to {config.workspaceName} at once.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(false)}
+                    className={`flex-1 ${quietClass}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${member.name}`}
+                    disabled={busy}
+                    onClick={() =>
+                      void run(async () => {
+                        await adapters.identity.removeMember(member.id)
+                        onChanged()
+                        onClose()
+                      })
+                    }
+                    className="flex-1 rounded-lg bg-(--chat-danger) px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="w-full rounded-lg px-3 py-2 text-sm font-medium text-(--chat-danger)"
+              >
+                Remove from {config.workspaceName}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function MembersScreen({
   config,
   adapters,
@@ -298,42 +598,43 @@ function MembersScreen({
   const { members, reload } = useMembers(adapters.identity, user)
   const manages = canManage(config, user)
   const [inviteRole, setInviteRole] = useState(config.roles[0]!.id)
-  const [link, setLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
+  const close = useCallback(() => setOpenId(null), [])
 
-  const mint = async (minting: Promise<string>) => {
-    const url = await minting
-    setLink(url)
-    // Clipboard access is a permission and a browser feature, so the URL is on screen either way.
+  // Read off the live list, so a role change shows in the sheet and a removal closes it.
+  const open = members.find((member) => member.id === openId)
+
+  const invite = async () => {
+    setInviteError(null)
     try {
-      await navigator.clipboard?.writeText(url)
-      setCopied(true)
-    } catch {
-      setCopied(false)
+      setInviteLink(await adapters.identity.invite(inviteRole))
+    } catch (failure) {
+      setInviteError(messageOf(failure))
     }
   }
 
   return (
     <div
       data-golem-component="Auth"
-      className="golem-auth mx-auto w-full max-w-3xl px-4 py-5 text-(--chat-text) sm:px-6 sm:py-7"
+      className="golem-auth mx-auto w-full max-w-2xl px-4 py-5 text-(--chat-text) sm:px-6 sm:py-7"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-            {config.copy.membersTitle}
-          </h1>
-          <p className="mt-1 text-sm text-(--chat-dim)">
-            Everyone who can open {config.workspaceName}.
-          </p>
-        </div>
-        {manages && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+        {config.copy.membersTitle}
+      </h1>
+      <p className="mt-1 text-sm text-(--chat-dim)">
+        Everyone who can open {config.workspaceName}.
+      </p>
+
+      {manages && (
+        <section aria-label="Invite" className="mt-5 space-y-3">
+          <div className="flex gap-2">
             <select
               aria-label="Role for the invite"
               value={inviteRole}
               onChange={(event) => setInviteRole(event.target.value)}
-              className="rounded-lg border border-(--chat-line2) bg-(--chat-panel) px-2 py-2 text-sm text-(--chat-text)"
+              className="min-w-0 flex-1 rounded-lg border border-(--chat-line2) bg-(--chat-panel) px-3 py-2.5 text-base text-(--chat-text) sm:max-w-xs sm:text-sm"
             >
               {config.roles.map((role) => (
                 <option key={role.id} value={role.id}>
@@ -343,89 +644,64 @@ function MembersScreen({
             </select>
             <button
               type="button"
-              onClick={() => void mint(adapters.identity.invite(inviteRole))}
-              className={quietClass}
+              onClick={() => void invite()}
+              className="shrink-0 rounded-lg bg-(--chat-text) px-5 py-2.5 text-sm font-medium text-(--chat-bg)"
             >
-              Invite by link
+              Invite
             </button>
           </div>
-        )}
-      </div>
-
-      {link && (
-        <div className="mt-4 rounded-xl border border-(--chat-line) bg-(--chat-panel) p-4">
-          <p className="text-sm font-medium">
-            Send this link. {copied ? 'It is on your clipboard.' : 'Copy it from here.'}
-          </p>
-          <input
-            readOnly
-            aria-label="Link to send"
-            value={link}
-            onFocus={(event) => event.target.select()}
-            className={`${fieldClass} font-mono text-xs`}
-          />
-        </div>
+          {inviteError && (
+            <p role="alert" className="text-sm text-(--chat-danger)">
+              {inviteError}
+            </p>
+          )}
+          {inviteLink && (
+            <LinkResult
+              // A new link is a new result: keyed, so "Copied" does not carry over to it.
+              key={inviteLink}
+              title="Send this link. Whoever opens it joins with that role."
+              link={inviteLink}
+              expiry={config.copy.inviteExpiry}
+              workspaceName={config.workspaceName}
+            />
+          )}
+        </section>
       )}
 
-      <ul className="mt-6 space-y-3">
+      <ul className="mt-5 divide-y divide-(--chat-line) overflow-hidden rounded-xl border border-(--chat-line) bg-(--chat-panel)">
         {members.map((member) => (
-          <li
-            key={member.id}
-            data-golem-auth-member={member.id}
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-(--chat-line) bg-(--chat-panel) p-4"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{member.name}</p>
-              <p className="truncate text-xs text-(--chat-dim)">{member.email}</p>
-            </div>
+          <li key={member.id} data-golem-auth-member={member.id}>
             {manages ? (
-              <select
-                aria-label={`Role for ${member.name}`}
-                value={roleFor(config, member)?.id ?? config.roles[0]!.id}
-                onChange={(event) => {
-                  void adapters.identity.setRole(member.id, event.target.value).then(reload)
-                }}
-                className="rounded-lg border border-(--chat-line2) bg-(--chat-panel) px-2 py-1.5 text-sm text-(--chat-text)"
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                onClick={() => setOpenId(member.id)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-(--chat-panel2)"
               >
-                {config.roles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.label}
-                  </option>
-                ))}
-              </select>
+                <MemberSummary config={config} member={member} self={member.id === user.id} />
+                <span aria-hidden="true" className="shrink-0 text-(--chat-faint)">
+                  ›
+                </span>
+              </button>
             ) : (
-              <span className="shrink-0 rounded-full border border-(--chat-line2) bg-(--chat-panel2) px-2 py-0.5 text-xs font-medium text-(--chat-text)">
-                {labelForRole(config, member)}
-              </span>
-            )}
-            {manages && adapters.identity.resetPassword && (
-              <button
-                type="button"
-                aria-label={`Reset password for ${member.name}`}
-                onClick={() => {
-                  void mint(adapters.identity.resetPassword!(member.id))
-                }}
-                className="shrink-0 rounded-lg border border-(--chat-line2) px-3 py-1.5 text-sm"
-              >
-                Reset password
-              </button>
-            )}
-            {/* Removing yourself is how a person locks themselves out, so that button is not drawn. */}
-            {manages && member.id !== user.id && (
-              <button
-                type="button"
-                aria-label={`Remove ${member.name}`}
-                onClick={() => {
-                  void adapters.identity.removeMember(member.id).then(reload)
-                }}
-                className="shrink-0 rounded-lg border border-(--chat-line2) px-3 py-1.5 text-sm text-(--chat-danger)"
-              >
-                Remove
-              </button>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <MemberSummary config={config} member={member} self={member.id === user.id} />
+              </div>
             )}
           </li>
         ))}
       </ul>
+
+      {manages && open && (
+        <MemberDetail
+          config={config}
+          adapters={adapters}
+          member={open}
+          self={open.id === user.id}
+          onChanged={reload}
+          onClose={close}
+        />
+      )}
     </div>
   )
 }

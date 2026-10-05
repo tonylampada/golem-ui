@@ -11,7 +11,8 @@ export const authDocs: ComponentDocs = {
 three surfaces on one config:
 
 - **\`<Auth />\`** — the screen. Signed out it is sign-in, sign-up and the invite landing; signed in it
-  is the member list, with roles and removals for whoever is allowed to manage them.
+  is the member list: rows to read, and for whoever manages, an invite at the top and a tap on a row
+  that opens the member — a bottom sheet on a phone — with role, password reset and removal.
 - **\`<Auth.Guard roles={[...]}>\`** — wraps what only some roles may see. It renders the sign-in
   screen to a stranger, a not-allowed card to the wrong role, and the children to the right one.
 - **\`<Auth.AccountMenu />\`** — the name, the role and the way out. It goes in \`Shell\`'s \`account\`
@@ -28,7 +29,9 @@ lists and what \`setRole\` writes, \`label\` is what a person reads, and \`manag
 may invite, re-role and remove. The **first entry is the default** — what someone who signs up
 without an invite becomes, and what the invite control offers first.
 
-\`copy\` overrides labels one at a time; everything you leave out keeps its default.`,
+\`copy\` overrides labels one at a time; everything you leave out keeps its default. Set
+\`copy.inviteExpiry\` and \`copy.resetExpiry\` to say how long the links your adapter mints last —
+Auth cannot know, so without them no expiry line is drawn.`,
   ],
 
   adapters: [
@@ -54,8 +57,8 @@ without an invite becomes, and what the invite control offers first.
     },
     {
       adapter: 'Identity',
-      calls: '`listMembers()`, `invite()`, `setRole()`, `removeMember()`',
-      why: 'The member list and what a managing role does to it.',
+      calls: '`listMembers()`, `invite()`, `setRole()`, `removeMember()`, `resetPassword()`',
+      why: 'The member list and what a managing role does to it. Without `resetPassword`, the member sheet offers no reset.',
     },
     {
       adapter: 'Navigation',
@@ -122,7 +125,7 @@ const adapters = { identity: fakeIdentity(), navigation: fakeNavigation() }
 - **A role that no longer exists.** A member holding a role that is not in \`roles\` reads as the raw
   id in the list, and a \`Guard\` that does not list it turns them away. Changing \`roles\` does not
   migrate anyone; \`setRole\` does.
-- **Removing yourself.** The button is not drawn on your own row, because the way out of a workspace
+- **Removing yourself.** The remove control is not drawn in your own member sheet, because the way out of a workspace
   is signing out, not deleting the last managing account.
 - **A new adapter object on every render.** Auth re-subscribes when \`adapters\` changes identity,
   which re-reads the session and the member list. Build adapters once, outside render.`,

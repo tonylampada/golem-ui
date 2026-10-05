@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.3
 
 - `Auth` — the member list reads on a phone. Each row is the whole name (wrapped, never cut), the
   address under it and the role as a pill; nothing else. For a managing role a tap opens that member
